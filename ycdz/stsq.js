@@ -11,7 +11,7 @@
 *******************************
 
 [rewrite_local]
-http:\/\/wallpaper\.soutushenqi\.com\/api\/v1\/account url script-response-body stsq.js
+http:\/\/wallpaper\.soutushenqi\.com\/api\/v1\/account url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/stsq.js
 [mitm] 
 hostname = wallpaper.soutushenqi.com
 
