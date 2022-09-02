@@ -13,17 +13,17 @@ hostname= user-kaji-api.b612kaji.com, buy.itunes.apple.com,buy.itunes.apple.com,
 
 [rewrite_local]
 
-# ******************************
-# 脚本功能：咔咔解锁+B612VIP
+# /******************************
+# 脚本功能：B612咔叽+解锁VIP
 # 下载地址：http://mtw.so/64S4xg
 # 软件版本：11.4.5
-# 作者：彭于晏
+# 脚本作者：彭于晏
 # 更新时间：2022-9-2
 # 问题反馈：QQ+89996462
-# 使用声明⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+# 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
-^https:\/\/user-kaji-api\.b612kaji\.com\/v1\/purchase\/subscription\/subscriber\/status url script-response-body https://raw.githubusercontent.com/89996462 /Quantumult-X/main/ycdz/bj.js
+^https:\/\/user-kaji-api\.b612kaji\.com\/v1\/purchase\/subscription\/subscriber\/status url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/bj.js
 
 # /******************************
 # 脚本：https抓包+解锁功能订阅
