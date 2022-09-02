@@ -5,7 +5,8 @@
 
 [mitm]
 
-hostname= user-kaji-api.b612kaji.com, buy.itunes.apple.com,buy.itunes.apple.com, partner-ai-api.quthing.com,api.xiuxiu.meitu.com,subscription-api.notedapp.io,wallpaper.soutushenqi.com,buy.itunes.apple.com,www.xmind.cn,api.xunyou.mobi,m2u-api.getkwai.com,
+hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, partner-ai-api.quthing.com,api.xiuxiu.meitu.com,subscription-api.notedapp.io,wallpaper.soutushenqi.com,buy.itunes.apple.com,www.xmind.cn,api.xunyou.mobi,m2u-api.getkwai.com,api.meiyan.com info.json,
+
 
 
 
@@ -141,3 +142,15 @@ http:\/\/wallpaper\.soutushenqi\.com\/api\/v1\/account url script-response-body 
 # *******************************
 
 ^https?:\/\/m2u-api\.getkwai\.com\/api-server\/api\/v2\/vip\/vipUserInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ytxj.js
+
+# /******************************
+# 脚本功能：美颜相机+解锁VIP
+# 下载地址：http://mtw.so/6co6Pp
+# 软件版本：11.1.00
+# 脚本作者：彭于晏
+# 更新时间：2022-9-2
+# 问题反馈：QQ+89996462
+# 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+# *******************************
+
+^https:\/\/api\.meiyan\.com\/vip\/user_info\.json url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/myxj.js
