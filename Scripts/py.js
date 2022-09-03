@@ -1,11 +1,12 @@
 //////////////////////////////////////////////
 ////////////彭于晏规则合集 QQ+89996462//////////
 ////////////规则仅供学习交流，勿用于其它//////////
+////////////TG群：https://t.me/plus8889//////////
 /////////////////////////////////////////////
 
 [mitm]
 
-hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, partner-ai-api.quthing.com,api.xiuxiu.meitu.com,subscription-api.notedapp.io,wallpaper.soutushenqi.com,buy.itunes.apple.com,www.xmind.cn,api.xunyou.mobi,m2u-api.getkwai.com,api.meiyan.com info.json,
+hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, partner-ai-api.quthing.com,api.xiuxiu.meitu.com,subscription-api.notedapp.io,wallpaper.soutushenqi.com,buy.itunes.apple.com,www.xmind.cn,api.xunyou.mobi,m2u-api.getkwai.com,api.meiyan.com info.json,api.revenuecat.com,
 
 
 
@@ -15,12 +16,39 @@ hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, 
 [rewrite_local]
 
 # /******************************
+# 脚本功能：文件管理器+解锁订阅
+# 下载地址：http://mtw.so/6ckG8D
+# 软件版本：1.0.5
+# 脚本作者：彭于晏
+# 更新时间：2022-9-3
+# 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
+# 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+# *******************************
+
+^https:\/\/buy\.itunes\.apple\.com\/verifyReceipt url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/wjglq.js
+
+# /******************************
+# 脚本功能：1blocker+解锁订阅
+# 下载地址：http://mtw.so/5PQG9U
+# 软件版本：5.2.5
+# 脚本作者：彭于晏
+# 更新时间：2022-9-3
+# 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
+# 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+# *******************************
+
+^https:\/\/api\.revenuecat\.com\/v1\/subscribers url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/blocker.js
+
+# /******************************
 # 脚本功能：B612咔叽+解锁VIP
 # 下载地址：http://mtw.so/64S4xg
 # 软件版本：11.4.5
 # 脚本作者：彭于晏
 # 更新时间：2022-9-2
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -32,6 +60,7 @@ hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, 
 # 作者：彭于晏
 # 更新时间：2022-9-1
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -44,6 +73,7 @@ hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, 
 # 作者：彭于晏
 # 更新时间：2022-9-1
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -56,6 +86,7 @@ hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, 
 # 脚本作者：彭于晏
 # 更新时间：2022-9-1
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -67,6 +98,7 @@ hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, 
 # 脚本作者：彭于晏
 # 更新时间：2022-9-1
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -79,6 +111,7 @@ hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, 
 # 脚本作者：彭于晏
 # 更新时间：2022-9-2
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩⚠️⚠️⚠️
 # *******************************
 
@@ -90,6 +123,7 @@ hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, 
 # 脚本作者：彭于晏
 # 更新时间：2022-9-1
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -102,6 +136,7 @@ http:\/\/wallpaper\.soutushenqi\.com\/api\/v1\/account url script-response-body 
 # 脚本作者：彭于晏
 # 更新时间：2022-9-1
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -114,6 +149,7 @@ http:\/\/wallpaper\.soutushenqi\.com\/api\/v1\/account url script-response-body 
 # 脚本作者：彭于晏
 # 更新时间：2022-9-2
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -126,6 +162,7 @@ http:\/\/wallpaper\.soutushenqi\.com\/api\/v1\/account url script-response-body 
 # 脚本作者：彭于晏
 # 更新时间：2022-9-1
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -138,6 +175,7 @@ http:\/\/wallpaper\.soutushenqi\.com\/api\/v1\/account url script-response-body 
 # 脚本作者：彭于晏
 # 更新时间：2022-9-1
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
@@ -150,6 +188,7 @@ http:\/\/wallpaper\.soutushenqi\.com\/api\/v1\/account url script-response-body 
 # 脚本作者：彭于晏
 # 更新时间：2022-9-2
 # 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
 # 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 # *******************************
 
