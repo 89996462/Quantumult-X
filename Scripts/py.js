@@ -16,6 +16,32 @@ hostname= user-kaji-api.b612kaji.com,buy.itunes.apple.com,buy.itunes.apple.com, 
 [rewrite_local]
 
 # /******************************
+# 脚本功能：Picsew滚动截图+解锁订阅
+# 下载地址：http://mtw.so/5AOWu4
+# 软件版本：3.8.6
+# 脚本作者：彭于晏
+# 更新时间：2022-9-3
+# 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
+# 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+# *******************************
+
+^https:\/\/buy\.itunes\.apple\.com\/verifyReceipt url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Picsew.js
+
+# /******************************
+# 脚本功能：old roll复古相机+解锁订阅
+# 下载地址：http://mtw.so/64PxcA
+# 软件版本：4.2.1
+# 脚本作者：彭于晏
+# 更新时间：2022-9-3
+# 问题反馈：QQ+89996462
+# TG群：https://t.me/plus8889
+# 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+# *******************************
+
+^https:\/\/buy\.itunes\.apple\.com\/verifyReceipt url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/old.js
+
+# /******************************
 # 脚本功能：文件管理器+解锁订阅
 # 下载地址：http://mtw.so/6ckG8D
 # 软件版本：1.0.5
