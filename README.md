@@ -6,11 +6,11 @@
 
 软件需求邮箱：8996462@qq.com
 
-          觉得有帮助可以请喝咖啡:
+            觉得有帮助可以请喝咖啡
 
 
 
-<img src="https://s1.ax1x.com/2022/09/03/vo1FhD.jpg" alt="IMG_5957" style="zoom:23%;" />
+<img src="https://s1.ax1x.com/2022/09/03/vo1mnI.jpg" alt="IMG_5957" style="zoom:23%;" />
 
 ## 特别声明:
 
