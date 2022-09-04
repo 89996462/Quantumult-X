@@ -13,7 +13,7 @@ TG群：https://t.me/plus8889
 
 [rewrite_local]
 
-https:\/\/api\.revenuecat\.com\/v1\/(subscribers|receipts) url script-response-body Pixelmator.js
+https:\/\/api\.revenuecat\.com\/v1\/(subscribers|receipts) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Pixelmator.js
 
 [mitm] 
 hostname= api.revenuecat.com
