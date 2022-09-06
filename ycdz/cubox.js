@@ -14,7 +14,7 @@ TG群：https://t.me/plus8889
 
 [rewrite_local]
 
-^https:\/\/cubox\.pro\/c\/api\/userInfo url script-response-body cubox.js
+^https:\/\/cubox\.pro\/c\/api\/userInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/cubox.js
 
 [mitm] 
 hostname = cubox.pro
