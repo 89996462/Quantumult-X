@@ -12,12 +12,10 @@ TG反馈群：https://t.me/plus8889
 *******************************
 
 [rewrite_local]
-
-^https?:\/\/[a-z-]*account\.wps\.c(n|om)(:\d+|)\/api\/users url https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Wps.js
+^https?:\/\/account\.wps\.cn\/api\/users url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Wps.js
 
 [mitm]
-
-hostname = *account.wps.cn, *account.wps.com
+hostname = account.wps.cn
 
 **************************/
 
@@ -26,12 +24,12 @@ var obj = {
   exp: 0,
   level: 3,
   privilege: [
-    { spid: "data_recover", times: 0, expire_time: 1846256142 },
-    { spid: "ocr", times: 0, expire_time: 1846256142 },
-    { spid: "pdf2doc", times: 0, expire_time: 1846256142 },
-    { spid: "pdf_merge", times: 0, expire_time: 1846256142 },
-    { spid: "pdf_sign", times: 0, expire_time: 1846256142 },
-    { spid: "pdf_split", times: 0, expire_time: 1846256142 }
+    { spid: "data_recover", times: 0, expire_time: 4102415999 },
+    { spid: "ocr", times: 0, expire_time: 4102415999 },
+    { spid: "pdf2doc", times: 0, expire_time: 4102415999 },
+    { spid: "pdf_merge", times: 0, expire_time: 4102415999 },
+    { spid: "pdf_sign", times: 0, expire_time: 4102415999 },
+    { spid: "pdf_split", times: 0, expire_time: 4102415999 }
   ],
   result: "ok",
   total_buy: 0,
@@ -41,15 +39,15 @@ var obj = {
     name: "超级会员",
     has_ad: 0,
     memberid: 40,
-    expire_time: 1846256142,
+    expire_time: 4102415999,
     enabled: [
-      { memberid: 40, name: "超级会员", expire_time: 1846256142 },
-      { memberid: 20, name: "WPS会员", expire_time: 1846256142 },
-      { memberid: 12, name: "稻壳会员", expire_time: 1846256142 }
+      { memberid: 40, name: "超级会员", expire_time: 4102415999 },
+      { memberid: 20, name: "WPS会员", expire_time: 4102415999 },
+      { memberid: 12, name: "稻壳会员", expire_time: 4102415999 }
     ]
   },
   wealth: 0,
-  expire_time: 1846256142
+  expire_time: 4102415999
 };
 
 $done({ body: JSON.stringify(obj) });
