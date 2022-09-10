@@ -12,7 +12,7 @@ TG反馈群：https://t.me/plus8889
 *******************************
 
 [rewrite_local]
-^https?:\/\/account\.wps\.cn\/api\/users url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Wps.js
+^https?:\/\/account\.wps\.cn\/api\/users url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/wps.js
 
 [mitm]
 hostname = account.wps.cn
