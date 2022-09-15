@@ -16,7 +16,7 @@ TG反馈群：https://t.me/plus8889
 
 [rewrite_local]
 
-^https:\/\/cat-match-static\.easygame2021\.com\/catMatch\/sheep_wx_1_1_5\/remote\/resources\/import\/cb\/cb6bb31d-ff5f-4cb9-b0a5-64018e70a0ca\.c0636\.json url script-response-body ylgy.js
+^https:\/\/cat-match-static\.easygame2021\.com\/catMatch\/sheep_wx_1_1_5\/remote\/resources\/import\/cb\/cb6bb31d-ff5f-4cb9-b0a5-64018e70a0ca\.c0636\.json url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ylgy.js
 
 [mitm] 
 
