@@ -1,6 +1,6 @@
 /******************************
 
-脚本功能：91视频(TF版)+解锁VIP
+脚本功能：91视频(TF版+轻量版)+解锁VIP
 软件下载：https://app.wenfr.xyz/i-3YRR79
 软件版本：v666
 脚本作者：彭于晏
@@ -15,11 +15,11 @@ TG反馈群：https://t.me/plus8889
 
 [rewrite_local]
 
-^https:\/\/api\.jtshuzhiwa\.com\/m_user\/info url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/91tv.js
+^https://(app|api).*.com/m_user/info url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/91tv.js
 
 [mitm] 
 
-hostname = api.jtshuzhiwa.com
+hostname = appapi.*.com,api.*.com
 
 
 *******************************/
