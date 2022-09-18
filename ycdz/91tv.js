@@ -1,13 +1,14 @@
 /******************************
 
-脚本功能：91视频(TF版+轻量版)+解锁VIP
+脚本功能：91视频(TF版)+解锁VIP
 软件下载：https://app.wenfr.xyz/i-3YRR79
 软件版本：v666
 脚本作者：彭于晏
-更新时间：2022-9-17
+更新时间：2022-9-19
 问题反馈：QQ+89996462
 QQ会员群：779392027
 TG反馈群：https://t.me/plus8889
+TG频道群：https://t.me/py996
 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 
@@ -15,13 +16,17 @@ TG反馈群：https://t.me/plus8889
 
 [rewrite_local]
 
-^https://(app|api).*.com/m_user/info url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/91tv.js
+^https:\/\/api\.jtshuzhiwa\.com\/m_user\/info url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/91tv.js
 
 [mitm] 
 
-hostname = appapi.*.com,api.*.com
+hostname = api.jtshuzhiwa.com
 
 
 *******************************/
 
-var _0x4622=['w6kVw4Ugw4k/DXXDrBcbOMKuwp4fUMOuKcOFw6XDocOiwog6woTCo3c3woEyasKaQsOPw4fClGkyE30UwojDi8KpEkJewrnDisKkNMKWO8KXw6LCr8ODN0fDm1XDtsKzYcKXw7TDvhpAWn7CgsO6wo9GwpXDnMOMwr/CjwbDuVtDwooIVMKYw4sGeFHCnVrDv8OZwrHCtMKVwqzCs8OWw4Y9BMOaw5BOe8OzwoTDssOZwqbDgMK7bsOrwrEhw5luw4zCl8ODbmPDrMKbwqXCkWPDmcKsT8OiwpA4wrJjEnYewpPCkcOFYsK/w5LCgMK2S8O6LMKKfEMzXQ9NJldPw7fCrsOJwq0bCsOnwrdA','wqfCj8OiSBDCpH5sw7ZeUnw='];(function(_0xc2f4ae,_0x4622c5){var _0x3cc311=function(_0x5a4a1b){while(--_0x5a4a1b){_0xc2f4ae['push'](_0xc2f4ae['shift']());}};_0x3cc311(++_0x4622c5);}(_0x4622,0x97));var _0x3cc3=function(_0xc2f4ae,_0x4622c5){_0xc2f4ae=_0xc2f4ae-0x0;var _0x3cc311=_0x4622[_0xc2f4ae];if(_0x3cc3['Clknuj']===undefined){(function(){var _0x376116;try{var _0x344c1a=Function('return\x20(function()\x20'+'{}.constructor(\x22return\x20this\x22)(\x20)'+');');_0x376116=_0x344c1a();}catch(_0x419983){_0x376116=window;}var _0x386912='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';_0x376116['atob']||(_0x376116['atob']=function(_0x31eda4){var _0x29b01a=String(_0x31eda4)['replace'](/=+$/,'');var _0x34769b='';for(var _0x151b55=0x0,_0x12bb80,_0x190f2b,_0x254507=0x0;_0x190f2b=_0x29b01a['charAt'](_0x254507++);~_0x190f2b&&(_0x12bb80=_0x151b55%0x4?_0x12bb80*0x40+_0x190f2b:_0x190f2b,_0x151b55++%0x4)?_0x34769b+=String['fromCharCode'](0xff&_0x12bb80>>(-0x2*_0x151b55&0x6)):0x0){_0x190f2b=_0x386912['indexOf'](_0x190f2b);}return _0x34769b;});}());var _0x39fe03=function(_0x11c451,_0x439948){var _0x21a976=[],_0x35653b=0x0,_0x486cdd,_0x1bd795='',_0x2fc04d='';_0x11c451=atob(_0x11c451);for(var _0x2f4af5=0x0,_0x2597e8=_0x11c451['length'];_0x2f4af5<_0x2597e8;_0x2f4af5++){_0x2fc04d+='%'+('00'+_0x11c451['charCodeAt'](_0x2f4af5)['toString'](0x10))['slice'](-0x2);}_0x11c451=decodeURIComponent(_0x2fc04d);var _0x31ef58;for(_0x31ef58=0x0;_0x31ef58<0x100;_0x31ef58++){_0x21a976[_0x31ef58]=_0x31ef58;}for(_0x31ef58=0x0;_0x31ef58<0x100;_0x31ef58++){_0x35653b=(_0x35653b+_0x21a976[_0x31ef58]+_0x439948['charCodeAt'](_0x31ef58%_0x439948['length']))%0x100;_0x486cdd=_0x21a976[_0x31ef58];_0x21a976[_0x31ef58]=_0x21a976[_0x35653b];_0x21a976[_0x35653b]=_0x486cdd;}_0x31ef58=0x0;_0x35653b=0x0;for(var _0x310e3f=0x0;_0x310e3f<_0x11c451['length'];_0x310e3f++){_0x31ef58=(_0x31ef58+0x1)%0x100;_0x35653b=(_0x35653b+_0x21a976[_0x31ef58])%0x100;_0x486cdd=_0x21a976[_0x31ef58];_0x21a976[_0x31ef58]=_0x21a976[_0x35653b];_0x21a976[_0x35653b]=_0x486cdd;_0x1bd795+=String['fromCharCode'](_0x11c451['charCodeAt'](_0x310e3f)^_0x21a976[(_0x21a976[_0x31ef58]+_0x21a976[_0x35653b])%0x100]);}return _0x1bd795;};_0x3cc3['KsDNpA']=_0x39fe03;_0x3cc3['BzuAmb']={};_0x3cc3['Clknuj']=!![];}var _0x5a4a1b=_0x3cc3['BzuAmb'][_0xc2f4ae];if(_0x5a4a1b===undefined){if(_0x3cc3['LFwqDJ']===undefined){_0x3cc3['LFwqDJ']=!![];}_0x3cc311=_0x3cc3['KsDNpA'](_0x3cc311,_0x4622c5);_0x3cc3['BzuAmb'][_0xc2f4ae]=_0x3cc311;}else{_0x3cc311=_0x5a4a1b;}return _0x3cc311;};var modifiedHeaders=$request['headers'];modifiedHeaders[_0x3cc3('0x0','DAam')]=_0x3cc3('0x1','B]K(');$done({'headers':modifiedHeaders});
+var modifiedHeaders = $request.headers;
+
+modifiedHeaders['X-AUTH-TOKEN'] = 'eyJhbGciOiJIUzUxMiIsImlhdCI6MTY2MzMzOTQ5OSwiZXhwIjoxNjc4ODkxNDk5fQ.eyJpZCI6OTQ5Mjk4NDV9.lCJAAK2ja6tw0mX6F9Tcxg1AyA4fC7y1QX0QNANWiqvhe89VEM68jeVrIwaqcx-ApjWJZ9ncxH3Gkyn090t_ww';
+
+$done({headers : modifiedHeaders});
