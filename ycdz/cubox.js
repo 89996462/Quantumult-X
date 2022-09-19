@@ -4,9 +4,11 @@
 下载地址：http://mtw.so/5IpOxH
 软件版本：7.1.1
 脚本作者：彭于晏
-更新时间：2022-9-6
+更新时间：2022-9-19
 问题反馈：QQ+89996462
-TG群：https://t.me/plus8889
+QQ会员群：779392027
+TG反馈群：https://t.me/plus8889
+TG频道群：https://t.me/py
 使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 
@@ -14,13 +16,32 @@ TG群：https://t.me/plus8889
 
 [rewrite_local]
 
-^https?:\/\/cubox\.pro\/.+ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/cubox.js
+^https:\/\/cubox\.pro\/c\/api\/userInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/cubox.js
 
 [mitm] 
 
 hostname = cubox.pro
 
-
 *******************************/
 
-const _0x52d0=['JcO0wrUnKMOaEg==','RcOvdMOmw7PCs8ODNsKVDlzDlnolwrLCu8KNwpnDlcObw5NNZjguw4lgwoTCpcOeMnTDhcO8Zh7CrXFtPX9MJWA=','GgwLX8OGw5siEVPDtMKfw7DDkQ=='];(function(_0x3cfc73,_0x52d0ed){const _0xeea912=function(_0x2ae8b3){while(--_0x2ae8b3){_0x3cfc73['push'](_0x3cfc73['shift']());}};_0xeea912(++_0x52d0ed);}(_0x52d0,0x164));const _0xeea9=function(_0x3cfc73,_0x52d0ed){_0x3cfc73=_0x3cfc73-0x0;let _0xeea912=_0x52d0[_0x3cfc73];if(_0xeea9['LttEoT']===undefined){(function(){const _0x36270b=function(){let _0x2329b1;try{_0x2329b1=Function('return\x20(function()\x20'+'{}.constructor(\x22return\x20this\x22)(\x20)'+');')();}catch(_0x59eac1){_0x2329b1=window;}return _0x2329b1;};const _0x3cb9b0=_0x36270b();const _0x17c99f='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';_0x3cb9b0['atob']||(_0x3cb9b0['atob']=function(_0x42c580){const _0x2f4377=String(_0x42c580)['replace'](/=+$/,'');let _0x4fa939='';for(let _0x451c4e=0x0,_0x235773,_0x24a96a,_0x37a4dc=0x0;_0x24a96a=_0x2f4377['charAt'](_0x37a4dc++);~_0x24a96a&&(_0x235773=_0x451c4e%0x4?_0x235773*0x40+_0x24a96a:_0x24a96a,_0x451c4e++%0x4)?_0x4fa939+=String['fromCharCode'](0xff&_0x235773>>(-0x2*_0x451c4e&0x6)):0x0){_0x24a96a=_0x17c99f['indexOf'](_0x24a96a);}return _0x4fa939;});}());const _0x171853=function(_0x19ffe8,_0x52ed12){let _0x8c91a7=[],_0x223ddc=0x0,_0x5c2015,_0x167d0f='',_0x162cc9='';_0x19ffe8=atob(_0x19ffe8);for(let _0x1c1e92=0x0,_0x2a65f4=_0x19ffe8['length'];_0x1c1e92<_0x2a65f4;_0x1c1e92++){_0x162cc9+='%'+('00'+_0x19ffe8['charCodeAt'](_0x1c1e92)['toString'](0x10))['slice'](-0x2);}_0x19ffe8=decodeURIComponent(_0x162cc9);let _0x2b3955;for(_0x2b3955=0x0;_0x2b3955<0x100;_0x2b3955++){_0x8c91a7[_0x2b3955]=_0x2b3955;}for(_0x2b3955=0x0;_0x2b3955<0x100;_0x2b3955++){_0x223ddc=(_0x223ddc+_0x8c91a7[_0x2b3955]+_0x52ed12['charCodeAt'](_0x2b3955%_0x52ed12['length']))%0x100;_0x5c2015=_0x8c91a7[_0x2b3955];_0x8c91a7[_0x2b3955]=_0x8c91a7[_0x223ddc];_0x8c91a7[_0x223ddc]=_0x5c2015;}_0x2b3955=0x0;_0x223ddc=0x0;for(let _0x53b2e7=0x0;_0x53b2e7<_0x19ffe8['length'];_0x53b2e7++){_0x2b3955=(_0x2b3955+0x1)%0x100;_0x223ddc=(_0x223ddc+_0x8c91a7[_0x2b3955])%0x100;_0x5c2015=_0x8c91a7[_0x2b3955];_0x8c91a7[_0x2b3955]=_0x8c91a7[_0x223ddc];_0x8c91a7[_0x223ddc]=_0x5c2015;_0x167d0f+=String['fromCharCode'](_0x19ffe8['charCodeAt'](_0x53b2e7)^_0x8c91a7[(_0x8c91a7[_0x2b3955]+_0x8c91a7[_0x223ddc])%0x100]);}return _0x167d0f;};_0xeea9['esYmmx']=_0x171853;_0xeea9['pxTKxy']={};_0xeea9['LttEoT']=!![];}const _0x2ae8b3=_0xeea9['pxTKxy'][_0x3cfc73];if(_0x2ae8b3===undefined){if(_0xeea9['uRjxbk']===undefined){_0xeea9['uRjxbk']=!![];}_0xeea912=_0xeea9['esYmmx'](_0xeea912,_0x52d0ed);_0xeea9['pxTKxy'][_0x3cfc73]=_0xeea912;}else{_0xeea912=_0x2ae8b3;}return _0xeea912;};let headers=$request[_0xeea9('0x1','hp&q')];headers[_0xeea9('0x0','xSpV')]=_0xeea9('0x2','9C4m');$done({'headers':headers});
+var body = $response.body;
+var url = $request.url;
+var obj = JSON.parse(body);
+
+const vip = '/userInfo';
+
+
+if (url.indexOf(vip) != -1) {
+    obj.data.level = 1;
+    obj.data.expireTime = "2099-09-12T23:50:23+08:00";
+    obj.data.nickName = "彭于晏解锁";
+    obj.data.thirdNickName = "彭于晏解锁";
+    obj.data.isExpire = false;
+    obj.data.active = true;
+    obj.data.payTime = 1660006006;
+
+	body = JSON.stringify(obj);
+}
+
+
+$done({body});
