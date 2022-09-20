@@ -15,11 +15,11 @@ TG频道群：https://t.me/py
 
 [rewrite_local]
 
-^https?:\/\/api\.revenuecat\.com\/v1\/(receipts|subscribers\/\$RCAnonymousID%3A\w{32})$ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/documents.js
+^https:\/\/license\.pdfexpert\.com\/api\/2\.0\/documents\/subscription\/refresh url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/documents.js
 
 [mitm] 
 
-hostname = api.revenuecat.com
+hostname = license.pdfexpert.com
 
 *******************************/
 
@@ -27,41 +27,7 @@ hostname = api.revenuecat.com
 var objc = JSON.parse($response.body);
 
     objc = 
-{
-  "originalTransactionId": 20001113828089,
-  "inAppStates": [
-    {
-      "originalTransactionId": 20001113828089,
-      "productId": "com.readdle.ReaddleDocsIPad.subscription.month10_allusers",
-      "subscriptionState": "trial",
-      "productName": "subscription",
-      "subscriptionExpirationDate": "08:52 27\/09\/9999",
-      "isEligibleForIntroPeriod": false,
-      "subscriptionAutoRenewStatus": "autoRenewOff",
-      "type": "subscription",
-      "isInGracePeriod": false,
-      "isInBillingRetryPeriod": false,
-      "entitlements": [
-      ]
-    },
-    {
-      "originalTransactionId": "0000",
-      "entitlements": [
-      ],
-      "type": "custom purchase",
-      "productId": "documents6-user"
-    }
-  ],
-  "chargingPlatform": "iOS AppStore",
-  "receiptStatus": "ok",
-  "bundleId": "com.readdle.ReaddleDocsIPad",
-  "receiptId": 1495937666000,
-  "statisticsInfo": {
-    "events": [
-    ]
-  }
-}
-
+{"bundleId":"com.readdle.ReaddleDocsIPad","chargingPlatform":"iOS AppStore","receiptId":1505921661000,"originalTransactionId":430001223657482,"inAppStates":[{"type":"subscription","productId":"com.readdle.ReaddleDocsIPad.subscription.month10_allusers","originalTransactionId":430001223657482,"productName":"subscription","isEligibleForIntroPeriod":false,"subscriptionExpirationDate":"01:26 24/09/9999","subscriptionState":"trial","subscriptionAutoRenewStatus":"autoRenewOff","isInGracePeriod":false,"isInBillingRetryPeriod":false,"entitlements":[]},{"type":"custom purchase","productId":"documents6-user","originalTransactionId":"0000","entitlements":[]}],"receiptStatus":"ok","statisticsInfo":{"events":[]}}
 
 
 $done({body : JSON.stringify(objc)});
