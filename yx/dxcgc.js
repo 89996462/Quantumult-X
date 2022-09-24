@@ -15,7 +15,7 @@ TG频道群：https://t.me/py
 *******************************
 [rewrite_local]
 
-^https:\/\/update\.kl321\.com\/funservice\/s01\/prefetch\/unifiedfetch url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/dxcgc.js
+^https:\/\/update\.kl321\.com\/funservice\/s01\/prefetch\/unifiedfetch url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/yx/dxcgc.js
 
 [mitm] 
 
