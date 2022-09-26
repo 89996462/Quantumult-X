@@ -14,7 +14,7 @@ TG频道群：https://t.me/py
 *******************************
 [rewrite_local]
 
-^https:\/\/wx-bingdu\.lanfeitech\.com\/api\/archive\/get url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/xmbd.js
+^https:\/\/wx-bingdu\.lanfeitech\.com\/api\/archive\/get url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/yx/xmbd.js
 
 [mitm] 
 
