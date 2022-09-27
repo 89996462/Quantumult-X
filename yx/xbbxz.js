@@ -14,7 +14,7 @@ TG频道群：https://t.me/py
 *******************************
 [rewrite_local]
 
-http:\/\/yxgs-tf-yx\.tapenjoy\.com\/api\/user\/dl url script-request-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/xbbxz.js
+http:\/\/yxgs-tf-yx\.tapenjoy\.com\/api\/user\/dl url script-request-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/yx/xbbxz.js
 
 [mitm] 
 
