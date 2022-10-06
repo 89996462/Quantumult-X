@@ -26,7 +26,7 @@ hostname = api.vistopia.com.cn
 var Url = $request.url;
 // var Url = "https://api.vistopia.com.cn/api/v1/user/check-unread?api_token=Zgfbs2DDhRJpugauNmpRk9ZZEvymatOQuopg2Etp02qVPsPx5ZyRKdxzBICGCLxI&req_time=1664954220&sign=06415db24158fbec1542640c534a3072"
 function setQueryString(key, val) { 
-    var url = Url.split('?'), search=url[1]; //获取地址栏 "?"后的内容
+    var url = Url.split('?'), search=url[1];
     var query = {};
     if (search) {
         search.split('&').forEach((item) => {
