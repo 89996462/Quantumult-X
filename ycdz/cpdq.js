@@ -19,7 +19,7 @@ TG频道群：https://t.me/py996
 
 [mitm] 
 
-hostname = dq.xiangha.com
+hostname = dq.xiangha.com,apiios_dq.xiangha.com
 
 *******************************/
 
