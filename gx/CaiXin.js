@@ -15,9 +15,12 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https?:\/\/gateway\.caixin\.com\/api\/app\-api\/auth\/(validate|validateAudioAuth) url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/gx/CaiXin.js
+^https:\/\/gateway\.caixin\.com\/api\/ucenter\/appapi\/v1\/userinfo url script-response-body CaiXin.js
+
+[mitm] 
 
 hostname = gateway.caixin.com
+
 
 *******************************/
 
