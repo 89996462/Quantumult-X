@@ -18,7 +18,7 @@ TG频道群：https://t.me/py996
 
 ^https?:\/\/(.*.*.)\/users\/me url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Busuu.js
 
-hostname = *.boshu.*
+hostname = *.boshu.*,*.bosuu.com
 
 *******************************/
 
