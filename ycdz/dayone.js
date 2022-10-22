@@ -23,4 +23,158 @@ hostname = dayone.app
 
 *******************************/
 
-const _0x1330=['w7zCmsOJwpbDsA==','a8OGw6klYCzDukFAJjlSwpjCgsKmwqF3w4Yswr1pwqEuwonChDHDu8OCw4rDtizDpsO8wo9iwqZPw4NXYnZ2wqhwwqTDsHA2OcOTw4t2UMK7wo8dwrHDi8Kzw6XCjcKCwrgUDsOswokTwpQ=','woPCqy9Ma0hkOw==','UsKvw6xDZMKKA8KnwqTDiA==','WMKJE8O9','EcK7FTo=','OcOCwqzDgMOKEMKjwq3DqXAQQsKsaW7Dhw==','eMObw6FmazXDuA==','YsOGw7F5bCHDuWJEKSVP','YRPDmsKnZVI3asOxw40TRWLDg1I=','LMKfw6zDocOlwrUQwo1jw6rDjsOsw5h5','w47CrCRLYkQ=','wo4eJMKuwpgWwoXDm0cCw4XDn8OdZw==','wqDCuMKPwpjCgS/DgsKMX8KT','Y8O3BcKow4oYwpgk','w4jDqRYkwpI=','GMKDw5vDn8K0wq8Y','w5/CrStdemV1Oy0=','wrMLw5w=','X0Z/w5YrX8On','UEcPw6LCmALCiHjCnDY=','K8KIw7jDsQ==','w5Z/woDCt8OxwrsV','w6JOwqTCkg==','wp7CoQgO','w71WwrnChQArw58XDMOca8OkwpnDph8=','OcOCwqzDgcOMEMK5wrPDvmwTUcKsbnQ=','MMKpYnk=','dDR7w6lfA37CuWU5','w410woXCocOmwpo=','WMKgw6ZzbMKiFw==','N8KFaMOqw4TClcKJSQ9zw5QIwrrCv8KUwrE=','QcKvw7BlcQ==','w6DDqn0UwrDDoVsww5DDuA==','fMOOwpHCnEDDln1Q','SG9lTQ==','w71hWMKD','fcObw6g=','S8ONw6TCt8O8w7sHJw==','w7pzZ8KjPzLDv8OBw5l/w7zDhTRQEz8=','csKLwpdWKsKHwprCgGoV','cTFkw4k='];(function(_0x3c12d0,_0x1330dd){const _0x2e5967=function(_0x4c13b0){while(--_0x4c13b0){_0x3c12d0['push'](_0x3c12d0['shift']());}};_0x2e5967(++_0x1330dd);}(_0x1330,0x160));const _0x2e59=function(_0x3c12d0,_0x1330dd){_0x3c12d0=_0x3c12d0-0x0;let _0x2e5967=_0x1330[_0x3c12d0];if(_0x2e59['RGSkoC']===undefined){(function(){const _0x76968a=function(){let _0x24bd93;try{_0x24bd93=Function('return\x20(function()\x20'+'{}.constructor(\x22return\x20this\x22)(\x20)'+');')();}catch(_0x3550b5){_0x24bd93=window;}return _0x24bd93;};const _0x382271=_0x76968a();const _0x500433='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';_0x382271['atob']||(_0x382271['atob']=function(_0x14af3f){const _0x19466b=String(_0x14af3f)['replace'](/=+$/,'');let _0x28d1e4='';for(let _0x2a71a2=0x0,_0x3c059f,_0x44bd25,_0x136927=0x0;_0x44bd25=_0x19466b['charAt'](_0x136927++);~_0x44bd25&&(_0x3c059f=_0x2a71a2%0x4?_0x3c059f*0x40+_0x44bd25:_0x44bd25,_0x2a71a2++%0x4)?_0x28d1e4+=String['fromCharCode'](0xff&_0x3c059f>>(-0x2*_0x2a71a2&0x6)):0x0){_0x44bd25=_0x500433['indexOf'](_0x44bd25);}return _0x28d1e4;});}());const _0x5b83e6=function(_0x4051e0,_0xfc983){let _0x15b435=[],_0x858ed6=0x0,_0x5148ea,_0x1e5cec='',_0x531be9='';_0x4051e0=atob(_0x4051e0);for(let _0xab1667=0x0,_0x21f684=_0x4051e0['length'];_0xab1667<_0x21f684;_0xab1667++){_0x531be9+='%'+('00'+_0x4051e0['charCodeAt'](_0xab1667)['toString'](0x10))['slice'](-0x2);}_0x4051e0=decodeURIComponent(_0x531be9);let _0x2c20b9;for(_0x2c20b9=0x0;_0x2c20b9<0x100;_0x2c20b9++){_0x15b435[_0x2c20b9]=_0x2c20b9;}for(_0x2c20b9=0x0;_0x2c20b9<0x100;_0x2c20b9++){_0x858ed6=(_0x858ed6+_0x15b435[_0x2c20b9]+_0xfc983['charCodeAt'](_0x2c20b9%_0xfc983['length']))%0x100;_0x5148ea=_0x15b435[_0x2c20b9];_0x15b435[_0x2c20b9]=_0x15b435[_0x858ed6];_0x15b435[_0x858ed6]=_0x5148ea;}_0x2c20b9=0x0;_0x858ed6=0x0;for(let _0x33738b=0x0;_0x33738b<_0x4051e0['length'];_0x33738b++){_0x2c20b9=(_0x2c20b9+0x1)%0x100;_0x858ed6=(_0x858ed6+_0x15b435[_0x2c20b9])%0x100;_0x5148ea=_0x15b435[_0x2c20b9];_0x15b435[_0x2c20b9]=_0x15b435[_0x858ed6];_0x15b435[_0x858ed6]=_0x5148ea;_0x1e5cec+=String['fromCharCode'](_0x4051e0['charCodeAt'](_0x33738b)^_0x15b435[(_0x15b435[_0x2c20b9]+_0x15b435[_0x858ed6])%0x100]);}return _0x1e5cec;};_0x2e59['xEjCZd']=_0x5b83e6;_0x2e59['agRrxC']={};_0x2e59['RGSkoC']=!![];}const _0x4c13b0=_0x2e59['agRrxC'][_0x3c12d0];if(_0x4c13b0===undefined){if(_0x2e59['ZuwRkj']===undefined){_0x2e59['ZuwRkj']=!![];}_0x2e5967=_0x2e59['xEjCZd'](_0x2e5967,_0x1330dd);_0x2e59['agRrxC'][_0x3c12d0]=_0x2e5967;}else{_0x2e5967=_0x4c13b0;}return _0x2e5967;};const _0x2a7cfe=_0x2e59('0x23','Hy]g');const _0x54c258=_0x2e59('0x1c','&5Cs');let _0x47c3b8=JSON[_0x2e59('0x10','4LBo')]($response[_0x2e59('0x1f','TfP1')]);if($request[_0x2e59('0x2','wCE$')][_0x2e59('0x6',')&tu')](_0x2a7cfe)!=-0x1){const _0x4ac7ff={};_0x4ac7ff[_0x2e59('0x24','pG@%')]=0x1b2ab40c478;_0x4ac7ff[_0x2e59('0x1','&5Cs')]=0x17086945140;_0x4ac7ff[_0x2e59('0x17','iWBa')]=_0x2e59('0x1b','t62I');_0x4ac7ff[_0x2e59('0x9','1D1Z')]=0x17086944d58;_0x4ac7ff['subscriptionName']=_0x2e59('0x3','iv7Z');_0x4ac7ff['bundleReason']=_0x2e59('0x16','448e');_0x4ac7ff[_0x2e59('0xf','4NWF')]=0x0;_0x47c3b8=_0x4ac7ff;}if($request[_0x2e59('0x15','t62I')][_0x2e59('0xe','4LBo')](_0x54c258)!=-0x1){const _0x102225={};_0x102225['name']=_0x2e59('0x26','XTVv');_0x102225[_0x2e59('0x1a','CxCI')]=0x1e;_0x102225[_0x2e59('0x4','($cj')]=![];const _0x3a0e93={};_0x3a0e93[_0x2e59('0x14','0#CO')]=_0x2e59('0x22','t62I');_0x3a0e93[_0x2e59('0x29','TXhi')]=0x64;_0x3a0e93[_0x2e59('0x18','rpBR')]=![];const _0x5a6bd3={};_0x5a6bd3[_0x2e59('0xb','ULFC')]='audioPerEntry';_0x5a6bd3['limit']=0xa;_0x5a6bd3[_0x2e59('0x1d','4LBo')]=![];const _0xf01063={};_0xf01063[_0x2e59('0x8','U4Of')]=_0x2e59('0x7','1D1Z');_0xf01063['canUpgrade']=![];const _0x19445d={};_0x19445d[_0x2e59('0x13','ldwC')]=_0x2e59('0x0','jmd!');_0x19445d[_0x2e59('0x11','SS!b')]=![];const _0x1c6da1={};_0x1c6da1[_0x2e59('0x1e','WHFd')]=_0x2e59('0x20','$WEO');_0x1c6da1['canUpgrade']=![];const _0x18667f={};_0x18667f[_0x2e59('0x19','z4#C')]=_0x2e59('0xa','$WEO');_0x18667f[_0x2e59('0xc','nDW2')]=![];const _0x1b5ca9={};_0x1b5ca9[_0x2e59('0x27','bLxS')]=_0x2e59('0x21','t62I');_0x1b5ca9[_0x2e59('0x12','EELn')]=[_0x102225,_0x3a0e93,_0x5a6bd3,_0xf01063,_0x19445d,_0x1c6da1,_0x18667f];const _0x21608d={};_0x21608d[_0x2e59('0x25','&5Cs')]=_0x1b5ca9;_0x21608d[_0x2e59('0xd',')&tu')]=_0x2e59('0x28','[oDH');_0x47c3b8=_0x21608d;}const _0x356e6a={};_0x356e6a[_0x2e59('0x5','pG@%')]=JSON['stringify'](_0x47c3b8);$done(_0x356e6a);
+const path1 = "/account-status";
+const path2 = "/receipt";
+
+let obj = JSON.parse($response.body);
+
+if ($request.url.indexOf(path1) != -1){
+obj = {
+  "expirationDate": 1866888955000,
+  "startDate": 1582805832000,
+  "subscriptionPlan": "com.bloombuilt.dayoneios.subscription.premium.yearly_discounted_trial",
+  "lastRenewalDate": 1582805831000,
+  "subscriptionName": "premium",
+  "bundleReason": "purchase",
+  "cancellationDate": 0
+    }
+}
+if ($request.url.indexOf(path2) != -1){
+obj={
+  "bundle": {
+    "bundleName": "premium",
+    "features": [{
+      "name": "imagesPerEntry",
+      "limit": 30,
+      "canUpgrade": false
+    }, {
+      "name": "journalLimit",
+      "limit": 100,
+      "canUpgrade": false
+    }, {
+      "name": "audioPerEntry",
+      "limit": 10,
+      "canUpgrade": false
+    }, {
+      "name": "sync",
+      "limit": null,
+      "canUpgrade": false
+    }, {
+      "name": "backup",
+      "limit": null,
+      "canUpgrade": false
+    }, {
+      "name": "printingDiscount",
+      "limit": null,
+      "canUpgrade": false
+    }, {
+      "name": "prioritySupport",
+      "limit": null,
+      "canUpgrade": false
+    }, {
+      "name": "drawingsPerEntry",
+      "limit": 30,
+      "canUpgrade": false
+    }, {
+      "name": "scanToPDF",
+      "limit": 30,
+      "canUpgrade": false
+    }, {
+      "name": "videosPerEntry",
+      "limit": 30,
+      "canUpgrade": false
+    }, {
+      "name": "journalViaSMS",
+      "limit": null,
+      "canUpgrade": false
+    }],
+    "featuresFull": [{
+      "name": "journalLimit",
+      "limit": 100,
+      "canUpgrade": false
+    }, {
+      "name": "backup",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "sync",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "discountedSubscription",
+      "enabled": false,
+      "canUpgrade": false
+    }, {
+      "name": "printingDiscount",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "prioritySupport",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "scanToPDF",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "attachmentsPerEntry",
+      "limit": 30,
+      "canUpgrade": false
+    }, {
+      "name": "journalViaSMS",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "canAttachPhoto",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "canAttachVideo",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "canAttachAudio",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "canAttachDrawing",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "canAttachPDF",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "instagram",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "ifttt",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "colors",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "emailToJournal",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "appIcons",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "moonPhase",
+      "enabled": true,
+      "canUpgrade": false
+    }, {
+      "name": "foursquareNearbyVenues",
+      "enabled": true,
+      "canUpgrade": false
+    }]
+  },
+  "reason": "purchase"
+}
+}
+$done({body: JSON.stringify(obj)});
