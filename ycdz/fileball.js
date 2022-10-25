@@ -17,13 +17,13 @@ TG频道群：https://t.me/py
 
 [rewrite_local]
 
-^https:\/\/app-measurement\.com\/config\/app\/1?(.*?)*$ url reject
-
 ^https?:\/\/api\.revenuecat\.com\/v1\/(receipts|subscribers\/\$RCAnonymousID%3A\w{32})$ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/fileball.js
+
+^https:\/\/app-measurement\.com\/config\/app\/1?(.*?)*$ url reject
 
 [mitm] 
 
-hostname = api.revenuecat.com,app-measurement.com
+hostname = api.revenuecat.com, app-measurement.com
 
 *******************************/
 
