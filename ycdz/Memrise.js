@@ -2,9 +2,9 @@
 
 脚本功能：Memrise跟忆术家学语言+解锁订阅
 下载地址：https://is.gd/NK2Knm
-软件版本：2022.9.26
+软件版本：2022.10.25
 脚本作者：彭于晏💞
-更新时间：2022-10-4
+更新时间：2022-11-06
 问题反馈：QQ+89996462
 QQ会员群：779392027💞
 TG反馈群：https://t.me/plus8889
@@ -16,7 +16,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https:\/\/api\.memrise\.com\/v1\.18 url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Memrise.js
+^https:\/\/api\.memrise\.com\/v1\.19 url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Memrise.js
 
 [mitm] 
 
