@@ -15,7 +15,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https:\/\/yimuapp\.com:8082\/bookkeeping\/user\/getUser\/ofmJVs7nZxzRnnPUe9530AMrwEmc url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ymjz.js
+^https:\/\/yimuapp\.com:8082\/bookkeeping\/user\/getUser url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ymjz.js
 
 [mitm] 
 
