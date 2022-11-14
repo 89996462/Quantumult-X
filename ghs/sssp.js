@@ -24,11 +24,8 @@ hostname = files.yuchenglw.com
 *******************************/
 
 
-
-
-
 var body=$response.body;
-body = body.replace(/(<div class="banner">)[\s\S[\d\D]{0,999}(<\/div>)/g,'<!--  -->');
+body = body.replace(/(<div class="banner">)[\s\S[\d\D]{0,1666}(<\/div>)/g,'<!--  -->');
 
 
 body = body.replace(/(<div class="speaker">)[\s\S[\d\D]{0,345}(<\/div>)/g,'<!--  -->');
@@ -46,5 +43,8 @@ body = body.replace(/(<div id="carousel")[\s\S[\d\D]{0,1777}(<\/div>)/g,'<!--  -
 
 
 body = body.replace(/(<div class="header fixed-top">)[\s\S[\d\D]{0,345}(<\/div>)/g,'<!--  -->');
+
+body = body.replace(/(<div class="banner mt-3">)[\s\S[\d\D]{0,1480}(<\/div>)/g,'<!--  -->');
+
 
 $done(body);
