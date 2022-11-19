@@ -14,7 +14,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https?:\/\/lchttpapi\.xczim\.com\/1\.1\/users\/(\$RCAnonymousID%)?([\u4E00-\u9FA5A-Za-z0-9-_]+)$? url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/xcz.js
+^https:\/\/lchttpapi\.xczim\.com url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/xcz.js
 
 
 [mitm]
