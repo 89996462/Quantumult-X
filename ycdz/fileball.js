@@ -2,9 +2,9 @@
 
 脚本功能：fileball+解锁订阅
 下载地址：美区——国区
-软件版本：1.2.7
+软件版本：1.2.7——1.2.8
 脚本作者：彭于晏
-更新时间：2022-10-25
+更新时间：2022-12-9
 问题反馈：QQ+89996462
 QQ会员群：779392027
 TG反馈群：https://t.me/plus8889
@@ -21,9 +21,12 @@ TG频道群：https://t.me/py
 
 ^https:\/\/app-measurement\.com\/config\/app\/1?(.*?)*$ url reject
 
+projects = type=http-response,pattern=^https://firebaseremoteconfig.googleapis.com/v1/projects/filebox-ac299/.*,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/Alex0510/Eric/master/surge/Script/projects.js
+fileball = type=http-response,pattern=^https?:\/\/api\.revenuecat\.com\/v1\/(receipts|subscribers\/\$RCAnonymousID%3A\w{32})$,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/fileball.js
+
 [mitm] 
 
-hostname = api.revenuecat.com, app-measurement.com
+hostname = api.revenuecat.com, app-measurement.com,*.googleapis.com
 
 *******************************/
 
