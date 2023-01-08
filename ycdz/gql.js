@@ -15,11 +15,11 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https:\/\/expire\.vanemu\.com\/1\.1\/functions\/getUserInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/gql.js
+^https:\/\/api\.guoqi365\.com\/1\.1\/functions\/getUserInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/gql.js
 
 [mitm] 
 
-hostname = expire.vanemu.com
+hostname = api.guoqi365.com
 
 *******************************/
 
