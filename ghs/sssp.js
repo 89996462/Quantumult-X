@@ -45,4 +45,6 @@ body = body.replace(/(<div class="banner">)[\s\S[\d\D]{0,2500}(<div class="row l
 
 body = body.replace(/(<div class="banner mt-3">)[\s\S[\d\D]{0,20000}(<div class="mt-5 text-center">)/g,'<div class="mt-5 text-center">');
 
+body = body.replace(/(<div class="banner">)[\s\S[\d\D]{0,20000}(<div class="row lists">)/g,'<div class="row lists">');
+
 $done({body});
