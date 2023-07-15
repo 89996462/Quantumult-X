@@ -19,7 +19,7 @@ TG频道群：https://t.me/py996
 
 [mitm] 
 
-hostname = api.revenuecat.com，buy.itunes.apple.com
+hostname = buy.itunes.apple.com
 
 *******************************/
 
