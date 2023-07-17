@@ -15,13 +15,17 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^http[s]?:\/\/120.79.99.225\/bzprouter\/getCodeAward url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/yx/RJHJ.js
+^http[s]?:\/\/.+\/bzprouter\/getCodeAward url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/yx/RJHJ.js
 
-[mitm] 
+[mitm] 
 
 hostname = 120.79.99.225
 
 *******************************/
 
-var body = $response.body.replace(/.+/g,'{"status":200,"recordset":{"award":"1|0|1000|100|4|0|10|100"}}')
-$done({ body });
+var objc = JSON.parse($response.body);
+
+    objc = 
+{"status":200,"recordset":{"award":"1|0|1000|100|4|0|10|100"}}
+
+$done({body : JSON.stringify(objc)});
