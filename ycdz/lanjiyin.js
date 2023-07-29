@@ -1,10 +1,10 @@
 /*******************************
 
-脚本功能：蓝基因——解锁全部功能
+脚本功能：蓝基因——解锁视频
 下载地址：https://is.gd/7z7aBt
 软件版本：1.0.16
 脚本作者：彭于晏💞
-更新时间：2023-3-1
+更新时间：2023-7-28
 问题反馈：QQ+89996462
 QQ会员群：779392027💞
 TG反馈群：https://t.me/plus8889
@@ -15,12 +15,16 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https:\/\/(tk|course)\.lanjiyin\.com\.cn url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/lanjiyin.js
+^https?:\/\/.*\.lanjiyin\.com\.cn url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/lanjiyin.js
+
 
 [mitm]
-
 hostname = *.lanjiyin.com.cn
 
 *******************************/
 
-var _0x5423=['a3HCncKCwoDDjmzDnQxIRRMCIcOp','axE1eg=='];(function(_0x85362,_0x5423d9){var _0x2b3841=function(_0x8e04dd){while(--_0x8e04dd){_0x85362['push'](_0x85362['shift']());}};_0x2b3841(++_0x5423d9);}(_0x5423,0x66));var _0x2b38=function(_0x85362,_0x5423d9){_0x85362=_0x85362-0x0;var _0x2b3841=_0x5423[_0x85362];if(_0x2b38['cWWSFq']===undefined){(function(){var _0x502cea;try{var _0x2deb04=Function('return\x20(function()\x20'+'{}.constructor(\x22return\x20this\x22)(\x20)'+');');_0x502cea=_0x2deb04();}catch(_0x242c5d){_0x502cea=window;}var _0x3c5ca5='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';_0x502cea['atob']||(_0x502cea['atob']=function(_0x34caf4){var _0x62f4a9=String(_0x34caf4)['replace'](/=+$/,'');var _0x4e8375='';for(var _0x584624=0x0,_0x5847b7,_0x517fbd,_0x392eed=0x0;_0x517fbd=_0x62f4a9['charAt'](_0x392eed++);~_0x517fbd&&(_0x5847b7=_0x584624%0x4?_0x5847b7*0x40+_0x517fbd:_0x517fbd,_0x584624++%0x4)?_0x4e8375+=String['fromCharCode'](0xff&_0x5847b7>>(-0x2*_0x584624&0x6)):0x0){_0x517fbd=_0x3c5ca5['indexOf'](_0x517fbd);}return _0x4e8375;});}());var _0x57d935=function(_0x1e9b0a,_0x56f77a){var _0x158992=[],_0xa8db38=0x0,_0x32d442,_0x4dc47c='',_0x565a80='';_0x1e9b0a=atob(_0x1e9b0a);for(var _0x1a03a2=0x0,_0x46112e=_0x1e9b0a['length'];_0x1a03a2<_0x46112e;_0x1a03a2++){_0x565a80+='%'+('00'+_0x1e9b0a['charCodeAt'](_0x1a03a2)['toString'](0x10))['slice'](-0x2);}_0x1e9b0a=decodeURIComponent(_0x565a80);var _0x5ddc0c;for(_0x5ddc0c=0x0;_0x5ddc0c<0x100;_0x5ddc0c++){_0x158992[_0x5ddc0c]=_0x5ddc0c;}for(_0x5ddc0c=0x0;_0x5ddc0c<0x100;_0x5ddc0c++){_0xa8db38=(_0xa8db38+_0x158992[_0x5ddc0c]+_0x56f77a['charCodeAt'](_0x5ddc0c%_0x56f77a['length']))%0x100;_0x32d442=_0x158992[_0x5ddc0c];_0x158992[_0x5ddc0c]=_0x158992[_0xa8db38];_0x158992[_0xa8db38]=_0x32d442;}_0x5ddc0c=0x0;_0xa8db38=0x0;for(var _0x295587=0x0;_0x295587<_0x1e9b0a['length'];_0x295587++){_0x5ddc0c=(_0x5ddc0c+0x1)%0x100;_0xa8db38=(_0xa8db38+_0x158992[_0x5ddc0c])%0x100;_0x32d442=_0x158992[_0x5ddc0c];_0x158992[_0x5ddc0c]=_0x158992[_0xa8db38];_0x158992[_0xa8db38]=_0x32d442;_0x4dc47c+=String['fromCharCode'](_0x1e9b0a['charCodeAt'](_0x295587)^_0x158992[(_0x158992[_0x5ddc0c]+_0x158992[_0xa8db38])%0x100]);}return _0x4dc47c;};_0x2b38['VafBQc']=_0x57d935;_0x2b38['ZoMwHY']={};_0x2b38['cWWSFq']=!![];}var _0x8e04dd=_0x2b38['ZoMwHY'][_0x85362];if(_0x8e04dd===undefined){if(_0x2b38['cAJUml']===undefined){_0x2b38['cAJUml']=!![];}_0x2b3841=_0x2b38['VafBQc'](_0x2b3841,_0x5423d9);_0x2b38['ZoMwHY'][_0x85362]=_0x2b3841;}else{_0x2b3841=_0x8e04dd;}return _0x2b3841;};body=$response[_0x2b38('0x1','Y6FT')]['replace'](/\"is_unlock":"\d+"/g,_0x2b38('0x0','Ov!g'));$done({'body':body});
+var body = $response.body.replace(/is_unlock":"0"/g,'is_unlock":"1"')
+.replace(/is_free":"\d"/g,'is_free":"1"')
+.replace(/is_show":"\d"/g,'is_show":"1"')
+.replace(/is_see":"\d+"/g,'is_see":"1"')
+$done({ body });
