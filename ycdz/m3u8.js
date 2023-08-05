@@ -16,7 +16,7 @@ TG频道群：https://t.me/py996
 [rewrite_local]
 
 
-^http[s]?:\/\/long.(fuhuida|riyufanyi).*\/(videos.|watch|static|upload|watch[0-9]+)\/.*\/.*\.m3u8\?auth_key.*$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/m3u8.js
+^https:\/\/.*\.longyuandingyi\.com\/videos2\/\w+\/\w+\.m3u8\?auth_key=[\w+\-]+$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/m3u8.js
 
 [mitm] 
 
