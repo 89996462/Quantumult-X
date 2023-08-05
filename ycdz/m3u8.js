@@ -28,7 +28,7 @@ hostname = *fuhuida*,*riyufanyi*,*longyuandingyi*
 
 const $ = new Env("秋名山车神🔔🔔🔔");
 let url = $request.url,headers = $request.headers;
-headers.hasOwnProperty("X-Playback-Session-Id") && $.msg("彭于晏提示—视频链接成功捕获", "点击一下此通知即可在线观看", "", ""+url); 
+headers.hasOwnProperty("X-Playback-Session-Id") && $.msg('视频链接捕获成功', '点击此通知在线观看', 'CCTV2', 'yybpro://play?' + url); 
 
 
 $.done({});
