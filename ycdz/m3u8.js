@@ -20,7 +20,7 @@ TG频道群：https://t.me/py996
 
 [mitm] 
 
-hostname = *fuhuida*,*riyufanyi*
+hostname = *fuhuida*,*riyufanyi*,*longyuandingyi*
 
 
 *******************************/
