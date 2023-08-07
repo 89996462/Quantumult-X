@@ -1,10 +1,10 @@
 /******************************
 
-脚本功能：m3u8视频抓取视频
-特别说明：绝大部分APP
-软件版本：9999
+脚本功能：汤头条轻量版——解锁—金币视频—VIP视频
+特别说明：支持APP播放 以及网页播放
+下载地址：https://is.gd/IKoHNM
 脚本作者：彭于晏💞
-更新时间：2023—8-5
+更新时间：2023—8-10
 问题反馈：QQ+89996462
 QQ会员群：779392027💞
 TG反馈群：https://t.me/plus8889
@@ -23,13 +23,15 @@ TG频道群：https://t.me/py996
 hostname = *fuhuida*,*riyufanyi*,*longyuandingyi*
 
 
+^https?:\/\/.*\.longyuandingyi\.com\/ url 302 https://long.longyuandingyi.com/
+
 *******************************/
 
 
 const $ = new Env("开车辣🔔🔔🔔");
 let url = $request.url,headers = $request.headers;
 url = url.replace('h5play', 'long');
-headers.hasOwnProperty("X-Playback-Session-Id") &&  $.msg("视频链接捕获成功", "点击此通知在线观看", "",url);
+headers.hasOwnProperty("X-Playback-Session-Id") &&  $.msg("彭于晏提示❗️视频链接捕获成功", "点击此通知在线观看", "",url);
 $.done({});
 
 
