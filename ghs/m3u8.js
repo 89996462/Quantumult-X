@@ -24,6 +24,8 @@ hostname = *fuhuida*,*riyufanyi*,*longyuandingyi*
 
 
 ^https?:\/\/.*\.longyuandingyi\.com\/ url 302 https://long.longyuandingyi.com/
+^http[s]?:\/\/(([0-9]+)|(h5))play\.riyufanyi\.wang\/ url 302 https://long.riyufanyi.wang/
+
 
 *******************************/
 
