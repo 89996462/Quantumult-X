@@ -14,13 +14,14 @@ TG频道群：https://t.me/py996
 更多资源请微信搜索小程序【屌丝博客】
 
 *******************************
+
 [rewrite_local]
 
-^http[s]?:\/\/*.dasyibalang.com\/v2\/User url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/dasyibalang.js
+^http[s]?:\/\/.*.dasyibalang.com\/v2\/User url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/dasyibalang.js
 
-[mitm] 
+[mitm] 
 
-hostname = *.dasyibalang.com
+hostname = .*.dasyibalang.com
 
 *******************************/
 
