@@ -18,7 +18,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^http[s]?:\/\/(10play|120play)(fuhuida|riyufanyi|longyuandingyi).*\/(videos.|watch|static|upload|watch[0-9]+)\/.*\/.*\.m3u8\?auth_key.*$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/pilipili.js
+^https?:\/\/(10play|120play)\.longyuandingyi\.com\/\w{3,10}\/\w{32}\/\w{32}\.m3u8\?auth_key=[\w\-]{30,50}$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/pilipili.js
 
 [mitm] 
 
