@@ -26,7 +26,9 @@ hostname = integral2.dasyibalang.com,w.dasyibalang.com,mix2.dasyibalang.com,api.
 
 *******************************/
 
-var body = $response.body.replace(/"VIP":\d/g,'"VIP":1')
-.replace(/"NickName":".*?"/g,'"NickName":"彭于晏破解"')
-.replace(/"Photo":".*?"/g,'"Photo":"https://i.imgtg.com/2022/10/31/Rhzig.jpg"')
-$done({ body });
+
+var body = JSON.parse($response.body);
+
+body.data.VIP = 1;
+
+$done({ body: JSON.stringify(body) });
