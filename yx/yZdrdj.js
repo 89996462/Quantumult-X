@@ -25,5 +25,5 @@ hostname = idauth.cdwaterbear.cn
 
 *******************************/
 
-var body = $response.body.replace(/"moneyInfo\\":\{\\"co\\":\\"\d+\\",\\"je\\":\\"\d+\\"/g,'"moneyInfo\\":\{\\"co\\":\\"9999999999\\",\\"je\\":\\"9999999999\\"')
+var body = $response.body.replace(/"moneyInfo\\":\{\\"co\\":\\"\d+\\",\\"je\\":\\"\d+\\"/g,'"moneyInfo\\":\{\\"co\\":\\"9999999999999\\",\\"je\\":\\"9999999999999\\"')
 $done({ body });
