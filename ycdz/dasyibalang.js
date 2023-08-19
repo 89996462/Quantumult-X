@@ -15,13 +15,14 @@ TG频道群：https://t.me/py996
 
 *******************************
 
+
 [rewrite_local]
 
-^http[s]?:\/\/.*.dasyibalang.com\/v2\/User url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/dasyibalang.js
+^http[s]?:\/\/(integral2|w|mix2|api)\.dasyibalang\.com\/v2\/User url script-response-body 88811.js
 
 [mitm] 
 
-hostname = .*.dasyibalang.com
+hostname = integral2.dasyibalang.com,w.dasyibalang.com,mix2.dasyibalang.com,api.dasyibalang.com
 
 *******************************/
 
