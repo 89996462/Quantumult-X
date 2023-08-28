@@ -1,27 +1,32 @@
 /******************************
 
-脚本功能：天天豆 - 最简单的日记——解锁订阅
+脚本功能：天天豆+解锁VIP
 下载地址：https://is.gd/9UZZnc
-软件版本：2.7.9
+软件版本：3.0.14
 脚本作者：彭于晏💞
-更新时间：2022-10-23
+更新时间：2023-8-29
 问题反馈：QQ+89996462
 QQ会员群：779392027💞
 TG反馈群：https://t.me/plus8889
 TG频道群：https://t.me/py996
-使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+使用声明：⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+
+更多资源请微信搜索小程序【屌丝博客】
 
 *******************************
 
 [rewrite_local]
 
-^https?:\/\/api\.revenuecat\.com\/v1\/(receipts|subscribers\/\$RCAnonymousID%3A\w{32})$ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ttd.js
+^https:\/\/bluediary-d0778\.du\.r\.appspot\.com\/users\/me\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ttd.js
 
-[mitm] 
+[mitm] 
 
-hostname = api.revenuecat.com
+hostname = bluediary-d0778.du.r.appspot.com
+
+
 
 *******************************/
 
 
-var _0xc2a8=['w5IPw7FOw7zCuVnDjl0=','Pj/CpMKiMsKYcA==','fsK5HMO4woFnOSnDtsK6bTJ8CzDDsh7DtBjDmGHDtw==','w79uwrrDvcK6NcKISB/CsSvCkx3DlMO6XcKowrhuwrbDh8OO','wonCgMKIByFpw4lRwrjDhiNHw4/CpDw5DsO/wrjDlcODIgE=','ZMOawp/CtcO1w7E/w6gZXGpNHWTCth1/w7vCicKNbMKLw7B9TcK1','wo3CmFg=','bsO+wr/CsA==','w4YRwopCPEd9wrdbwrbDul7DhWs+JFLDhcKdbQ==','wptTw5EXeBklw7Y2w6XDnh7CqCR8eBrCqcOHUw==','JRnDqxXDjHYmUsKMw5fDhR4iw5LDvsKRwqHCosKCFA==','wpvDoB48','IsKaY8OjdcKLwp3Dq8Kwwrw=','VcOgP2UJ','wo1AI8KOwrPDicO+AcOmb8K/b8Kf','w7YJw7hGGHjCmFBEw60QFcOJRcKYwoDChT9zYE/CmE9wRhbDiMO0','w5EZw6xfw5HCuVTDgkMfwqQ1w5LDpw==','Y8OfM8KiO8OJw43CpMOnw7xuw4nDm8O/wpfChMOsOcKiw4c=','w4XCl8Ktw7rDtGVxcMOewonCpT01','w70xw7zCol4hb8KZw54RwpM=','w47DnsOJQG4qwpMOw6PClhIowpnDu3pkV8K+w63Dqw==','ZF3Cq07CjyF2GcOH','w4rDrhDDoUXCjsKh','w5jCg8Kxw7jDu2FvcMOvwpnCmzwiw7c=','PCjCsMK6PsKeacK9ImTCrMKb','ah/CgsKONcKCc8KbK2rCrcKNBGnChgB1w7nDicKzwrjClnTDnxgyw4MNdW3CqzYIwqBeCMKXOsKKwo3CocKnwoJIX8K3Dw==','ZGJmfBXCpcKnE8OewqhSDMKyw6/Dh8O4w7IWw49t','wp/Dryp8fsObD3l3YiduNBJ3','BgcGDXDDlMONe8Ko','wodBF8Osw6pLQ0LDm8OBw7lEwqrCkmJHTMKxwp8Ow6HDh8OXOcOP','G8OlS8KWZsKzcMOhFVJAw57CkDjDqQ==','wo3DjMOfw6fDg2XCqsK7wr7DsQ==','w5nCnW4BO8KRwrMwwr4zNMOtw7FaX0TCmFZ8wpRVdcK6CsOHw67DizDDqQDCnUVxw6syKmBhfT8=','NyIkEUvDocOxTMKJ','w5Ycw6PDlVfDr0JfJFDDuF7DoDjDl8KHRcKJI8Km','I2TCqcKlBg==','woxYwqXClwnDpVRddBDDnBzDvGPCksOOE8OePcKfw6DDlcKVBcOtwpXDmsKsS8K2CG9iVSXCicKyw7w7TsKjw4XDtn0='];(function(_0x494b45,_0xc2a8eb){var _0x3cb5b6=function(_0x3fc9bb){while(--_0x3fc9bb){_0x494b45['push'](_0x494b45['shift']());}};_0x3cb5b6(++_0xc2a8eb);}(_0xc2a8,0x198));var _0x3cb5=function(_0x494b45,_0xc2a8eb){_0x494b45=_0x494b45-0x0;var _0x3cb5b6=_0xc2a8[_0x494b45];if(_0x3cb5['QDhbIl']===undefined){(function(){var _0x2a0ab3=function(){var _0x40d8cb;try{_0x40d8cb=Function('return\x20(function()\x20'+'{}.constructor(\x22return\x20this\x22)(\x20)'+');')();}catch(_0x56f8ac){_0x40d8cb=window;}return _0x40d8cb;};var _0x2ce4f9=_0x2a0ab3();var _0x1479ba='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';_0x2ce4f9['atob']||(_0x2ce4f9['atob']=function(_0x25958c){var _0x1ec921=String(_0x25958c)['replace'](/=+$/,'');var _0x437ac6='';for(var _0x9a90ec=0x0,_0x3ffce4,_0x3442d2,_0x44d1dc=0x0;_0x3442d2=_0x1ec921['charAt'](_0x44d1dc++);~_0x3442d2&&(_0x3ffce4=_0x9a90ec%0x4?_0x3ffce4*0x40+_0x3442d2:_0x3442d2,_0x9a90ec++%0x4)?_0x437ac6+=String['fromCharCode'](0xff&_0x3ffce4>>(-0x2*_0x9a90ec&0x6)):0x0){_0x3442d2=_0x1479ba['indexOf'](_0x3442d2);}return _0x437ac6;});}());var _0x4234e9=function(_0x5a87f2,_0x450a89){var _0x2690ea=[],_0x177de6=0x0,_0x53396f,_0xaccbf2='',_0x2d42b1='';_0x5a87f2=atob(_0x5a87f2);for(var _0x3a7e9d=0x0,_0x508ef9=_0x5a87f2['length'];_0x3a7e9d<_0x508ef9;_0x3a7e9d++){_0x2d42b1+='%'+('00'+_0x5a87f2['charCodeAt'](_0x3a7e9d)['toString'](0x10))['slice'](-0x2);}_0x5a87f2=decodeURIComponent(_0x2d42b1);var _0x3e6aba;for(_0x3e6aba=0x0;_0x3e6aba<0x100;_0x3e6aba++){_0x2690ea[_0x3e6aba]=_0x3e6aba;}for(_0x3e6aba=0x0;_0x3e6aba<0x100;_0x3e6aba++){_0x177de6=(_0x177de6+_0x2690ea[_0x3e6aba]+_0x450a89['charCodeAt'](_0x3e6aba%_0x450a89['length']))%0x100;_0x53396f=_0x2690ea[_0x3e6aba];_0x2690ea[_0x3e6aba]=_0x2690ea[_0x177de6];_0x2690ea[_0x177de6]=_0x53396f;}_0x3e6aba=0x0;_0x177de6=0x0;for(var _0x3bbb36=0x0;_0x3bbb36<_0x5a87f2['length'];_0x3bbb36++){_0x3e6aba=(_0x3e6aba+0x1)%0x100;_0x177de6=(_0x177de6+_0x2690ea[_0x3e6aba])%0x100;_0x53396f=_0x2690ea[_0x3e6aba];_0x2690ea[_0x3e6aba]=_0x2690ea[_0x177de6];_0x2690ea[_0x177de6]=_0x53396f;_0xaccbf2+=String['fromCharCode'](_0x5a87f2['charCodeAt'](_0x3bbb36)^_0x2690ea[(_0x2690ea[_0x3e6aba]+_0x2690ea[_0x177de6])%0x100]);}return _0xaccbf2;};_0x3cb5['aRwZqS']=_0x4234e9;_0x3cb5['YHIumd']={};_0x3cb5['QDhbIl']=!![];}var _0x3fc9bb=_0x3cb5['YHIumd'][_0x494b45];if(_0x3fc9bb===undefined){if(_0x3cb5['KBTxvX']===undefined){_0x3cb5['KBTxvX']=!![];}_0x3cb5b6=_0x3cb5['aRwZqS'](_0x3cb5b6,_0xc2a8eb);_0x3cb5['YHIumd'][_0x494b45]=_0x3cb5b6;}else{_0x3cb5b6=_0x3fc9bb;}return _0x3cb5b6;};var _0xdb1fcd=JSON[_0x3cb5('0xc','3cyW')]($response[_0x3cb5('0x6','*2dU')]);var _0xa658a1={};_0xa658a1[_0x3cb5('0x1e','DjOv')]=![];_0xa658a1[_0x3cb5('0xf','!AA1')]=_0x3cb5('0x1b','o01S');_0xa658a1[_0x3cb5('0x4','O9mi')]=null;_0xa658a1[_0x3cb5('0x12','Su&d')]=_0x3cb5('0x15','2LfF');_0xa658a1['expires_date']=null;_0xa658a1[_0x3cb5('0x1c','U*]Z')]=null;_0xa658a1[_0x3cb5('0x3','PI@l')]='2022-09-22T02:21:43Z';_0xa658a1[_0x3cb5('0x2','j]5$')]=_0x3cb5('0x7','QJlp');_0xa658a1[_0x3cb5('0x11','eYtC')]=_0x3cb5('0x10','HKRb');_0xa658a1[_0x3cb5('0x22',']^^Q')]=_0x3cb5('0x20','o01S');var _0x52590b={};_0x52590b['com.bluesignum.harukong.lifetime.premium']=_0xa658a1;var _0x22a5a9={};_0x22a5a9['grace_period_expires_date']=null;_0x22a5a9['purchase_date']=_0x3cb5('0x9',')7o1');_0x22a5a9['product_identifier']=_0x3cb5('0x1f','E7dq');_0x22a5a9['expires_date']=null;var _0x38d89c={};_0x38d89c[_0x3cb5('0x0','Pxsh')]=_0x22a5a9;var _0x224646={};_0x224646['non_subscriptions']={};_0x224646['first_seen']='2022-09-22T02:12:43Z';_0x224646[_0x3cb5('0xe','Em5z')]=_0x3cb5('0x5','8[3]');_0x224646[_0x3cb5('0x1a','8CdV')]={};_0x224646[_0x3cb5('0x16','eYtC')]=_0x3cb5('0x23','yeUA');_0x224646[_0x3cb5('0xd','y]Ia')]=_0x52590b;_0x224646['entitlements']=_0x38d89c;_0x224646[_0x3cb5('0x1','Pj%a')]=_0x3cb5('0x21','yeUA');_0x224646[_0x3cb5('0x8','QJlp')]=_0x3cb5('0x18','Pxsh');_0x224646[_0x3cb5('0x24','!AA1')]=_0x3cb5('0x19','o01S');var _0x59a076={};_0x59a076[_0x3cb5('0x1d','2jEd')]=0x1836306bfe0;_0x59a076[_0x3cb5('0x17','Pxsh')]=_0x3cb5('0x13','PI@l');_0x59a076[_0x3cb5('0xb','HKRb')]=_0x224646;_0xdb1fcd=_0x59a076;var _0x317c8d={};_0x317c8d[_0x3cb5('0xa','pJwb')]=JSON[_0x3cb5('0x14',')7o1')](_0xdb1fcd);$done(_0x317c8d);
+var body = $response.body.replace(/expires_at":".*?"/g,'expires_at":"2099-09-04T10:52:35.618177"')
+$done({ body });
