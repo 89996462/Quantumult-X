@@ -16,19 +16,48 @@ TG反馈群：https://t.me/plus8889
 
 [rewrite_local]
 
-^https:\/\/awvp\.aoscdn\.com\/base\/vip\/client\/authorizations url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/arqt.js
+^https?:\/\/.*\.(aoscdn\.com|apsapp\.cn) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/arqt.js
 
 [mitm] 
 
-hostname = awvp.aoscdn.com
+hostname = *.aoscdn.com, *.apsapp.cn
+
+*************************************/
 
 
-*******************************/
+var ojbk = JSON.parse($response.body);
+const vipa = '/base/vip/client/authorizations';
+const vipb = '/vips';
 
-var body = $response.body;
-var objk = JSON.parse(body);
 
-objk = {"status":200,"message":"success","data":{"license_type":"free","period_type":"trial","is_activated":1,"remain_days":0,"will_expire":1,"allowed_device_count":1,"begin_activated_time":1662783235,"durations":0,"vip_special":0,"has_buy_extend":0,"has_present":0,"product_id":369,"is_lifetime":0,"expired_at":0,"expire_time":"9999-01-01 00:00:00","candy":0,"candy_expired_at":0,"device_id":2700581012,"exist_trial":0}}
-body = JSON.stringify(objk);
+if ($request.url.indexOf(vipa) != -1){
+  ojbk.data.is_activated = 1;
+  ojbk.data.remain_days = 999999999;
+  ojbk.data.expire_time = "2099-09-09 09:09:09";
+  ojbk.data.expired_at = 4092600296;
+  ojbk.data.license_type = "premium";
+  ojbk.data.durations = 999999999;
+  ojbk.data.vip_special = 1;
+}
 
-$done({body});
+if ($request.url.indexOf(vipb) != -1){
+  ojbk.data = {
+    "group_expired_at" : 0,
+    "is_tried" : 0,
+    "max_devices" : 1,
+    "period_type" : "active",
+    "candy_expired_at" : 0,
+    "pending" : 0,
+    "remained_seconds" : 0,
+    "limit" : 0,
+    "expired_at" : 4092600296,
+    "candy" : 0,
+    "license_type" : "premium",
+    "quota" : 999999999,
+    "status" : 1,
+    "vip_special" : 1,
+    "coin" : 100
+  };
+}
+
+$done({body : JSON.stringify(ojbk)});
