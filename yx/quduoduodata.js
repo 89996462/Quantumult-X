@@ -18,7 +18,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^http[s]?:\/\/qddzf.quduoduodata.top\/app\/order\/queryOrderInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/yx/quduoduodata.js
+^http[s]?:\/\/qddzf.quduoduodata.top url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/yx/quduoduodata.js
 
 [mitm] 
 
