@@ -19,7 +19,7 @@ TG频道群：https://t.me/py996
 
 (?<=vip=)false url 302 true
 
-^https:\/\/www\.longstargpt\.com url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ChatAl40.js
+https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ChatAl40.js
 
 [mitm] 
 
