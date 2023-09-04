@@ -21,7 +21,7 @@ TG频道群：https://t.me/py996
 
 ^https?:\/\/.*mgtv\.com\/(v\d+\/(video\/getSource|module\/list)|GetUserInfo|entrance\/home) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/gx/MGTV2.js
 
-&src\=mgtv&suuid\=.*&testversion\=&ticket\=[A-Z0-9]{32} url 302 &src=mgtv&testversion=&ticket=4208da032e45503f98a6d2716ad92b08
+&src\=mgtv&suuid\=.*&testversion\=&ticket\=[A-Z0-9]{32} url 302 &src=mgtv&testversion=&ticket=677ABCDA17233AF889EA10602DFE84A3
 
 ^https?:\/\/nuc\.api\.mgtv.com\/Logout url reject-dict
 
