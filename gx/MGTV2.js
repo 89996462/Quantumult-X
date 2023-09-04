@@ -17,8 +17,6 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^http[s]?:\/\/mobile\.api\.mgtv\.com\/v[0-9]\/(playlist|video\/album|video\/relative|video\/list).*$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/gx/MGTV1.js
-
 ^https?://.*mgtv.com/(v\d+/(video/getSource|module/list)|(GetUserInfo|encounter/entrance/home)|(credits)) url https://raw.githubusercontent.com/89996462/Quantumult-X/main/gx/MGTV2.js
 
 &src\=mgtv&suuid\=.*&testversion\=&ticket\=[A-Z0-9]{32} url 302 &src=mgtv&testversion=&ticket=4208da032e45503f98a6d2716ad92b08
