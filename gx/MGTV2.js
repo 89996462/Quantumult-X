@@ -29,7 +29,25 @@ TG频道群：https://t.me/py996
 
 ^https?:\/\/mob\.bz\.mgtv\.com\/odin\/c1\/channel\/ads\?_ url reject-dict
 
-^https?:\/\/mobile\.da\.mgtv\.com\/json\/app\/bdboot url reject-dict
+^https?:\/\/nuc\.api\.mgtv.com\/Logout url reject-200
+
+^https?:\/\/pcvideoyd\.titan\.mgtv\.com\/pb\/ url reject-img
+
+^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/ url reject-200
+
+^https?:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json url reject-200
+
+^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/server_bidding\/pre_fetch\/ url reject-200
+
+^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/stats\/batch\/ url reject-200
+
+^https?:\/\/mob\.bz\.mgtv\.com\/odin\/c1\/channel\/ads\?_ url reject-200
+
+^https?:\/\/mobile\.da\.mgtv\.com\/json\/app\/bdboot url reject-200
+
+^https?:\/\/mobile\.api\.mgtv\.com\/mobile\/config\?_support url reject-200
+
+^https?:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/ url reject-200
 
 
 # 【小芒】
