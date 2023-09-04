@@ -23,30 +23,19 @@ TG频道群：https://t.me/py996
 
 &src\=mgtv&suuid\=.*&testversion\=&ticket\=[A-Z0-9]{32} url 302 &src=mgtv&testversion=&ticket=2031287C725A39BE8D5F5E2FF31D57AB
 
-^https?:\/\/nuc\.api\.mgtv.com\/Logout url reject-dict
 
-^https?:\/\/pcvideoyd\.titan\.mgtv\.com\/pb\/ url reject-dict
 
-^https?:\/\/mob\.bz\.mgtv\.com\/odin\/c1\/channel\/ads\?_ url reject-dict
 
 ^https?:\/\/nuc\.api\.mgtv.com\/Logout url reject-200
-
 ^https?:\/\/pcvideoyd\.titan\.mgtv\.com\/pb\/ url reject-img
-
 ^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/ url reject-200
-
 ^https?:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/package\.json url reject-200
-
 ^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/server_bidding\/pre_fetch\/ url reject-200
-
+&src\=mgtv&suuid\=.*&testversion\=&ticket\=[A-Z0-9]{32} url 302 &src=mgtv&testversion=&ticket=84122092810F360BA056B85869F9F51A
 ^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/stats\/batch\/ url reject-200
-
 ^https?:\/\/mob\.bz\.mgtv\.com\/odin\/c1\/channel\/ads\?_ url reject-200
-
 ^https?:\/\/mobile\.da\.mgtv\.com\/json\/app\/bdboot url reject-200
-
 ^https?:\/\/mobile\.api\.mgtv\.com\/mobile\/config\?_support url reject-200
-
 ^https?:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/renderer\/ url reject-200
 
 
@@ -54,16 +43,16 @@ TG频道群：https://t.me/py996
 ^https?:\/\/mobile\.api\.mgtv\.com\/mobile\/config\?_support url reject-dict
 
 # 底部会员LOGO叠加ICON
-^https?:\/\/mob\.bz\.mgtv\.com\/odin\/c1\/skin\/config url reject-dict
+#^https?:\/\/mob\.bz\.mgtv\.com\/odin\/c1\/skin\/config url reject-dict
 
 # 文件太大了，屏蔽暂未发现副作用https://dc.bz.mgtv.com/dynamic/v1/dsl/list/10101001/0/5/0?
 # ^https?:\/\/dc\.bz\.mgtv\.com\/dynamic\/v1\/dsl\/list\/ url reject-dict
 
 #加入会员 跳过广告https://vip.bz.mgtv.com/client/dynamic_entry
-^https?:\/\/vip\.bz\.mgtv\.com\/client\/dynamic_entry url reject-dict
+#^https?:\/\/vip\.bz\.mgtv\.com\/client\/dynamic_entry url reject-dict
 
 #我的积分 余额 5 https://credits.bz.mgtv.com/credits/url
-^https?:\/\/credits\.bz\.mgtv\.com\/credits\/url url reject-dict
+#^https?:\/\/credits\.bz\.mgtv\.com\/credits\/url url reject-dict
 
 
 [mitm] 
