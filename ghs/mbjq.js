@@ -1,11 +1,11 @@
 /******************************
 
-脚本功能：暗网禁区——解锁—金币视频—VIP视频
+脚本功能：缅北禁区——解锁—金币视频—VIP视频
 特别说明：开启脚本——即可观看。无需跳转观看
 特别说明：必须开启HTTP抓包，并且关闭其他脚本
-下载地址：https://1576.rorkzv.com
+下载地址：https://mbjd.cc/
 脚本作者：彭于晏💞
-更新时间：2023—8-14
+更新时间：2023—9-16
 问题反馈：QQ+89996462
 QQ会员群：779392027💞
 TG反馈群：https://t.me/plus8889
@@ -19,9 +19,9 @@ TG频道群：https://t.me/py996
 [rewrite_local]
 
 
-^https?:\/\/(155play|1300play)\.longyuandingyi\.com\/\w{3,10}\/\w{32}\/\w{32}\.m3u8\?auth_key=[\w\-]{30,50}$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/awjq.js
+^https?:\/\/(155play|1300play)\.longyuandingyi\.com\/\w{3,10}\/\w{32}\/\w{32}\.m3u8\?auth_key=[\w\-]{30,50}$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/mbjq.js
 
-^https?:\/\/(10play|120play)\.longyuandingyi\.com\/ url 302 https://long.longyuandingyi.com/
+^https?:\/\/(10play|h5play)\.longyuandingyi\.com\/ url 302 https://long.longyuandingyi.com/
 
 [mitm] 
 
