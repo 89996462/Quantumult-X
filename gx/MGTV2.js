@@ -26,7 +26,7 @@ TG频道群：https://t.me/py996
 # 底部会员LOGO叠加ICON
 ^https?:\/\/nuc\.api\.mgtv.com\/Logout url reject-200
 # 底部会员LOGO叠加ICON
-&src\=mgtv&suuid\=.*&testversion\=&ticket\=[A-Z0-9]{32} url 302 &src=mgtv&testversion=&ticket=2031287C725A39BE8D5F5E2FF31D57AB
+^(https?:\/\/\D.+)(&src=mgtv.*?&testversion=&)(ticket=\w{32})(.+) url 302 $1$2ticket=2031287C725A39BE8D5F5E2FF31D57AB$4
 # 底部会员LOGO叠加ICON
 ^https?:\/\/pcvideoyd\.titan\.mgtv\.com\/pb\/ url reject-img
 # 底部会员LOGO叠加ICON
