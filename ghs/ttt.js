@@ -16,8 +16,8 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-
-^https?:\/\/h5play\.longyuandingyi\.com\/\w{3,10}\/\w{32}\/\w{32}\.m3u8\?auth_key=[\w\-]{30,50}$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ttt.js
+^https?:\/\/(10play|h5play)\.longyuandingyi\.com url 302 https://long.longyuandingyi.com/
+^https?:\/\/9999play\.longyuandingyi\.com\/\w{3,10}\/\w{32}\/\w{32}\.m3u8\?auth_key=[\w\-]{30,50}$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ttt.js
 
 [mitm] 
 
