@@ -23,5 +23,5 @@ hostname = qigai-wx.game.jingyougz.com
 
 *******************************/
 
-var body = $response.body.replace(/coin\\":\d+/g,'coin\\":888888888888')
+var body = $response.body.replace(/coin\\":\d+/g,'coin\\":8888888888888888888888')
 $done({ body });
