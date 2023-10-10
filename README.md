@@ -10,7 +10,7 @@
 
 
 
-<img src="https://s1.ax1x.com/2022/09/03/vo1mnI.jpg" alt="IMG_5957" style="zoom:23%;" />
+<img src="[https://s1.ax1x.com/2022/09/03/vo1mnI.jpg](https://pic.imgdb.cn/item/6525664bc458853aefbb9d02.jpg)" alt="IMG_5957" style="zoom:23%;" />
 
 ## 特别声明:
 
