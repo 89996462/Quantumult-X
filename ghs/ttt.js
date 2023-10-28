@@ -3,7 +3,7 @@
 脚本功能：汤头条轻量版——解锁—金币视频—VIP视频
 特别说明：开启脚本即可在线观看视频-漫画無解
 特别说明：必须开启HTTP抓包,并且关闭其他的脚本
-下载地址：https://is.gd/IKoHNM
+下载地址：https://ttt.aff009.net/af/caJtT
 脚本作者：彭于晏💞
 更新时间：2023—8-10
 问题反馈：QQ+89996462
@@ -16,7 +16,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https?:\/\/(10play|h5play)\.longyuandingyi\.com url 302 https://long.longyuandingyi.com/
+(https?:\/\/)(?!long)([^./]+\.)*(longyuandingyi|zihzot)\.com(\/.*)? url 302 $1long.$3.com$4
 ^https?:\/\/9999play\.longyuandingyi\.com\/\w{3,10}\/\w{32}\/\w{32}\.m3u8\?auth_key=[\w\-]{30,50}$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ttt.js
 
 [mitm] 
