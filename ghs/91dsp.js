@@ -2,8 +2,7 @@
 
 脚本功能：91短视频——解锁—金币视频—VIP视频
 特别说明：开启规则即可在线观看
-更多资源：微信搜索微信小程序： 屌丝博客
-下载地址：http://50dh.app/
+下载地址：https://dbf4801.zfijby.com/aff-hVbkx
 脚本作者：彭于晏💞
 更新时间：2023—8-9
 问题反馈：QQ+89996462
@@ -16,9 +15,9 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https:\/\/10play\.longyuandingyi\.com url 302 https://long.longyuandingyi.com/
+(https?:\/\/)(?!long)([^./]+\.)*(longyuandingyi|zihzot)\.com(\/.*)? url 302 $1long.$3.com$4
 
-^https?:\/\/(99play|99play)\.longyuandingyi\.com\/\w{3,10}\/\w{32}\/\w{32}\.m3u8\?auth_key=[\w\-]{30,50}$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/91dsp.js
+^https?:\/\/(999play|999play)\.longyuandingyi\.com\/\w{3,10}\/\w{32}\/\w{32}\.m3u8\?auth_key=[\w\-]{30,50}$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/91dsp.js
 
 [mitm] 
 
