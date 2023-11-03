@@ -16,7 +16,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https?://(10play\.zihzot\.com)/(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ttt.js
+^https?://(h5play\.zihzot\.com)/(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ttt.js
 
 [mitm] 
 
