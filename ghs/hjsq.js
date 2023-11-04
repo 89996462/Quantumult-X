@@ -15,7 +15,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https?://(h5play\.vzcnqmr\.cn)/(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/50duh.js
+^https?://(h5play\.vzcnqmr\.cn)/(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/hjsq.js
 
 [mitm] 
 
