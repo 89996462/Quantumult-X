@@ -5,7 +5,7 @@
 特别说明：必须开启HTTP抓包，并且关闭其他脚本
 下载地址：https://1576.rorkzv.com
 脚本作者：彭于晏💞
-更新时间：2023—8-14
+更新时间：2023—11-12
 问题反馈：QQ+89996462
 QQ会员群：779392027💞
 TG反馈群：https://t.me/plus8889
@@ -19,12 +19,11 @@ TG频道群：https://t.me/py996
 [rewrite_local]
 
 
-^https?://(10play\.snowing\.ren)/(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/awjq.js
-^https?://(120play\.snowing\.ren)/(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/awjq.js
+^https?:\/\/(120play|10play)\.(snowing|beibeini3)\.(ren|cn)/(videos.|watch|static|upload|watch[0-9]+)\/.*\/.*\.m3u8\?auth_key.*$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/awjq.js
 
 [mitm] 
 
-hostname = *.snowing.ren
+hostname = *.snowing.ren, *.beibeini3.cn, *.pili01a.net
 
 
 *******************************/
