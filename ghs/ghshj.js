@@ -46,6 +46,10 @@ YY视频下载地址：https://05.snuvoz.com
 [rewrite_local]
 
 ^https?:\/\/(120play|10play|h5play)\.(hhclyjz|snowing|beibeini3)\.(ren|cn)/(videos.|watch|static|upload|watch[0-9]+)\/.*\/.*\.m3u8\?auth_key.*$ url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ghshj.js
+^https?://(10play\.hhclyjz\.cn)//(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ghshj.js
+^https?://(120play\.hhclyjz\.cn)//(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ghshj.js
+^https?://(h5play\.hhclyjz\.cn)//(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ghshj.js
+
 
 [mitm] 
 
