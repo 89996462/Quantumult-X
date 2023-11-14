@@ -17,6 +17,8 @@ TG频道群：https://t.me/py996
 [rewrite_local]
 
 ^https?://(10play\.beibeini3\.cn)//(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/YYSP.js
+^https?://(h5play\.beibeini3\.cn)//(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/YYSP.js
+^https?://(120play\.beibeini3\.cn)//(\w+)/\w{32}/\w{32}\.m3u8\? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/YYSP.js
 
 [mitm] 
 
