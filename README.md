@@ -10,7 +10,8 @@
             
 
 
-<img src="https://pic.imgdb.cn/item/6564daaac458853aefbb3ca9.jpg" alt="IMG_5957" style="zoom:23%;" />
+<img src="https://pic.imgdb.cn/item/6564daaac458853aefbb3ca9.jpg" alt="IMG_5957" style="width: 100%!;(MISSING) height: auto;">
+
 
 
 ## 特别声明:
