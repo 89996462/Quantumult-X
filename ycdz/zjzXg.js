@@ -15,11 +15,10 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https:\/\/standard\.rhinoxlab\.com\/standard\/account\/getAccountInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/zjzXg.js
+^https:\/\/appss\.rhinoxlab\.com\/app\/account\/getAccountInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/zjzXg.js
+[mitm] 
 
-[mitm] 
-
-hostname = standard.rhinoxlab.com
+hostname = appss.rhinoxlab.com
 
 
 *******************************/
@@ -27,7 +26,7 @@ hostname = standard.rhinoxlab.com
 
 var objc = JSON.parse($response.body);
 
-    objc = 
+    objc = 
 {
   "success" : true,
   "result" : {
