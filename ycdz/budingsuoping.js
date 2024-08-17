@@ -19,7 +19,7 @@ TG频道群：https://t.me/py996
 
 [mitm] 
 
-hostname = screen-lock.sm-check.com
+hostname = lxy.51wnl-cq.com
 
 *******************************/
 
