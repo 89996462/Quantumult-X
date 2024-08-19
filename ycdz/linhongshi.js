@@ -1,4 +1,4 @@
-/******************************
+/*******************************
 
 脚本功能：P图大神——解锁VIP
 下载地址：https://t.cn/A6HsZlkP
@@ -15,7 +15,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https:\/\/appss\.linhongshi\.com\/app\/account\/getAccountInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/linhongshi.js
+^https:\/\/appss\.linhongshi\.com\/\/app\/account\/getAccountInfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/linhongshi.js
 
 [mitm] 
 
@@ -23,7 +23,6 @@ hostname = appss.linhongshi.com
 
 
 *******************************/
-
 
 var objc = JSON.parse($response.body);
 
