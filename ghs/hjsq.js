@@ -19,8 +19,7 @@ TG频道群：https://t.me/py996
 
 [mitm] 
 
-hostname = 120play.*.cn,h5play.*.com,long.*.cn
-
+hostname = 120play.*.cn,h5play.*.com,long.*.cn,*.fipxor.cn
 
 *******************************/
 
