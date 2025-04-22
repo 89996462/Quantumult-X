@@ -15,7 +15,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-https:\/\/.+\.iwzbz\.com\/api\/v1\.1\/user\/getvipinfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/iwzbz.js.js
+https:\/\/.+\.iwzbz\.com\/api\/v1\.1\/user\/getvipinfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/iwzbz.js
 
 [mitm] 
 
