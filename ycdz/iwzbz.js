@@ -19,7 +19,7 @@ https:\/\/.+\.iwzbz\.com\/api\/v1\.1\/user\/getvipinfo url script-response-body 
 
 [mitm] 
 
-hostname = bzpp2.iwzbz.com
+hostname = *.iwzbz.com
 
 *******************************/
 
