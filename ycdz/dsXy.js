@@ -24,5 +24,5 @@ hostname = mars.inout.top
 *******************************/
 
 var body = $response.body.replace(/vip_expire_time": \w+/g,'vip_expire_time": 4076744128000')
-.replace(/auto_subscribe_or_permanent_vip": \w+/g,'auto_subscribe_or_permanent_vip": true')
+.replace(/is_lifetime_membership": \w+/g,'is_lifetime_membership": true')
 $done({ body });
