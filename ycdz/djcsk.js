@@ -28,4 +28,4 @@ var body = $response.body.replace(/isvip":\w+/g,'isvip":true')
 .replace(/expiretime":\d+/g,'expiretime":8888888888')
 .replace(/viptype":\d/g,'viptype":1')
 .replace(/hasvipcode":\w+/g,'hasvipcode":true')
-$done({ body })
+$done({ body });
