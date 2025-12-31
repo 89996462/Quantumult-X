@@ -15,7 +15,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^http:\/\/djcsk-api.y2-3.com:80/api/User/Info url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/djcsk.js
+^http[s]?:\/\/djcsk-api.y2-3.com:80/api/User/Info url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/djcsk.js
 
 [mitm] 
 
