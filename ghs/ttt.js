@@ -12,16 +12,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-# 汤头条：m3u8 视频链接捕获
 ^https:\/\/[^\/]*\..*\.cn\/\w+\/[a-z0-9]{32}\/[a-z0-9]{32}\.m3u8(\?.*)? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ttt.js
-
-# 汤头条：Nuxt 前端去广告（开屏 + 首页 dx-ads + API 解密后清 ads）
-^https?:\/\/[^\/]+\..+\/_nuxt\/[\w.-]+\.js url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/tangtoutiao_remove_ads.js
-
-[filter-local]
-
-# 拦截广告图 CDN（勿拦 /upload/、/xiao/ 等正常封面）
-^https?:\/\/[^\/]+\/upload_01\/ads\/ url reject
 
 [mitm]
 
