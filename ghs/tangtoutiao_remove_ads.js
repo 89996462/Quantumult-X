@@ -1,12 +1,15 @@
 /******************************
- * 汤头条 PWA 去广告 v6
+ * 汤头条 PWA 去广告 · 精简版
  *
  * 远程：https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/tangtoutiao_remove_ads.js
  *
- * v6：列表/详情 API 原样透传（保证视频封面与播放）；仅配置 API 清开屏/弹窗/浮层
- *     去掉 JS 注入 stripTT、dx-ads 禁用等破坏性补丁；CSS 只隐藏弹窗/浮层
+ * 仅净化四类广告（API 顶层字段，不碰 list/detail/thumb_cover/播放地址）：
+ *   1. 开屏 ads
+ *   2. 进入弹出 pop_ads / apps
+ *   3. 各页顶部轮播 banner / banners
+ *   4. 播放页顶部 banner / banners
  *
- * 更新后：QX 重载配置 → 清除汤头条网站数据 → 重新打开
+ * 更新后：QX 重载 → 清除汤头条网站数据 → 重新打开
  *******************************/
 
 ;(function (root, factory) {
@@ -6674,8 +6677,8 @@ const TT_IV = "81d7beac44a86f43";
 const TT_SALT = TT_KEY;
 
 const HTML_INJECT =
-  '<style id="tt-no-ads">.welcome-ad,.active-dialog,.dx-float-ad,.dx-ads{display:none!important}</style>' +
-  '<script>(function(){try{var k=location.hostname;if(!/\\.cc$/.test(k))return;document.querySelectorAll(\'script[type="module"][src*="/_nuxt/"]\').forEach(function(s){if(s.src.indexOf("v=tt6")<0)s.src+=(s.src.indexOf("?")<0?"?":"&")+"v=tt6"})}catch(e){}})();<\/script>';
+  '<style id="tt-no-ads">.welcome-ad,.active-dialog,.dx-ads,.ad-swipe-item{display:none!important}</style>' +
+  '<script>(function(){try{var k=location.hostname;if(!/\\.cc$/.test(k))return;document.querySelectorAll(\'script[type="module"][src*="/_nuxt/"]\').forEach(function(s){if(s.src.indexOf("v=tt8")<0)s.src+=(s.src.indexOf("?")<0?"?":"&")+"v=tt8"})}catch(e){}})();<\/script>';
 
 function parseJsonBody(raw) {
   if (!raw) return null;
@@ -6735,48 +6738,24 @@ function isAdItem(e) {
     return true;
   const u = String(e.img_url || e.url || e.link_url || "");
   if (/\/upload_01\/ads\//.test(u)) return true;
+  if (/\/hc237\/uploads\/default\/other\//.test(u)) return true;
   return false;
 }
 
-function isConfigPayload(data) {
-  return (
-    data &&
-    typeof data === "object" &&
-    (Object.prototype.hasOwnProperty.call(data, "pop_ads") ||
-      Object.prototype.hasOwnProperty.call(data, "layer_ads") ||
-      Object.prototype.hasOwnProperty.call(data, "apps"))
-  );
-}
-
-function isMediaPayload(data) {
-  return (
-    data &&
-    typeof data === "object" &&
-    (Array.isArray(data.list) ||
-      data.detail ||
-      Array.isArray(data.values) ||
-      data.source_240 ||
-      data.source_480 ||
-      data.source_720)
-  );
-}
-
-function stripConfigAds(data) {
+/** 只清四类广告位，不递归、不碰 list/detail/values 等视频数据 */
+function stripSlotAds(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return false;
   let changed = false;
-  for (const k of [
-    "pop_ads",
-    "layer_ads",
-    "apps",
-    "ads_pop",
-    "ads_screen",
-    "floating_ads",
-    "popup_ads",
-    "open_ads",
-  ]) {
+
+  for (const k of ["pop_ads", "apps"]) {
     if (!Object.prototype.hasOwnProperty.call(data, k)) continue;
-    data[k] = Array.isArray(data[k]) ? [] : null;
-    changed = true;
+    const empty = Array.isArray(data[k]) ? !data[k].length : data[k] == null;
+    if (!empty) {
+      data[k] = Array.isArray(data[k]) ? [] : null;
+      changed = true;
+    }
   }
+
   if (Object.prototype.hasOwnProperty.call(data, "ads")) {
     const v = data.ads;
     if (Array.isArray(v)) {
@@ -6790,6 +6769,16 @@ function stripConfigAds(data) {
       changed = true;
     }
   }
+
+  for (const k of ["banner", "banners"]) {
+    if (!Array.isArray(data[k]) || !data[k].length) continue;
+    const next = data[k].filter((e) => !isAdItem(e));
+    if (next.length !== data[k].length) {
+      data[k] = next;
+      changed = true;
+    }
+  }
+
   return changed;
 }
 
@@ -6813,13 +6802,7 @@ function patchApi(raw, url) {
     const plain = ttDecryptPlain(outer.data);
     const inner = JSON.parse(plain);
     const payload = inner.data ?? inner;
-    if (isMediaPayload(payload)) {
-      return { raw, n: 0 };
-    }
-    if (!isConfigPayload(payload)) {
-      return { raw, n: 0 };
-    }
-    if (!stripConfigAds(payload)) {
+    if (!stripSlotAds(payload)) {
       return { raw, n: 0 };
     }
     const newPlain = JSON.stringify(inner);
@@ -6834,7 +6817,7 @@ function patchApi(raw, url) {
         data: newHex,
       }),
     };
-    console.log("[汤头条去广告] 配置 API 已清广告");
+    console.log("[汤头条去广告] 已清开屏/弹窗/顶部banner");
     return { raw: JSON.stringify(next), n: 1 };
   } catch (e) {
     console.log("[汤头条去广告] API 解密失败: " + e);
@@ -6850,7 +6833,7 @@ function patchHtml(src) {
     n++;
   }
   const bust = /(\/_nuxt\/[\w.-]+\.js)(?=")/g;
-  const next = src.replace(bust, "$1?v=tt6");
+  const next = src.replace(bust, "$1?v=tt8");
   if (next !== src) {
     src = next;
     n++;
