@@ -14,9 +14,6 @@ TG频道群：https://t.me/py996
 
 ^https:\/\/[^\/]*\..*\.cn\/\w+\/[a-z0-9]{32}\/[a-z0-9]{32}\.m3u8(\?.*)? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ttt.js
 
-[rewrite_local]
-
-# 主包：API 解密后剥离 ads 等字段（匹配含 mS 拦截器的入口 chunk）
 ^https?:\/\/[^\/]+\..+\/_nuxt\/[\w.-]+\.js url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/tangtoutiao_remove_ads.js
 
 [mitm]
