@@ -1,123 +1,93 @@
-/*
- * 海角社区 PWA 去广告脚本 (Quantumult X)
+/******************************
+ * 海角社区 PWA 去广告 v2
+ *
+ * 将下方 [rewrite_local]、[filter-local]、[mitm] 复制到 Quantumult X 配置文件
+ * 脚本可放本地，或使用 raw 远程地址（请改成你自己的仓库路径）
+ *
+ * 远程示例：
+ * https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/haijiao_remove_ads.js
+ *
+ * 生效后请清除 p4.aozngkwm.com 网站数据（避免 Service Worker 缓存旧 JS）
+ *******************************
 
- * ^https?:\/\/[^\/]+\..+\/main\.dart\.js(\?.*)? url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/haijiao_remove_ads.js
+[rewrite_local]
 
+# patch Flutter 主程序，去除广告解析逻辑
+^https?:\/\/[^\/]+\..+\/main\.dart\.js(\?.*)? url script-response-body haijiao_remove_ads.js
 
- * hostname = p4.aozngkwm.com, *.aozngkwm.com, api2.fnomellx.cc, api2.anpbbxdyo.com, *.anpbbxdyo.com
+[filter-local]
 
- * ==============================
- */
+# 拦截广告图 CDN（抓包路径：*/upload_01/ads/，勿拦 /xiao/ 正常封面）
+^https?:\/\/[^\/]+\/upload_01\/ads\/ url reject
 
-const isQX = typeof $task !== "undefined";
-const isSurge = typeof $httpClient !== "undefined" && !isQX;
-const isLoon = typeof $loon !== "undefined";
+[mitm]
+
+hostname = p4.aozngkwm.com, *.aozngkwm.com, api2.fnomellx.cc, *.fnomellx.cc, api2.anpbbxdyo.com, *.anpbbxdyo.com, new.iajckz.cn, *.iajckz.cn
+
+*******************************/
+
 
 let body = $response.body;
 
 function patchMainDart(src) {
   let n = 0;
-  const hit = (label) => { n++; console.log(`[海角去广告] ${label}`); };
+  const hit = (label) => {
+    n++;
+    console.log(`[海角去广告] ${label}`);
+  };
+  const gsub = (re, rep, label) => {
+    const before = src;
+    src = src.replace(re, rep);
+    if (src !== before) hit(label);
+  };
 
-  // ---- 1. /api/home/getconfig 全局广告配置 ----
-  const cfgPatches = [
-    [
-      /p\.fx=c\.i\(a,n\)[^\n]+/,
-      "p.fx=A.b([],t.n)",
-      "清除开屏广告 ads_screen"
-    ],
-    [
-      /p\.fy=c\.i\(a,m\)[^\n]+/,
-      "p.fy=A.b([],t.n)",
-      "清除弹窗广告 ads_pop"
-    ],
-    [
-      /p\.go=c\.i\(a,j\)[^\n]+/,
-      "p.go=[]",
-      "清除悬浮广告 floating_ads"
-    ],
-    [
-      /if\(c\.i\(a,g\)!=null&&b\.b\(c\.i\(a,g\)\)\)\{s=J\.ao\(b\.a\(c\.i\(a,g\)\),new A\.aN_\(\),t\.__\)\ns=A\.x\(s,!0,s\.\$ti\.j\("J\.E"\)\)\}else s=A\.b\(\[\],t\.lT\)\np\.db=s/,
-      "s=A.b([],t.lT)\np.db=s",
-      "清除应用中心/启动页推广 apps"
-    ]
-  ];
+  // getconfig 全局广告
+  gsub(/p\.fx=c\.i\(a,n\)[^\n]+/, "p.fx=A.b([],t.n)", "ads_screen");
+  gsub(/p\.fy=c\.i\(a,m\)[^\n]+/, "p.fy=A.b([],t.n)", "ads_pop");
+  gsub(/p\.go=c\.i\(a,j\)[^\n]+/, "p.go=[]", "floating_ads");
+  gsub(
+    /if\(c\.i\(a,g\)!=null&&b\.b\(c\.i\(a,g\)\)\)\{s=J\.ao\(b\.a\(c\.i\(a,g\)\),new A\.aN_\(\),t\.__\)\ns=A\.x\(s,!0,s\.\$ti\.j\("J\.E"\)\)\}else s=A\.b\(\[\],t\.lT\)\np\.db=s/,
+    "s=A.b([],t.lT)\np.db=s",
+    "apps 推广"
+  );
+  gsub(/p\.y1=A\.i\(c\.i\(a,"floating_ai"\)\)/, 'p.y1=""', "floating_ai");
 
-  for (const [re, rep, label] of cfgPatches) {
-    if (re.test(src)) {
-      src = src.replace(re, rep);
-      hit(label);
-    }
-  }
+  // 列表/详情 banner、ads、ads_media
+  gsub(/t\.j\.b\(J\.d\(a,"banner"\)\)/g, "!1", "banner");
+  gsub(/t\.j\.b\(J\.d\(a,"banners"\)\)/g, "!1", "banners");
+  gsub(/t\.j\.b\(J\.d\(a,"ad_list"\)\)/g, "!1", "ad_list");
+  gsub(/t\.j\.b\(J\.d\(a,"ads"\)\)/g, "!1", "ads 数组");
+  gsub(/m\.b\(n\.i\(a,"banner"\)\)/g, "!1", "appcenter banner");
+  gsub(/p\.b\(o\.i\(a,"ads"\)\)/g, "!1", "mv ads");
+  gsub(/p\.b\(o\.i\(a,"ads_media"\)\)/g, "!1", "mv ads_media");
+  gsub(/p\.b\(q\.i\(a,"ads"\)\)/g, "!1", "page ads");
+  gsub(/r\.b\(s\.i\(a,"ads"\)\)/g, "!1", "list ads");
+  gsub(
+    /r\.b\(s\.i\(a,p\)\)\?J\.cd\(J\.ao\(s\.i\(a,p\),new A\.bpb\(\),t\.U\)\):A\.b\(\[\],t\.n\)/g,
+    "A.b([],t.n)",
+    "top_banner"
+  );
+  gsub(
+    /r\.b\(s\.i\(a,o\)\)\?J\.cd\(J\.ao\(s\.i\(a,o\),new A\.bpc\(\),t\.U\)\):A\.b\(\[\],t\.n\)/g,
+    "A.b([],t.n)",
+    "bot_banner"
+  );
 
-  // ---- 2. 各页面 API 响应中的 banner / ad_list ----
-  const bannerPatches = [
-    [/t\.j\.b\(J\.d\(a,"banner"\)\)/g, "!1", "禁用 banner 字段解析"],
-    [/t\.j\.b\(J\.d\(a,"banners"\)\)/g, "!1", "禁用 banners 字段解析"],
-    [/t\.j\.b\(J\.d\(a,"ad_list"\)\)/g, "!1", "禁用 ad_list 字段解析"],
-    [/m\.b\(n\.i\(a,"banner"\)\)/g, "!1", "禁用 appcenter banner"],
-    [
-      /r\.b\(s\.i\(a,p\)\)\?J\.cd\(J\.ao\(s\.i\(a,p\),new A\.bpb\(\),t\.U\)\):A\.b\(\[\],t\.n\)/g,
-      "A.b([],t.n)",
-      "禁用 top_banner"
-    ],
-    [
-      /r\.b\(s\.i\(a,o\)\)\?J\.cd\(J\.ao\(s\.i\(a,o\),new A\.bpc\(\),t\.U\)\):A\.b\(\[\],t\.n\)/g,
-      "A.b([],t.n)",
-      "禁用 bot_banner"
-    ]
-  ];
+  // 启动弹窗 / 广告组件
+  gsub(/r\.Z0\$=A\.x\(\$\.bf\(\)\.fy,!0,t\.z\)/, "r.Z0$=A.b([],t.z)", "启动 ads_pop");
+  gsub(/Vq\(a,b\)\{var s="advertising"/, 'Vq(a,b){return;var s="advertising"', "advertising 弹窗");
+  gsub(/b0_\(a\)\{var s=this\.c/, "b0_(a){return;var s=this.c", "全屏广告");
+  gsub(/b_Z\(a\)\{var s,r,q=\{\}/, "b_Z(a){return;var s,r,q={}", "应用推广");
+  gsub(/acB\(\)\{var s=this/, "acB(){return;var s=this", "启动广告调度 acB");
 
-  for (const [re, rep, label] of bannerPatches) {
-    if (re.test(src)) {
-      src = src.replace(re, rep);
-      hit(label);
-    }
-  }
-
-  // ---- 3. 启动弹窗 / 广告上报 ----
-  const flowPatches = [
-    [
-      /r\.Z0\$=A\.x\(\$\.bf\(\)\.fy,!0,t\.z\)/,
-      "r.Z0$=A.b([],t.z)",
-      "禁用启动弹窗广告队列"
-    ],
-    [
-      /Vq\(a,b\)\{var s="advertising"/,
-      'Vq(a,b){return;var s="advertising"',
-      "禁用广告埋点弹窗"
-    ],
-    [
-      /b0_\(a\)\{var s=this\.c/,
-      "b0_(a){return;var s=this.c",
-      "禁用全屏广告弹层"
-    ],
-    [
-      /b_Z\(a\)\{var s,r,q=\{\}/,
-      "b_Z(a){return;var s,r,q={}",
-      "禁用应用推广弹窗"
-    ]
-  ];
-
-  for (const [re, rep, label] of flowPatches) {
-    if (re.test(src)) {
-      src = src.replace(re, rep);
-      hit(label);
-    }
-  }
-
-  console.log(`[海角去广告] 共应用 ${n} 处补丁`);
+  console.log(`[海角去广告] 共 ${n} 处补丁`);
   return src;
 }
 
-if (body && body.includes("ayp(a){") && body.includes("ads_screen")) {
+if (body && body.length > 100000 && body.includes("ayp(a){")) {
   body = patchMainDart(body);
-} else if (body && body.length > 100000) {
-  // 版本更新后字段名可能变化，仍尝试 banner 级补丁
-  body = patchMainDart(body);
-  console.log("[海角去广告] 未匹配完整特征，已尝试通用补丁");
 } else {
-  console.log("[海角去广告] 非 main.dart.js，跳过");
+  console.log("[海角去广告] 跳过：非 main.dart.js");
 }
 
 $done({ body });
