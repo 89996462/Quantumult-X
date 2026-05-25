@@ -13,7 +13,7 @@
 [rewrite_local]
 
 # patch Flutter 主程序，去除广告解析逻辑
-^https?:\/\/[^\/]+\..+\/main\.dart\.js(\?.*)? url script-response-body haijiao_remove_ads.js
+^https?:\/\/[^\/]+\..+\/main\.dart\.js(\?.*)? url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/haijiao_remove_ads.js
 
 [filter-local]
 
