@@ -15,7 +15,6 @@ TG频道群：https://t.me/py996
 [rewrite_local]
 
 ^https:\/\/[^\/]*\..*\.cn\/\w+\/[a-z0-9]{32}\/[a-z0-9]{32}\.m3u8(\?.*)? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/hdsq.js
-^https?:\/\/[^\/]+\..+\/_nuxt\/[\w.-]+\.js url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/tangtoutiao_remove_ads.js
 
 [mitm]
 
