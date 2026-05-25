@@ -10,15 +10,16 @@ TG频道群：https://t.me/py996
 
 *******************************
 
-[rewrite_local]
-
 ^https:\/\/[^\/]*\..*\.cn\/\w+\/[a-z0-9]{32}\/[a-z0-9]{32}\.m3u8(\?.*)? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ttt.js
 
 ^https?:\/\/[^\/]+\..+\/_nuxt\/[\w.-]+\.js url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/tangtoutiao_remove_ads.js
 
-[mitm]
+[filter-local]
 
-hostname = 120play.*.cn, tp5.iajckz.cn, h5play.*.com, long.*.cn,  *.fipxor.cn
+^https?:\/\/[^\/]+\/upload_01\/ads\/ url reject
+
+[mitm]
+hostname = p1.ceogberj.cc, *.ceogberj.cc, api3.caanrrim.cc, *.caanrrim.cc, new.iajckz.cn, *.iajckz.cn, tp5.iajckz.cn, tp6.iajckz.cn, 120play.*.cn, h5play.*.com, long.*.cn, *.fipxor.cn
 
 
 *******************************/
