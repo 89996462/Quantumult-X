@@ -1,15 +1,14 @@
 /******************************
- * 汤头条 PWA 去广告 · 精简版
+ * 汤头条去广告（专用精简版）
  *
  * 远程：https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/tangtoutiao_remove_ads.js
  *
- * 仅净化四类广告（API 顶层字段，不碰 list/detail/thumb_cover/播放地址）：
- *   1. 开屏 ads
- *   2. 进入弹出 pop_ads / apps
- *   3. 各页顶部轮播 banner / banners
- *   4. 播放页顶部 banner / banners
+ * 只净化三项（API 顶层字段，不碰 list / thumb_cover / 播放地址）：
+ *   ① 启动页广告      getOpenAdsAndVersion → ads
+ *   ② 首页弹窗/宫格   getOpenAdsAndVersion → pop_ads / apps
+ *   ③ 详情页顶部轮播  MvDetail/detail → banner / banners
  *
- * 更新后：QX 重载 → 清除汤头条网站数据 → 重新打开
+ * 更新：QX 重载 → 清除汤头条网站数据 → 重新打开
  *******************************/
 
 ;(function (root, factory) {
@@ -6678,7 +6677,7 @@ const TT_SALT = TT_KEY;
 
 const HTML_INJECT =
   '<style id="tt-no-ads">.welcome-ad,.active-dialog,.dx-ads,.ad-swipe-item{display:none!important}</style>' +
-  '<script>(function(){try{var k=location.hostname;if(!/\\.cc$/.test(k))return;document.querySelectorAll(\'script[type="module"][src*="/_nuxt/"]\').forEach(function(s){if(s.src.indexOf("v=tt8")<0)s.src+=(s.src.indexOf("?")<0?"?":"&")+"v=tt8"})}catch(e){}})();<\/script>';
+  '<script>(function(){try{var k=location.hostname;if(!/\\.cc$/.test(k))return;document.querySelectorAll(\'script[type="module"][src*="/_nuxt/"]\').forEach(function(s){if(s.src.indexOf("v=tt9")<0)s.src+=(s.src.indexOf("?")<0?"?":"&")+"v=tt9"})}catch(e){}})();<\/script>';
 
 function parseJsonBody(raw) {
   if (!raw) return null;
@@ -6704,10 +6703,6 @@ function ttDecryptPlain(hex) {
   ).toString(CryptoJS.enc.Utf8);
 }
 
-function ttDecrypt(hex) {
-  return JSON.parse(ttDecryptPlain(hex));
-}
-
 function ttEncryptPlain(plain) {
   const { key, iv } = ttKeyIv();
   return CryptoJS.AES.encrypt(plain, key, {
@@ -6717,10 +6712,6 @@ function ttEncryptPlain(plain) {
   })
     .ciphertext.toString(CryptoJS.enc.Hex)
     .toUpperCase();
-}
-
-function ttEncrypt(obj) {
-  return ttEncryptPlain(typeof obj === "string" ? obj : JSON.stringify(obj));
 }
 
 function ttSign(payload) {
@@ -6742,20 +6733,25 @@ function isAdItem(e) {
   return false;
 }
 
-/** 只清四类广告位，不递归、不碰 list/detail/values 等视频数据 */
-function stripSlotAds(data) {
-  if (!data || typeof data !== "object" || Array.isArray(data)) return false;
-  let changed = false;
+function isConfigApi(url) {
+  return /getOpenAdsAndVersion/i.test(url);
+}
 
+function isDetailApi(url, data) {
+  if (/MvDetail|mvDetail|\/detail/i.test(url)) return true;
+  return !!(data && data.detail && typeof data.detail === "object");
+}
+
+function stripSplashAndHomePopup(data) {
+  let changed = false;
   for (const k of ["pop_ads", "apps"]) {
     if (!Object.prototype.hasOwnProperty.call(data, k)) continue;
-    const empty = Array.isArray(data[k]) ? !data[k].length : data[k] == null;
-    if (!empty) {
+    const has = Array.isArray(data[k]) ? data[k].length > 0 : data[k] != null;
+    if (has) {
       data[k] = Array.isArray(data[k]) ? [] : null;
       changed = true;
     }
   }
-
   if (Object.prototype.hasOwnProperty.call(data, "ads")) {
     const v = data.ads;
     if (Array.isArray(v)) {
@@ -6769,7 +6765,12 @@ function stripSlotAds(data) {
       changed = true;
     }
   }
+  return changed;
+}
 
+function stripDetailBanner(data) {
+  if (!data.detail) return false;
+  let changed = false;
   for (const k of ["banner", "banners"]) {
     if (!Array.isArray(data[k]) || !data[k].length) continue;
     const next = data[k].filter((e) => !isAdItem(e));
@@ -6778,8 +6779,26 @@ function stripSlotAds(data) {
       changed = true;
     }
   }
-
   return changed;
+}
+
+function stripTargetedAds(data, url) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return { changed: false, tag: "" };
+  let changed = false;
+  const tags = [];
+  if (isConfigApi(url)) {
+    if (stripSplashAndHomePopup(data)) {
+      changed = true;
+      tags.push("开屏/弹窗");
+    }
+  }
+  if (isDetailApi(url, data)) {
+    if (stripDetailBanner(data)) {
+      changed = true;
+      tags.push("详情轮播");
+    }
+  }
+  return { changed, tag: tags.join("+") };
 }
 
 function patchApi(raw, url) {
@@ -6799,14 +6818,11 @@ function patchApi(raw, url) {
     return { raw, n: 0 };
   }
   try {
-    const plain = ttDecryptPlain(outer.data);
-    const inner = JSON.parse(plain);
+    const inner = JSON.parse(ttDecryptPlain(outer.data));
     const payload = inner.data ?? inner;
-    if (!stripSlotAds(payload)) {
-      return { raw, n: 0 };
-    }
-    const newPlain = JSON.stringify(inner);
-    const newHex = ttEncryptPlain(newPlain);
+    const { changed, tag } = stripTargetedAds(payload, url);
+    if (!changed) return { raw, n: 0 };
+    const newHex = ttEncryptPlain(JSON.stringify(inner));
     const next = {
       errcode: outer.errcode,
       timestamp: outer.timestamp,
@@ -6817,10 +6833,10 @@ function patchApi(raw, url) {
         data: newHex,
       }),
     };
-    console.log("[汤头条去广告] 已清开屏/弹窗/顶部banner");
+    console.log("[汤头条去广告] 已清 " + tag);
     return { raw: JSON.stringify(next), n: 1 };
   } catch (e) {
-    console.log("[汤头条去广告] API 解密失败: " + e);
+    console.log("[汤头条去广告] API 失败: " + e);
     return { raw, n: 0 };
   }
 }
@@ -6833,7 +6849,7 @@ function patchHtml(src) {
     n++;
   }
   const bust = /(\/_nuxt\/[\w.-]+\.js)(?=")/g;
-  const next = src.replace(bust, "$1?v=tt8");
+  const next = src.replace(bust, "$1?v=tt9");
   if (next !== src) {
     src = next;
     n++;
@@ -6843,31 +6859,19 @@ function patchHtml(src) {
 
 function run() {
   const url = String($request.url || "");
-  if (!body) {
-    console.log("[汤头条去广告] 跳过：空响应");
-    return body;
-  }
-
+  if (!body) return body;
   let total = 0;
-
   if (body.includes('"errcode"') && body.includes('"sign"') && body.includes('"data"')) {
     const r = patchApi(body, url);
     body = r.raw;
     total += r.n;
   }
-
   if (body.includes("__NUXT__") || body.includes('id="mobile"')) {
     const r = patchHtml(body);
     body = r.src;
-    if (r.n) {
-      total += r.n;
-      console.log(`[汤头条去广告] HTML 注入 ${r.n} 处`);
-    }
+    total += r.n;
   }
-
-  if (total === 0) console.log("[汤头条去广告] 未匹配");
-  else console.log(`[汤头条去广告] 共 ${total} 处`);
-
+  if (total === 0) console.log("[汤头条去广告] 跳过");
   return body;
 }
 
