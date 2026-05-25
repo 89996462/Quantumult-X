@@ -1,12 +1,10 @@
 /******************************
- * 汤头条 PWA 去广告 v4
+ * 汤头条 PWA 去广告 v5
  *
  * 远程：https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/tangtoutiao_remove_ads.js
  *
- * v4 核心：API 层解密/清广告/重签（PWA 缓存 JS 时仍生效）
- *   - getOpenAdsAndVersion: ads / pop_ads / layer_ads / apps
- *   - list_element / tab / MvList 等: banner / ads
- * v3 保留：HTML cache-bust + CSS + _nuxt 补丁
+ * v5：只清广告位，保留视频封面/正常图片（不再清空 banner 整表、不隐藏 my-swipe-item）
+ * v4：API 层解密/清广告/重签（pop_ads / layer_ads / apps / 开屏 ads / 广告 banner）
  *
  * 更新后：QX 重载配置 → 清除汤头条网站数据 → 重新打开
  *******************************/
@@ -6676,11 +6674,11 @@ const TT_IV = "81d7beac44a86f43";
 const TT_SALT = TT_KEY;
 
 const STRIP_FN =
-  'function stripTT(o,d){if(!o||typeof o!="object"||d>12)return;if(Array.isArray(o)){for(var i=o.length-1;i>=0;i--){var e=o[i];if(e&&typeof e=="object"&&(e.advertise_code||e.advertise_location_code||String(e.img_url||e.url||"").indexOf("/ads/")>-1))o.splice(i,1);else stripTT(e,d+1)}return}for(var k of["ads","ad_list","banner","banners","floating_ads","ads_pop","ads_screen","popup_ads","open_ads","advertise_list","pop_ads","layer_ads","apps"])Object.prototype.hasOwnProperty.call(o,k)&&(o[k]=Array.isArray(o[k])?[]):null);for(var k in o)stripTT(o[k],d+1)}';
+  'function isAdItem(e){if(!e||typeof e!="object")return!1;if(e.advertise_code||e.advertise_location_code||e.ad_slot_name)return!0;if(typeof e.position=="number"&&e.position>=2001&&e.position<2100)return!0;var u=String(e.img_url||e.url||e.link_url||"");return u.indexOf("/upload_01/ads/")>-1}function stripTT(o,d){if(!o||typeof o!="object"||d>12)return;if(Array.isArray(o))return;for(var k of["pop_ads","layer_ads","apps","ads_pop","ads_screen","floating_ads","popup_ads","open_ads","advertise_list","ad_list"])Object.prototype.hasOwnProperty.call(o,k)&&(o[k]=Array.isArray(o[k])?[]:null);if(Object.prototype.hasOwnProperty.call(o,"ads")){var a=o.ads;Array.isArray(a)?o.ads=a.filter(function(e){return!isAdItem(e)}):a&&typeof a=="object"&&isAdItem(a)&&(o.ads=null)}for(var k of["banner","banners"])Array.isArray(o[k])&&(o[k]=o[k].filter(function(e){return!isAdItem(e)}));for(var k in o)stripTT(o[k],d+1)}';
 
 const HTML_INJECT =
-  '<style id="tt-no-ads">.welcome-ad,.marquee,.ad-title,.ad-swipe-item,.my-swipe-item,.active-dialog,.dx-float-ad,.ad-item,.offical-dialog{display:none!important}.grid.grid-cols-6.gap-x-1.gap-y-0\\.5{display:none!important}</style>' +
-  '<script>(function(){try{var k=location.hostname;if(!/\\.cc$/.test(k))return;document.querySelectorAll(\'script[type="module"][src*="/_nuxt/"]\').forEach(function(s){if(s.src.indexOf("v=tt4")<0)s.src+=(s.src.indexOf("?")<0?"?":"&")+"v=tt4"})}catch(e){}})();<\/script>';
+  '<style id="tt-no-ads">.welcome-ad,.marquee,.ad-title,.ad-swipe-item,.active-dialog,.dx-float-ad,.ad-item{display:none!important}</style>' +
+  '<script>(function(){try{var k=location.hostname;if(!/\\.cc$/.test(k))return;document.querySelectorAll(\'script[type="module"][src*="/_nuxt/"]\').forEach(function(s){if(s.src.indexOf("v=tt5")<0)s.src+=(s.src.indexOf("?")<0?"?":"&")+"v=tt5"})}catch(e){}})();<\/script>';
 
 function parseJsonBody(raw) {
   if (!raw) return null;
@@ -6720,41 +6718,41 @@ function ttSign(payload) {
   return CryptoJS.MD5(CryptoJS.SHA256(parts.join("&") + TT_SALT).toString()).toString();
 }
 
+function isAdItem(e) {
+  if (!e || typeof e !== "object") return false;
+  if (e.advertise_code || e.advertise_location_code || e.ad_slot_name) return true;
+  if (typeof e.position === "number" && e.position >= 2001 && e.position < 2100)
+    return true;
+  const u = String(e.img_url || e.url || e.link_url || "");
+  if (/\/upload_01\/ads\//.test(u)) return true;
+  return false;
+}
+
 function stripTT(o, d) {
   if (!o || typeof o !== "object" || d > 12) return;
-  if (Array.isArray(o)) {
-    for (let i = o.length - 1; i >= 0; i--) {
-      const e = o[i];
-      if (
-        e &&
-        typeof e === "object" &&
-        (e.advertise_code ||
-          e.advertise_location_code ||
-          String(e.img_url || e.url || "").indexOf("/ads/") > -1)
-      )
-        o.splice(i, 1);
-      else stripTT(e, d + 1);
-    }
-    return;
-  }
-  const keys = [
-    "ads",
-    "ad_list",
-    "banner",
-    "banners",
-    "floating_ads",
-    "ads_pop",
-    "ads_screen",
-    "popup_ads",
-    "open_ads",
-    "advertise_list",
+  if (Array.isArray(o)) return;
+  const clearKeys = [
     "pop_ads",
     "layer_ads",
     "apps",
+    "ads_pop",
+    "ads_screen",
+    "floating_ads",
+    "popup_ads",
+    "open_ads",
+    "advertise_list",
+    "ad_list",
   ];
-  for (const k of keys)
+  for (const k of clearKeys)
     if (Object.prototype.hasOwnProperty.call(o, k))
       o[k] = Array.isArray(o[k]) ? [] : null;
+  if (Object.prototype.hasOwnProperty.call(o, "ads")) {
+    const v = o.ads;
+    if (Array.isArray(v)) o.ads = v.filter((e) => !isAdItem(e));
+    else if (v && typeof v === "object" && isAdItem(v)) o.ads = null;
+  }
+  for (const k of ["banner", "banners"])
+    if (Array.isArray(o[k])) o[k] = o[k].filter((e) => !isAdItem(e));
   for (const k in o) stripTT(o[k], d + 1);
 }
 
@@ -6803,7 +6801,7 @@ function patchHtml(src) {
     n++;
   }
   const bust = /(\/_nuxt\/[\w.-]+\.js)(?=")/g;
-  const next = src.replace(bust, "$1?v=tt4");
+  const next = src.replace(bust, "$1?v=tt5");
   if (next !== src) {
     src = next;
     n++;
@@ -6828,14 +6826,6 @@ function patchEntry(src) {
     "const f=t.Decrypt(n.data);stripTT(f.data??f,0);if(u===f.status)";
   if (src.includes(decryptNeedle)) {
     src = src.replace(decryptNeedle, decryptInsert);
-    n++;
-  }
-  const cfgNeedle =
-    "setConfigByKeys(e){Object.keys(e).forEach(t=>{this.config[t]=e[t]})}";
-  const cfgInsert =
-    "setConfigByKeys(e){stripTT(e,0);Object.keys(e).forEach(t=>{this.config[t]=e[t]})}";
-  if (src.includes(cfgNeedle) && src.includes("function stripTT(")) {
-    src = src.replace(cfgNeedle, cfgInsert);
     n++;
   }
   return { src, n };
