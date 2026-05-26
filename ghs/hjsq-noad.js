@@ -1,12 +1,12 @@
 /******************************
 
-脚本功能：海角社区——去开屏——去弹窗——去Banner——去悬浮
+脚本功能：海角社区——去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
 特别说明：QX 重写脚本无 $crypto，本脚本内置 CryptoJS
  ① 将下方 [rewrite_local]、[mitm] 复制到 QX 主配置
  ② 远程订阅：重写行已指向 GitHub raw，上传 hjsq-noad.remote.js 后刷新资源
  ③ 开启 MITM 并对 api2、p4.aozngkwm.com 安装证书
  ④ 改完清 Safari 缓存并完全重启 App
-更新时间：2026-05-26 v4
+更新时间：2026-05-26 v5
 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************
@@ -27,7 +27,7 @@ hostname = api2.anpbbxdyo.com, *.anpbbxdyo.com, p4.aozngkwm.com, *.aozngkwm.com
 
 *******************************/
 
-// hjsq-noad v4
+// hjsq-noad v5
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -41,7 +41,7 @@ var CryptoJS;
 const AES_KEY = "tjJHooEeIYLszIUt";
 const AES_IV = "bleBrccsf7MZLG29";
 const SIGN_SALT = "tjJHooEeIYLszIUt";
-const AD_KEY_RE = /^(ads_screen|ads_pop|floating_ads|banner|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|pop_ads)$/i;
+const AD_KEY_RE = /^(ads_screen|ads_pop|floating_ads|banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|pop_ads)$/i;
 
 function calcSign(dataB64, timestamp) {
   var raw = "data=" + dataB64 + "&timestamp=" + timestamp + SIGN_SALT;
