@@ -2,11 +2,11 @@
 
 脚本功能：海角社区——去开屏广告——去进入弹窗——去悬浮广告——去首页Banner
 特别说明：① 将下方 [rewrite_local]、[mitm] 复制到 QX 主配置并开启 MITM
-         ② 本地用法：脚本放 Scripts/，重写写 script-response-body hjsq-noad.js
-         ③ 远程用法：只改重写那一行，填完整 raw 链接（见下方注释），勿用 [script] 段
-         ④ 对 api2.* 与 p4.aozngkwm.com 安装证书；改完清缓存并重启页面
-适配接口：api2.*/api/*（重点 getconfig / tabnew/list_construct）
-更新时间：2026-05-26 v2
+         ② 本地：脚本放 Scripts，重写指向 hjsq-noad.js
+         ③ 远程：重写那一行填 raw 直链（须为纯 JS，与本文下方代码一致）
+         ④ 对 api2 域名与 p4.aozngkwm.com 安装证书；改完清缓存并重启页面
+适配接口：api2 域名下全部 api 路径（getconfig、list_construct 等）
+更新时间：2026-05-26 v3
 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************
@@ -14,9 +14,6 @@
 [rewrite_local]
 
 ^https?:\/\/api2\.[^\/]+\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/hjsq-noad.js
-
-# 远程订阅示例（把上一行换成你的 raw 直链，且 GitHub 上该文件必须真实存在）：
-# ^https?:\/\/api2\.[^\/]+\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/hjsq-noad.js
 
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
 
@@ -27,7 +24,6 @@
 [mitm]
 
 hostname = api2.anpbbxdyo.com, *.anpbbxdyo.com, p4.aozngkwm.com, *.aozngkwm.com
-
 
 *******************************/
 
@@ -40,7 +36,7 @@ const AD_KEY_RE =
   /^(ads_screen|ads_pop|floating_ads|banner|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|pop_ads)$/i;
 
 function calcSign(dataB64, timestamp) {
-  const raw = `data=${dataB64}&timestamp=${timestamp}${SIGN_SALT}`;
+  const raw = "data=" + dataB64 + "&timestamp=" + timestamp + SIGN_SALT;
   const sha256hex = $crypto.digest({
     type: "SHA-256",
     message: raw,
@@ -54,29 +50,24 @@ function calcSign(dataB64, timestamp) {
 }
 
 function decryptPayload(dataB64) {
-  const opts = {
-    data: dataB64,
-    key: AES_KEY,
-    iv: AES_IV,
-    type: "AES",
-    mode: "CBC",
-    padding: "pkcs7",
-  };
   let plain;
   try {
-    plain = $crypto.dataDecrypt(opts);
+    plain = $crypto.dataDecrypt({
+      data: dataB64,
+      key: AES_KEY,
+      iv: AES_IV,
+      type: "AES",
+      mode: "CBC",
+      padding: "pkcs7",
+    });
   } catch (e1) {
-    try {
-      plain = $crypto.decrypt({
-        algorithm: "AES-CBC",
-        key: AES_KEY,
-        iv: AES_IV,
-        data: dataB64,
-        padding: "Pkcs7",
-      });
-    } catch (e2) {
-      throw e2;
-    }
+    plain = $crypto.decrypt({
+      algorithm: "AES-CBC",
+      key: AES_KEY,
+      iv: AES_IV,
+      data: dataB64,
+      padding: "Pkcs7",
+    });
   }
   if (plain && typeof plain === "object") return JSON.stringify(plain);
   return String(plain);
