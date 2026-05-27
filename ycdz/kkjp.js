@@ -1,5 +1,5 @@
 /******************************
-# 脚本功能：KK键盘 — 会员显示 + 变声次数 + 广告净化
+# 脚本功能：KK键盘 — 会员显示 + 变声次数（精简版）
 # 脚本作者：自定义
 # 更新时间：2026-05-27
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -35,21 +35,9 @@
 ^https?:\/\/misc\.weshineapp\.com\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
 ^https?:\/\/kkmob\.weshineapp\.com\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
 ^https?:\/\/kkgif\.weshine\.im\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
-^https?:\/\/.*pangolin-sdk-toutiao.*\/api\/ad\/union\/sdk\/get_ads url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
-^https?:\/\/open\.e\.kuaishou\.com\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
-
-^https?:\/\/encrypt\.weshine\.im url reject
-^https?:\/\/.*\.anythinktech\.com url reject
-^https?:\/\/.*\.metricslinks\.com url reject
-^https?:\/\/.*\.pangolin-sdk-toutiao.*\/api\/ad\/union\/mediation url reject
-^https?:\/\/.*\.pangolin-sdk-toutiao.*\/api\/ad\/union\/sdk\/settings url reject
-^https?:\/\/mi\.gdt\.qq\.com url reject
-^https?:\/\/win\.gdt\.qq\.com url reject
-^https?:\/\/pgdt\.ugdtimg\.com url reject
-^https?:\/\/gromore\.pangolin-sdk-toutiao\.com url reject
 
 [mitm]
-hostname = kk.weshine.im, kk-flow.weshine.im, encrypt.weshine.im, misc.weshineapp.com, kkmob.weshineapp.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, gromore.pangolin-sdk-toutiao.com, open.e.kuaishou.com, *.anythinktech.com, *.metricslinks.com, mi.gdt.qq.com, win.gdt.qq.com, pgdt.ugdtimg.com, log-api.pangolin-sdk-toutiao.com, log-api.pangolin-sdk-toutiao-b.com, log-api.pangolin-sdk-toutiao.com, toblog.ctobsnssdk.com, api-access.pangolin-sdk-toutiao1.com
+hostname = kk.weshine.im, kk-flow.weshine.im, misc.weshineapp.com, kkmob.weshineapp.com, kkgif.weshine.im
 
 *******************************/
 
@@ -97,13 +85,9 @@ function patchUnlockFields(node) {
     if ("user_type" in node && "vip_expired_time" in node) patchVipInfo(node);
     if ("vip_use" in node) node.vip_use = 0;
     if ("vvip_use" in node) node.vvip_use = 0;
-    if ("ad_status" in node) node.ad_status = 0;
     if ("is_vip" in node && !("user_type" in node)) node.is_vip = 1;
     if ("lock" in node) node.lock = 0;
     if ("need_vip" in node) node.need_vip = 0;
-    if ("need_ad" in node) node.need_ad = 0;
-    if ("show_ad" in node) node.show_ad = 0;
-    if ("count_ad" in node) node.count_ad = 0;
     if ("freeCount" in node) node.freeCount = FREE_COUNT;
     if ("totalCount" in node) node.totalCount = FREE_COUNT;
     if ("currCount" in node) node.currCount = FREE_COUNT;
@@ -153,33 +137,6 @@ function patchVipGoodsList(data) {
     walkPatch(data);
 }
 
-function patchAdDetail(data) {
-    return [];
-}
-
-function emptyPangleAds() {
-    return {
-        request_id: "KK-NO-AD-" + Date.now(),
-        status_code: 20001,
-        reason: 106,
-        desc: "no fill"
-    };
-}
-
-function emptyKuaishouAds() {
-    return {
-        llsid: 0,
-        result: 1,
-        errorMsg: "OK",
-        egid: "",
-        hasMore: false,
-        interval: 120,
-        feeds: [],
-        ad: [],
-        impAdInfo: []
-    };
-}
-
 function handleKkApi(url, body) {
     if (!body || !isObj(body)) return body;
 
@@ -190,16 +147,6 @@ function handleKkApi(url, body) {
 
     if (url.includes("/v2.0/vip/goodslist") || url.includes("/vip/goodslist")) {
         if (body.data) patchVipGoodsList(body.data);
-        return body;
-    }
-
-    if (url.includes("/v3.0/app/AdDetail")) {
-        body.data = patchAdDetail(body.data);
-        return body;
-    }
-
-    if (url.includes("/v1.0/advpricecollect")) {
-        body.data = true;
         return body;
     }
 
@@ -232,12 +179,6 @@ function handleHostApi(url, body) {
         host.includes("kkgif.weshine.im")
     ) {
         return handleKkApi(url, body);
-    }
-    if (host.includes("pangolin-sdk-toutiao")) {
-        return emptyPangleAds();
-    }
-    if (host.includes("open.e.kuaishou.com")) {
-        return emptyKuaishouAds();
     }
     return body;
 }
