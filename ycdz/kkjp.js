@@ -32,6 +32,9 @@
 
 ^https?:\/\/kk\.weshine\.im\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
 ^https?:\/\/kk-flow\.weshine\.im\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
+^https?:\/\/misc\.weshineapp\.com\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
+^https?:\/\/kkmob\.weshineapp\.com\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
+^https?:\/\/kkgif\.weshine\.im\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
 ^https?:\/\/.*pangolin-sdk-toutiao.*\/api\/ad\/union\/sdk\/get_ads url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
 ^https?:\/\/open\.e\.kuaishou\.com\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/kkjp.js
 
@@ -95,7 +98,7 @@ function patchUnlockFields(node) {
     if ("vip_use" in node) node.vip_use = 0;
     if ("vvip_use" in node) node.vvip_use = 0;
     if ("ad_status" in node) node.ad_status = 0;
-    if ("is_vip" in node && !("user_type" in node)) node.is_vip = 0;
+    if ("is_vip" in node && !("user_type" in node)) node.is_vip = 1;
     if ("lock" in node) node.lock = 0;
     if ("need_vip" in node) node.need_vip = 0;
     if ("need_ad" in node) node.need_ad = 0;
@@ -221,7 +224,13 @@ function handleKkApi(url, body) {
 }
 
 function handleHostApi(url, body) {
-    if (host.includes("kk.weshine.im") || host.includes("kk-flow.weshine.im")) {
+    if (
+        host.includes("kk.weshine.im") ||
+        host.includes("kk-flow.weshine.im") ||
+        host.includes("misc.weshineapp.com") ||
+        host.includes("kkmob.weshineapp.com") ||
+        host.includes("kkgif.weshine.im")
+    ) {
         return handleKkApi(url, body);
     }
     if (host.includes("pangolin-sdk-toutiao")) {
