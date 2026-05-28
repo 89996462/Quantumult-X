@@ -13,12 +13,19 @@ TG频道群：https://t.me/py996
 [rewrite_local]
 
 ^https?:\/\/api[0-9]*\.[^\/]+\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/luolidad.js
-
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
 
 ^https?:\/\/api-dc-prod-002\.cyou\/ - reject
 
+^https?:\/\/api-dc-prod-003\.cyou\/ - reject
+
 ^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
+
+^https?:\/\/api-dc2-prod-03\.cyou\/ - reject
+
+^https?:\/\/api-dc-prod-004\.cyou\/ - reject
+
+^https?:\/\/api-dc2-prod-04\.cyou\/ - reject
 
 [filter-local]
 
@@ -26,15 +33,24 @@ TG频道群：https://t.me/py996
 
 ^https?:\/\/api-dc-prod-002\.cyou\/ - reject
 
+^https?:\/\/api-dc-prod-003\.cyou\/ - reject
+
 ^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
+
+^https?:\/\/api-dc2-prod-03\.cyou\/ - reject
+
+^https?:\/\/api-dc-prod-004\.cyou\/ - reject
+
+^https?:\/\/api-dc2-prod-04\.cyou\/ - reject
+
+^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
 [mitm]
 
-hostname = api2.zwcdjpuxs.cc, *.zwcdjpuxs.cc, *.zwntwhem.cc, p1.lpegbefn.com
+hostname = api2.saggopnvv.cc, *.saggopnvv.cc, new.ywbvrkwk.cn, *.ywbvrkwk.cn, p3.sbpmlenma.cc, *.sbpmlenma.cc
 
 *******************************/
 
-// hjsq-noad-140641 v1
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -45,13 +61,22 @@ var CryptoJS;
   }
 })();
 
-const AES_KEY = "0nxG8fD2kqlrEv5M";
-const AES_IV = "u0r3GcsdXsYmAfhT";
-const SIGN_SALT = "Ibc2blO8BHHUbRF9w4YiEC9mcOL8oBtt";
-const AD_KEY_RE = /^(ads_screen|ads_pop|floating_ads|banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|pop_ads|ads_list|pop_app_ads|pop_bottom_ads|proxy_banner_1|proxy_banner_2|layer_ads)$/i;
+const AES_KEY = "6c3a9ad53fae2796";
+const AES_IV = "1ae94ef112d431cd";
+const SIGN_SALT = "6c3a9ad53fae2796";
+const API_VER = "v1";
+const AD_KEY_RE = /^(ads_screen|ads_pop|floating_ads|floating|banner|mv_banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|pop_ads|ads_list|pop_app_ads|pop_bottom_ads|proxy_banner_1|proxy_banner_2|layer_ads|icon_list|app_grid|grid_apps|splash_ads|boot_ads|advertising_list|ad_banner|home_banner)$/i;
+const AD_BLOCK_STYLE_RE = /grid|宫格|icon[\-_]?grid|apps?[\-_]?grid|app[\-_]?list|导流/i;
 
 function calcSign(dataB64, timestamp) {
-  var raw = "data=" + dataB64 + "&timestamp=" + timestamp + SIGN_SALT;
+  var raw =
+    "_ver=" +
+    API_VER +
+    "&data=" +
+    dataB64 +
+    "&timestamp=" +
+    timestamp +
+    SIGN_SALT;
   var shaHex = CryptoJS.SHA256(raw).toString();
   return CryptoJS.MD5(CryptoJS.enc.Utf8.parse(shaHex)).toString();
 }
@@ -104,6 +129,39 @@ function stripAds(node) {
   }
 }
 
+function isAdResourceItem(item) {
+  if (!item || typeof item !== "object") return false;
+  var fields = [
+    "icon",
+    "img_url",
+    "img",
+    "img_url_full",
+    "link_url",
+    "url",
+    "cover",
+    "thumb",
+    "image",
+  ];
+  for (var i = 0; i < fields.length; i++) {
+    var v = item[fields[i]];
+    if (typeof v === "string" && /\/upload_01\/ads\//i.test(v)) return true;
+  }
+  return false;
+}
+
+function stripAdResourceItems(node) {
+  if (Array.isArray(node)) {
+    for (var i = node.length - 1; i >= 0; i--) {
+      if (isAdResourceItem(node[i])) node.splice(i, 1);
+      else stripAdResourceItems(node[i]);
+    }
+    return;
+  }
+  if (!node || typeof node !== "object") return;
+  var keys = Object.keys(node);
+  for (var j = 0; j < keys.length; j++) stripAdResourceItems(node[keys[j]]);
+}
+
 function stripAdvertiseItems(node) {
   if (Array.isArray(node)) {
     for (var i = node.length - 1; i >= 0; i--) {
@@ -121,16 +179,88 @@ function stripAdvertiseItems(node) {
   for (var j = 0; j < keys.length; j++) stripAdvertiseItems(node[keys[j]]);
 }
 
+function shouldRemoveConstructBlock(block) {
+  if (!block || typeof block !== "object") return false;
+  if (block.advertise_code || block.is_ad === 1 || block.is_ad === true || block.is_ad === "1")
+    return true;
+  var style = String(
+    block.style || block.type || block.show_type || block.layout || block.module_type || ""
+  ).toLowerCase();
+  if (AD_BLOCK_STYLE_RE.test(style)) return true;
+  var key = String(block.key || block.slot_key || block.position_key || "");
+  if (AD_KEY_RE.test(key)) return true;
+  var name = String(block.name || block.title || block.module_name || "");
+  if (/导流|广告|推广|app/i.test(name) && /grid|宫格|icon|apps/i.test(style + name)) return true;
+  return false;
+}
+
+function stripConstructBlocks(node) {
+  if (Array.isArray(node)) {
+    for (var i = node.length - 1; i >= 0; i--) {
+      if (shouldRemoveConstructBlock(node[i])) node.splice(i, 1);
+      else stripConstructBlocks(node[i]);
+    }
+    return;
+  }
+  if (!node || typeof node !== "object") return;
+  var keys = Object.keys(node);
+  for (var j = 0; j < keys.length; j++) {
+    var k = keys[j];
+    if (
+      /^(list|items|blocks|modules|construct_list|tab_list|rows|sections)$/i.test(k) &&
+      Array.isArray(node[k])
+    ) {
+      var arr = node[k];
+      for (var n = arr.length - 1; n >= 0; n--) {
+        if (shouldRemoveConstructBlock(arr[n])) arr.splice(n, 1);
+      }
+    }
+    stripConstructBlocks(node[k]);
+  }
+}
+
+function patchByUrl(payload, reqUrl) {
+  if (!reqUrl) return;
+  if (reqUrl.indexOf("/api/home/banner") >= 0) {
+    if (payload.data !== undefined) payload.data = Array.isArray(payload.data) ? [] : {};
+    return;
+  }
+  if (reqUrl.indexOf("/api/home/getconfig") >= 0) {
+    stripAds(payload);
+    if (payload.data) stripAds(payload.data);
+    return;
+  }
+  if (reqUrl.indexOf("/api/tabnew/list_construct") >= 0) {
+    stripConstructBlocks(payload);
+    if (payload.data) {
+      stripConstructBlocks(payload.data);
+      stripAdvertiseItems(payload.data);
+      stripAdResourceItems(payload.data);
+      if (Array.isArray(payload.data.banner)) payload.data.banner = [];
+    }
+    return;
+  }
+  if (reqUrl.indexOf("/api/navigation/index") >= 0) {
+    stripAds(payload);
+    if (payload.data) stripAds(payload.data);
+    return;
+  }
+  if (reqUrl.indexOf("getADsByPosition") >= 0 && payload.data && Array.isArray(payload.data)) {
+    payload.data = [];
+  }
+}
+
 function patchPayload(payload, reqUrl) {
   stripAds(payload);
   if (payload.data) {
     stripAds(payload.data);
     stripAdvertiseItems(payload.data);
+    stripAdResourceItems(payload.data);
   }
   stripAdvertiseItems(payload);
-  if (reqUrl && reqUrl.indexOf("getADsByPosition") >= 0 && payload.data && Array.isArray(payload.data)) {
-    payload.data = [];
-  }
+  stripAdResourceItems(payload);
+  stripConstructBlocks(payload);
+  patchByUrl(payload, reqUrl);
 }
 
 function processBody(body, reqUrl) {
@@ -158,11 +288,36 @@ function processBody(body, reqUrl) {
   }
 }
 
-var body = $response.body;
-var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
-var newBody = processBody(body, reqUrl);
-if (newBody) {
-  $done({ body: newBody, headers: $response.headers });
-} else {
-  $done();
+function getResponseBody() {
+  if (typeof $response === "undefined") return "";
+  if ($response.body) return $response.body;
+  if ($response.bodyBytes) {
+    try {
+      var bytes =
+        $response.bodyBytes instanceof Uint8Array
+          ? $response.bodyBytes
+          : new Uint8Array($response.bodyBytes);
+      var out = "";
+      for (var i = 0; i < bytes.length; i++) out += String.fromCharCode(bytes[i]);
+      return out;
+    } catch (e) {}
+  }
+  return "";
 }
+
+function finishDone(newBody) {
+  if (!newBody) {
+    $done();
+    return;
+  }
+  var headers = Object.assign({}, $response.headers || {});
+  delete headers["Content-Encoding"];
+  delete headers["content-encoding"];
+  delete headers["Content-Length"];
+  delete headers["content-length"];
+  $done({ body: newBody, headers: headers });
+}
+
+var body = getResponseBody();
+var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
+finishDone(processBody(body, reqUrl));
