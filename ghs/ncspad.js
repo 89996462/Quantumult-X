@@ -1,20 +1,19 @@
 /*******************************
 
-脚本名称:  奶茶视频（NeonOrb）去广告
+脚本名称:  奶茶视频-去广告
 脚本功能:  去广告 — 底部仅保留「首页 / 头等舱 / 我的」
-特别说明:  基于抓包 2026-05-28-224356（newapisd.bhw6gjej.com）
-特别说明:  须开启 MITM；本文件为配置+脚本一体，导入此文件即可
-特别说明:  本脚本仅净化广告，不含任何会员/充值改写
-更新时间:  2026-5-28
-使用声明:  ⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+更新时间：2026-5-29
+TG反馈群：https://t.me/plus8889
+TG频道群：https://t.me/py996
+使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************
 
 [rewrite_local]
 
-^https?:\/\/newapisd\.[^\/]+\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ncsp.js
+^https?:\/\/newapisd\.[^\/]+\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ncspad.js
 
-^https?:\/\/newapicf\.[^\/]+\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ncsp.js
+^https?:\/\/newapicf\.[^\/]+\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ncspad.js
 
 ^https?:\/\/[^\/]+\/uploads\/images\/ads\/ - reject
 
@@ -41,7 +40,6 @@ var CryptoJS;
 const AES_KEY = "AyNC6UCkCiyZKye3";
 const AES_IV = "SbpletilYwx0MqqU";
 const SIGN_SALT = "iAj79jAAq5fDzH6kpeeTKF15b7EzxHik";
-// NeonOrb / 奶茶视频 CodePush v12：PSW_AES_KEY + AES_IV_PARAMETER，CBC 直接解完整 d
 const AES_KEY_D = "xPxo2S5uGPhKHx5g";
 const AES_IV_D = "0a1b2c3d4e5f6789";
 const AD_KEY_RE =
