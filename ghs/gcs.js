@@ -44,6 +44,33 @@ TG频道群：https://t.me/py996
 hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, imgwm5zye4k.hzzhxcy.com, *.hzzhxcy.com, www.xinjiaodu.top, api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, line.emzjnoho.xyz, *.emzjnoho.xyz, yypwa4.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc, goc.emscuelainka.com
 
 *******************************/
+^https?:\/\/[^\/]+\/uploads\/images\/ads\/ - reject
+
+^https?:\/\/goc\.emscuelainka\.com\/_glaxy_c08_\/.*\/ads - reject
+
+^https?:\/\/ap\.dc-report\.cc\/ - reject
+
+^https?:\/\/api-dc-prod-002\.cyou\/ - reject
+
+^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
+
+[filter-local]
+
+^https?:\/\/[^\/]+\/uploads\/images\/ads\/ - reject
+
+^https?:\/\/goc\.emscuelainka\.com\/_glaxy_c08_\/.*\/ads - reject
+
+^https?:\/\/ap\.dc-report\.cc\/ - reject
+
+^https?:\/\/api-dc-prod-002\.cyou\/ - reject
+
+^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
+
+[mitm]
+
+hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, imgwm5zye4k.hzzhxcy.com, *.hzzhxcy.com, www.xinjiaodu.top, api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, line.emzjnoho.xyz, *.emzjnoho.xyz, yypwa4.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc, goc.emscuelainka.com
+
+*******************************/
 
 // 91-去广告-20260528 (capture 2026-05-28-185408 + 51动漫 line.* 兼容)
 var CryptoJS;
@@ -277,11 +304,12 @@ function patchPayloadByUrl(payload, reqUrl) {
   if (u.indexOf("/api/operation/ads") >= 0) {
     if (Array.isArray(payload)) return [];
     if (payload && typeof payload === "object") {
-      var keys = Object.keys(payload);
-      for (var i = 0; i < keys.length; i++) {
-        var k = keys[i];
-        payload[k] = Array.isArray(payload[k]) ? [] : {};
+      if (payload.data !== undefined) {
+        payload.data = Array.isArray(payload.data) ? [] : {};
       }
+      if (typeof payload.code !== "number") payload.code = 200;
+      if (typeof payload.name !== "string") payload.name = "OK";
+      if (typeof payload.message !== "string") payload.message = "成功";
     }
     return;
   }
