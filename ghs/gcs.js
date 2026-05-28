@@ -263,13 +263,17 @@ function patchVipData(data) {
   }
   if (data.pay_domains && Array.isArray(data.pay_domains)) data.pay_domains = [];
   if (data.pay_setting && typeof data.pay_setting === "object") {
-    if (data.pay_setting.vip && typeof data.pay_setting.vip === "object") data.pay_setting.vip = {};
-    if (data.pay_setting.point && typeof data.pay_setting.point === "object") data.pay_setting.point = {};
+    if (data.pay_setting.vip && typeof data.pay_setting.vip === "object") {
+      data.pay_setting.vip.back = data.pay_setting.vip.back || "";
+    }
+    if (data.pay_setting.point && typeof data.pay_setting.point === "object") {
+      data.pay_setting.point.back = data.pay_setting.point.back || "";
+    }
   }
   var u = data.user;
   if (!u || typeof u !== "object") return;
   u.is_vip = true;
-  u.is_vip_micro_video = true;
+  u.is_vip_micro_video = 1;
   u.vip_type = 4;
   u.vip_level = 4;
   if (u.viplevel && typeof u.viplevel === "object") {
@@ -279,7 +283,19 @@ function patchVipData(data) {
     u.viplevel.download_times = 999999;
     u.viplevel.micro_views_number = 999999;
   }
-  u.vip_show_type = 1;
+  if (u.vip_show_type && typeof u.vip_show_type === "object") {
+    u.vip_show_type.show_type = 1;
+    u.vip_show_type.types = 4;
+    u.vip_show_type.types_desc = "永久VIP";
+    if (typeof u.vip_show_type.title !== "string") u.vip_show_type.title = "";
+  } else {
+    u.vip_show_type = {
+      title: "",
+      show_type: 1,
+      types: 4,
+      types_desc: "永久VIP",
+    };
+  }
   u.wait_pay_url = "";
   u.vipend_date = "2099-12-31 23:59:59";
   u.vip_temp_views = 999999;
