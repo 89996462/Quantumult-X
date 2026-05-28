@@ -12,7 +12,7 @@ TG频道群：https://t.me/py996
   
 [rewrite_local]
 
-^https?:\/\/newapi[a-z]{2}\.[^\/]+\/api\/(user\/read|bootstrap|content\/getNav|points\/info|points\/point_limited\/info|points\/point_limited\/remind|points\/exchange\/config|video\/playNew(?:\/\d+)?|video\/details(?:\/\d+)?) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gcs.js
+^https?:\/\/newapi[a-z]{2}\.[^\/]+\/api\/(user\/read|bootstrap|content\/getNav|points\/info|points\/point_limited\/info|points\/point_limited\/remind|points\/exchange\/config|video\/playNew(?:\/\d+)?|video\/details(?:\/\d+)?) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/ncsp.js
 
 [mitm]
 
