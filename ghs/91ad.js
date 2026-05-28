@@ -1,8 +1,8 @@
 /******************************
 
-脚本功能：91——解锁—金币视频—VIP视频-去广告
-特别说明：必须开启HTTP抓包,并且关闭其他的脚本
-更新时间：2026—5-28
+脚本功能：去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
+特别说明：必须开启 HTTP 抓包，并关闭同域其它去广告脚本
+更新时间：2026-5-28
 TG反馈群：https://t.me/plus8889
 TG频道群：https://t.me/py996
 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -11,7 +11,9 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https?:\/\/api[0-9]*\.[^\/]+\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/91ad.js
+^https?:\/\/(?:api[0-9]*|line)\.[^\/]+\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/91ad.js
+
+^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
 
@@ -21,6 +23,8 @@ TG频道群：https://t.me/py996
 
 [filter-local]
 
+^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
+
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
 
 ^https?:\/\/api-dc-prod-002\.cyou\/ - reject
@@ -29,7 +33,7 @@ TG频道群：https://t.me/py996
 
 [mitm]
 
-hostname = api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, yypwa1.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc
+hostname = api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, line.emzjnoho.xyz, *.emzjnoho.xyz, yypwa4.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc
 
 *******************************/
 
@@ -102,11 +106,18 @@ function stripAds(node) {
   }
 }
 
+function isAdResourceItem(item) {
+  if (!item || typeof item !== "object") return false;
+  if (item.advertise_code || item.ad_slot_name) return true;
+  var urls = [item.resource_url, item.link_url, item.img_url, item.image, item.icon].join("|");
+  return /\/upload_01\/ads\/|\/ads\/\d{4}/i.test(urls);
+}
+
 function stripAdvertiseItems(node) {
   if (Array.isArray(node)) {
     for (var i = node.length - 1; i >= 0; i--) {
       var item = node[i];
-      if (item && typeof item === "object" && (item.advertise_code || item.ad_slot_name)) {
+      if (isAdResourceItem(item)) {
         node.splice(i, 1);
       } else {
         stripAdvertiseItems(item);
