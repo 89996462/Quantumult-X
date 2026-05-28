@@ -33,8 +33,7 @@ TG频道群：https://t.me/py996
 
 [mitm]
 
-hostname = api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, line.emzjnoho.xyz, *.emzjnoho.xyz, yypwa4.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc
-
+hostname = api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, line.jqeecefr.org, *.jqeecefr.org, line.emzjnoho.xyz, *.emzjnoho.xyz, new.ywbvrkwk.cn, *.ywbvrkwk.cn, yypwa4.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc
 *******************************/
 
 var CryptoJS;
