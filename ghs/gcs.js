@@ -1,4 +1,4 @@
-// 奶茶视频 NeonOrb 会员 · 远程脚本 · 勿含 [rewrite_local]
+
 
 var CryptoJS;
 (function () {
@@ -13,7 +13,6 @@ var CryptoJS;
 const AES_KEY = "AyNC6UCkCiyZKye3";
 const AES_IV = "SbpletilYwx0MqqU";
 const SIGN_SALT = "iAj79jAAq5fDzH6kpeeTKF15b7EzxHik";
-// NeonOrb / 奶茶视频 CodePush v12：PSW_AES_KEY + AES_IV_PARAMETER，CBC 直接解完整 d
 const AES_KEY_D = "xPxo2S5uGPhKHx5g";
 const AES_IV_D = "0a1b2c3d4e5f6789";
 const AD_KEY_RE =
@@ -89,6 +88,7 @@ function patchLevel(lv) {
 }
 
 var COIN = 999999;
+var NICKNAME = "彭于晏Crack";
 
 function patchWallet(o) {
   if (!o || typeof o !== "object") return;
@@ -101,6 +101,7 @@ function patchWallet(o) {
 
 function patchUser(u) {
   if (!u || typeof u !== "object") return;
+  u.nickname = NICKNAME;
   u.is_vip = true;
   u.is_vip_micro_video = 1;
   u.vip_type = 4;
@@ -120,6 +121,7 @@ function patchUser(u) {
   u.temp_views = COIN;
   u.temp_cache = COIN;
   u.micro_view_left_today = COIN;
+  u.sage_times_left_today = COIN;
   u.integral = COIN;
   patchLevel(u.level);
   patchLevel(u.viplevel);
@@ -205,6 +207,7 @@ function patchPayload(payload, url) {
     if (typeof d.user_is_vip !== "undefined") d.user_is_vip = 1;
     if (typeof d.user_vip_level === "number") d.user_vip_level = 4;
     patchUser(d.user);
+    if (typeof d.point_reward === "number") d.point_reward = COIN;
     if (d.contentSetting && typeof d.contentSetting === "object") {
       d.contentSetting.content_video_pay_switch = 0;
       d.contentSetting.ios_content_video_pay_switch = 0;
