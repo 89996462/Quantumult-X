@@ -9,7 +9,7 @@ TG反馈群：https://t.me/plus8889
 TG频道群：https://t.me/py996
 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
-*******************************/
+*******************************
 
 [rewrite_local]
 
@@ -45,6 +45,7 @@ hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, imgwm5zye4k.hzzhxcy.com, *.hzz
 
 *******************************/
 
+// 91-去广告-20260528 (capture 2026-05-28-185408 + 51动漫 line.* 兼容)
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -58,10 +59,11 @@ var CryptoJS;
 const AES_KEY = "AyNC6UCkCiyZKye3";
 const AES_IV = "SbpletilYwx0MqqU";
 const SIGN_SALT = "iAj79jAAq5fDzH6kpeeTKF15b7EzxHik";
+// NeonOrb / 奶茶视频 CodePush v12：PSW_AES_KEY + AES_IV_PARAMETER，CBC 直接解完整 d
 const AES_KEY_D = "xPxo2S5uGPhKHx5g";
 const AES_IV_D = "0a1b2c3d4e5f6789";
 const AD_KEY_RE =
-  /^(ads_screen|ads_pop|floating_ads|floating|float_window|float_ad|banner|banners|mv_banner|home_banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|splash_ad|splash|open_screen|startup_ad|active_pop|pop_ads|ads_list|pop_app_ads|pop_bottom_ads|popAds1?|notice|proxy_banner_1|proxy_banner_2|layer_ads|operation_ads|quick_entry|grid_list|diamond_list)$/i;
+  /^(ads_screen|ads_pop|floating_ads|floating|float_window|float_ad|banner|banners|mv_banner|home_banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|splash_ad|splash|open_screen|startup_ad|active_pop|pop_ads|ads_list|pop_app_ads|pop_bottom_ads|popAds1?|notice|proxy_banner_1|proxy_banner_2|layer_ads|operation_ads|quick_entry|grid_list|diamond_list|recommend_list|icon_list|entry_list|nav_ad_list)$/i;
 
 function calcSign(dataB64, timestamp) {
   var raw = "data=" + dataB64 + "&timestamp=" + timestamp + SIGN_SALT;
@@ -233,6 +235,43 @@ function patchElements(node) {
   }
 }
 
+function patchVipData(data) {
+  if (!data || typeof data !== "object") return;
+  if (typeof data.user_vip_level === "number") data.user_vip_level = 4;
+  if (data.contentSetting && typeof data.contentSetting === "object") {
+    if (typeof data.contentSetting.content_video_pay_switch === "number") {
+      data.contentSetting.content_video_pay_switch = 0;
+    }
+    if (typeof data.contentSetting.ios_content_video_pay_switch === "number") {
+      data.contentSetting.ios_content_video_pay_switch = 0;
+    }
+    if (typeof data.contentSetting.limit_jump_pay === "number") {
+      data.contentSetting.limit_jump_pay = 0;
+    }
+  }
+  if (data.pay_domains && Array.isArray(data.pay_domains)) data.pay_domains = [];
+  if (data.pay_setting && typeof data.pay_setting === "object") {
+    if (data.pay_setting.vip && typeof data.pay_setting.vip === "object") data.pay_setting.vip = {};
+    if (data.pay_setting.point && typeof data.pay_setting.point === "object") data.pay_setting.point = {};
+  }
+  var u = data.user;
+  if (!u || typeof u !== "object") return;
+  u.is_vip = 1;
+  u.is_vip_micro_video = 1;
+  u.vip_type = 4;
+  u.vip_level = 4;
+  u.viplevel = 4;
+  u.vip_show_type = 1;
+  u.wait_pay_url = "";
+  u.vipend_date = "2099-12-31 23:59:59";
+  u.vip_temp_views = 999999;
+  u.vip_temp_cache = 999999;
+  u.vip_view_limit_today = 999999;
+  u.vip_view_times_today = 0;
+  u.vip_cache_limit_today = 999999;
+  u.vip_cache_times_today = 0;
+}
+
 function patchPayloadByUrl(payload, reqUrl) {
   var u = reqUrl || "";
   if (u.indexOf("/api/operation/ads") >= 0) {
@@ -248,9 +287,27 @@ function patchPayloadByUrl(payload, reqUrl) {
   }
   if (u.indexOf("/api/popup/") >= 0) {
     stripAds(payload);
+    if (payload.data && payload.data.recommend_list && Array.isArray(payload.data.recommend_list)) {
+      payload.data.recommend_list = [];
+    }
     if (payload.list) payload.list = [];
     if (payload.pop_list) payload.pop_list = [];
     if (payload.popup) payload.popup = null;
+    return;
+  }
+  if (u.indexOf("/api/vip/charge_success_list") >= 0) {
+    if (payload.data && Array.isArray(payload.data)) payload.data = [];
+    return;
+  }
+  if (u.indexOf("/api/product/indexNew") >= 0) {
+    if (payload.data && typeof payload.data === "object") {
+      if (Array.isArray(payload.data.products_first)) payload.data.products_first = [];
+      if (Array.isArray(payload.data.products_renew)) payload.data.products_renew = [];
+    }
+    return;
+  }
+  if (u.indexOf("/api/product/getUserCoupons") >= 0) {
+    if (payload.data && Array.isArray(payload.data)) payload.data = [];
     return;
   }
   patchPayload(payload, reqUrl);
@@ -268,6 +325,7 @@ function patchPayload(payload, reqUrl) {
     stripAds(d);
     stripBannerFields(d);
     stripAdvertiseItems(d);
+    patchVipData(d);
   }
   stripBannerFields(payload);
   stripAdvertiseItems(payload);
