@@ -1,13 +1,14 @@
 /*******************************
 
-脚本名称:  奶茶视频（NeonOrb）去广告+会员
-脚本功能:  去广告 — 底部仅保留「首页 / 头等舱 / 我的」；解锁 VIP / 金币视频
+脚本名称:  奶茶视频（NeonOrb）去广告
+脚本功能:  去广告 — 底部仅保留「首页 / 头等舱 / 我的」
 特别说明:  基于抓包 2026-05-28-224356（newapisd.bhw6gjej.com）
 特别说明:  须开启 MITM；本文件为配置+脚本一体，导入此文件即可
-更新时间:  2026-5-29
+特别说明:  本脚本仅净化广告，不含任何会员/充值改写
+更新时间:  2026-5-28
 使用声明:  ⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
-*******************************/
+*******************************
 
 [rewrite_local]
 
@@ -26,6 +27,7 @@
 hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, newapicf.sbhq85ek.com, *.sbhq85ek.com, imgwm5zye4k.hzzhxcy.com, *.hzzhxcy.com
 
 *******************************/
+
 
 var CryptoJS;
 (function () {
@@ -311,146 +313,6 @@ function patchElements(node) {
   }
 }
 
-var COIN = 999999;
-var NICKNAME = "彭于晏Crack";
-
-function patchLevel(lv) {
-  if (!lv || typeof lv !== "object") return;
-  lv.level_id = 4;
-  lv.level_name = "永久VIP";
-  lv.views_number = COIN;
-  lv.download_times = COIN;
-  lv.micro_views_number = COIN;
-}
-
-function patchWallet(o) {
-  if (!o || typeof o !== "object") return;
-  o.point = COIN;
-  o.point_income_total = COIN;
-  if (typeof o.point_expired === "number") o.point_expired = 0;
-  if (typeof o.day_point === "number") o.day_point = COIN;
-  if (typeof o.day_point_left === "number") o.day_point_left = COIN;
-}
-
-function patchUser(u) {
-  if (!u || typeof u !== "object") return;
-  u.nickname = NICKNAME;
-  u.is_vip = true;
-  u.is_vip_micro_video = 1;
-  u.vip_type = 4;
-  u.vip_level = 4;
-  u.vipend_date = "2099-12-31 23:59:59";
-  u.wait_pay_url = "";
-  u.view_limit_today = COIN;
-  u.view_times_today = 0;
-  u.cache_limit_today = COIN;
-  u.cache_times_today = 0;
-  u.vip_view_limit_today = COIN;
-  u.vip_view_times_today = 0;
-  u.vip_cache_limit_today = COIN;
-  u.vip_cache_times_today = 0;
-  u.vip_temp_views = COIN;
-  u.vip_temp_cache = COIN;
-  u.temp_views = COIN;
-  u.temp_cache = COIN;
-  u.micro_view_left_today = COIN;
-  u.sage_times_left_today = COIN;
-  u.integral = COIN;
-  patchLevel(u.level);
-  patchLevel(u.viplevel);
-  patchWallet(u.point);
-  patchWallet(u.coin);
-  patchWallet(u.diamond);
-  patchWallet(u.bonus);
-  if (u.vip_show_type && typeof u.vip_show_type === "object") {
-    u.vip_show_type.show_type = 1;
-    u.vip_show_type.types = 4;
-    u.vip_show_type.types_desc = "永久VIP";
-    if (typeof u.vip_show_type.title !== "string") u.vip_show_type.title = "";
-  } else {
-    u.vip_show_type = { title: "", show_type: 1, types: 4, types_desc: "永久VIP" };
-  }
-}
-
-function patchMovie(m) {
-  if (!m || typeof m !== "object") return;
-  m.is_free = 1;
-  m.play_ctrl = 0;
-  m.p_status = 0;
-  m.flag = "FREE";
-  m.is_point = 0;
-  m.points = 0;
-  m.free_vip_level = "1,2,3,4,5,6";
-  m.p_start_time = "00:00:00";
-  m.p_end_time = "00:00:00";
-}
-
-function patchPlayNew(d) {
-  if (!d || typeof d !== "object") return;
-  d.user_is_vip = true;
-  d.is_p = 0;
-  d.is_point = 0;
-  d.points = 0;
-  delete d.p_time;
-}
-
-function patchVideoDetails(d) {
-  if (!d || typeof d !== "object") return;
-  patchMovie(d.movie);
-}
-
-function patchPoints(d) {
-  if (!d || typeof d !== "object") return;
-  if (d.points && typeof d.points === "object") patchWallet(d.points);
-  if (d.price && typeof d.price === "object") {
-    if (typeof d.price.change_view_today_price === "number") {
-      d.price.change_view_today_price = 0;
-    }
-  }
-}
-
-function patchContentNav(d) {
-  if (!d || typeof d !== "object") return;
-  d.user_vip_level = 4;
-  if (d.contentSetting && typeof d.contentSetting === "object") {
-    d.contentSetting.content_video_pay_switch = "0";
-    d.contentSetting.ios_content_video_pay_switch = "0";
-    d.contentSetting.limit_jump_pay = "";
-    d.contentSetting.trial_limit_time = "999999";
-  }
-}
-
-function patchVipPayload(payload, reqUrl) {
-  if (!payload || !payload.data) return;
-  var d = payload.data;
-  var u = reqUrl || "";
-  var ep = "";
-  var m = u.match(/\/api\/([^?]+)/);
-  if (m) ep = m[1];
-  if (ep.indexOf("video/playNew") === 0 || (d.url && typeof d.is_p !== "undefined")) {
-    patchPlayNew(d);
-  } else if (ep.indexOf("video/details") === 0 || d.movie) {
-    patchVideoDetails(d);
-  } else if (ep.indexOf("points/") === 0 || (d.points && d.points.user_id)) {
-    patchPoints(d);
-  } else if (ep.indexOf("content/getNav") === 0 || d.contentNav) {
-    patchContentNav(d);
-  } else {
-    if (typeof d.user_is_vip !== "undefined") d.user_is_vip = 1;
-    if (typeof d.user_vip_level === "number") d.user_vip_level = 4;
-    patchUser(d.user);
-    if (typeof d.point_reward === "number") d.point_reward = COIN;
-    if (d.contentSetting && typeof d.contentSetting === "object") {
-      d.contentSetting.content_video_pay_switch = 0;
-      d.contentSetting.ios_content_video_pay_switch = 0;
-      d.contentSetting.limit_jump_pay = 0;
-    }
-    if (d.video_preview_switch !== undefined) d.video_preview_switch = 0;
-    if (d.ios_pay_switch !== undefined) d.ios_pay_switch = 0;
-    if (d.pay_entrance_vip !== undefined) d.pay_entrance_vip = 0;
-  }
-}
-
 function patchPayloadByUrl(payload, reqUrl) {
   var u = reqUrl || "";
   if (u.indexOf("/api/operation/ads") >= 0) {
@@ -504,31 +366,8 @@ function patchPayloadByUrl(payload, reqUrl) {
     clearResponseSignature(payload);
     return;
   }
-  if (u.indexOf("/api/user/read") >= 0) {
-    patchVipPayload(payload, reqUrl);
-    clearResponseSignature(payload);
-    return;
-  }
-  if (u.indexOf("/api/video/playNew") >= 0 || u.indexOf("/api/video/details") >= 0) {
-    patchVipPayload(payload, reqUrl);
-    clearResponseSignature(payload);
-    return;
-  }
-  if (u.indexOf("/api/points/") >= 0) {
-    patchVipPayload(payload, reqUrl);
-    clearResponseSignature(payload);
-    return;
-  }
-  if (u.indexOf("/api/content/getNav") >= 0) {
-    patchVipPayload(payload, reqUrl);
-    clearResponseSignature(payload);
-    return;
-  }
   if (u.indexOf("/api/bootstrap") >= 0) {
-    if (payload.data && typeof payload.data === "object") {
-      patchBootstrapData(payload.data);
-      patchVipPayload(payload, reqUrl);
-    }
+    if (payload.data && typeof payload.data === "object") patchBootstrapData(payload.data);
     clearResponseSignature(payload);
     return;
   }
