@@ -1,54 +1,16 @@
-/******************************
+/*******************************
 
-脚本功能：去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
-特别说明：基于抓包 2026-05-28-185408（NeonOrb / newapisd.bhw6gjej.com）
-特别说明：必须开启 MITM 与 HTTP 抓包，并关闭同域其它去广告脚本
-特别说明：远程测试用 gcs.js（须为纯 JS，见 Downloads/ghs/gcs.js 上传至仓库）
-特别说明：本地备用 91-去广告-20260528-pure.js（勿用带注释头的本文件作 script-response-body）
-更新时间：2026-5-28
-TG反馈群：https://t.me/plus8889
-TG频道群：https://t.me/py996
-使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
-
-*******************************
 
 [rewrite_local]
 
-^https?:\/\/(?:api[0-9]*|line)\.[^\/]+\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gcs.js
-
-^https?:\/\/newapisd\.[^\/]+\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gcs.js
-
-^https?:\/\/newapicf\.[^\/]+\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gcs.js
-
-^https?:\/\/[^\/]+\/uploads\/images\/ads\/ - reject
-
-^https?:\/\/goc\.emscuelainka\.com\/_glaxy_c08_\/.*\/ads - reject
-
-^https?:\/\/ap\.dc-report\.cc\/ - reject
-
-^https?:\/\/api-dc-prod-002\.cyou\/ - reject
-
-^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
-
-[filter-local]
-
-^https?:\/\/[^\/]+\/uploads\/images\/ads\/ - reject
-
-^https?:\/\/goc\.emscuelainka\.com\/_glaxy_c08_\/.*\/ads - reject
-
-^https?:\/\/ap\.dc-report\.cc\/ - reject
-
-^https?:\/\/api-dc-prod-002\.cyou\/ - reject
-
-^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
+^https?:\/\/newapi[a-z]{2}\.[^\/]+\/api\/(user\/read|bootstrap|content\/getNav|points\/info|points\/point_limited\/info|points\/point_limited\/remind|points\/exchange\/config|video\/playNew(?:\/\d+)?|video\/details(?:\/\d+)?) url script-response-body, requires-body=1 https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gcs.js
 
 [mitm]
 
-hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, newapicf.sbhq85ek.com, *.sbhq85ek.com, imgwm5zye4k.hzzhxcy.com, *.hzzhxcy.com, www.xinjiaodu.top, api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, line.emzjnoho.xyz, *.emzjnoho.xyz, yypwa4.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc, goc.emscuelainka.com
+hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, newapicf.sbhq85ek.com, *.sbhq85ek.com
 
 *******************************/
 
-// 91-去广告-20260528 (capture 2026-05-28-185408 + 51动漫 line.* 兼容)
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -120,326 +82,171 @@ function encryptPayloadD(plainText) {
   }).toString();
 }
 
-function isAdResourceItem(item) {
-  if (!item || typeof item !== "object") return false;
-  var u =
-    item.image ||
-    item.img ||
-    item.cover ||
-    item.pic ||
-    item.url ||
-    item.link ||
-    item.jump_url ||
-    "";
-  if (typeof u !== "string") return false;
-  return /\/uploads\/images\/ads\//i.test(u) || /\/ads\//i.test(u);
+function decryptD(b64) {
+  return decryptPayloadD(b64);
 }
 
-function stripAdListItems(node) {
-  if (Array.isArray(node)) {
-    for (var i = node.length - 1; i >= 0; i--) {
-      if (isAdResourceItem(node[i])) node.splice(i, 1);
-      else stripAdListItems(node[i]);
-    }
-    return;
-  }
-  if (!node || typeof node !== "object") return;
-  var keys = Object.keys(node);
-  for (var j = 0; j < keys.length; j++) stripAdListItems(node[keys[j]]);
+function encryptD(text) {
+  return encryptPayloadD(text);
 }
 
-function stripAds(node) {
-  if (Array.isArray(node)) {
-    for (var i = 0; i < node.length; i++) stripAds(node[i]);
-    return;
-  }
-  if (!node || typeof node !== "object") return;
-  var keys = Object.keys(node);
-  for (var j = 0; j < keys.length; j++) {
-    var k = keys[j];
-    var v = node[k];
-    if (AD_KEY_RE.test(k)) {
-      if (k === "ads") node[k] = null;
-      else node[k] = Array.isArray(v) ? [] : v && typeof v === "object" ? {} : v;
-      continue;
-    }
-    if (/^ads_/i.test(k) && (Array.isArray(v) || (v && typeof v === "object"))) {
-      node[k] = Array.isArray(v) ? [] : {};
-      continue;
-    }
-    if (/^proxy_banner/i.test(k) && Array.isArray(v)) {
-      node[k] = [];
-      continue;
-    }
-    stripAds(v);
-  }
+function patchLevel(lv) {
+  if (!lv || typeof lv !== "object") return;
+  lv.level_id = 4;
+  lv.level_name = "永久VIP";
+  lv.views_number = 999999;
+  lv.download_times = 999999;
+  lv.micro_views_number = 999999;
 }
 
-function stripAdvertiseItems(node) {
-  if (Array.isArray(node)) {
-    for (var i = node.length - 1; i >= 0; i--) {
-      var item = node[i];
-      if (
-        item &&
-        typeof item === "object" &&
-        (item.advertise_code ||
-          item.ad_slot_name ||
-          item.is_ad ||
-          item.ad_type ||
-          isAdResourceItem(item))
-      ) {
-        node.splice(i, 1);
-      } else {
-        stripAdvertiseItems(item);
-      }
-    }
-    return;
-  }
-  if (!node || typeof node !== "object") return;
-  var keys = Object.keys(node);
-  for (var j = 0; j < keys.length; j++) stripAdvertiseItems(node[keys[j]]);
+var COIN = 999999;
+
+function patchWallet(o) {
+  if (!o || typeof o !== "object") return;
+  o.point = COIN;
+  o.point_income_total = COIN;
+  if (typeof o.point_expired === "number") o.point_expired = 0;
+  if (typeof o.day_point === "number") o.day_point = COIN;
+  if (typeof o.day_point_left === "number") o.day_point_left = COIN;
 }
 
-function stripBannerFields(node) {
-  if (Array.isArray(node)) {
-    for (var i = 0; i < node.length; i++) stripBannerFields(node[i]);
-    return;
-  }
-  if (!node || typeof node !== "object") return;
-  var keys = Object.keys(node);
-  for (var j = 0; j < keys.length; j++) {
-    var k = keys[j];
-    var v = node[k];
-    if (k === "banner" && (Array.isArray(v) || (v && typeof v === "object"))) {
-      node[k] = Array.isArray(v) ? [] : {};
-      continue;
-    }
-    stripBannerFields(v);
-  }
-}
-
-function patchHomeConfig(data) {
-  if (!data || typeof data !== "object") return;
-  data.ads = null;
-  data.popAds = [];
-  data.popAds1 = [];
-  data.pop_app_ads = [];
-  data.pop_bottom_ads = [];
-  if (data.notice) data.notice = {};
-}
-
-function patchElements(node) {
-  if (!node || typeof node !== "object") return;
-  if (Array.isArray(node.elements)) {
-    for (var i = 0; i < node.elements.length; i++) patchElements(node.elements[i]);
-  }
-  if (Array.isArray(node.value)) {
-    stripAdvertiseItems(node.value);
-  }
-}
-
-function shouldPatchVip(reqUrl) {
-  var u = reqUrl || "";
-  return (
-    u.indexOf("/api/user/read") >= 0 ||
-    u.indexOf("/api/bootstrap") >= 0 ||
-    u.indexOf("/api/v1/homeIndex") >= 0
-  );
-}
-
-function patchVipData(data) {
-  if (!data || typeof data !== "object") return;
-  if (typeof data.user_vip_level === "number") data.user_vip_level = 4;
-  if (data.contentSetting && typeof data.contentSetting === "object") {
-    if (typeof data.contentSetting.content_video_pay_switch === "number") {
-      data.contentSetting.content_video_pay_switch = 0;
-    }
-    if (typeof data.contentSetting.ios_content_video_pay_switch === "number") {
-      data.contentSetting.ios_content_video_pay_switch = 0;
-    }
-    if (typeof data.contentSetting.limit_jump_pay === "number") {
-      data.contentSetting.limit_jump_pay = 0;
-    }
-  }
-  if (data.pay_domains && Array.isArray(data.pay_domains)) data.pay_domains = [];
-  if (data.pay_setting && typeof data.pay_setting === "object") {
-    if (data.pay_setting.vip && typeof data.pay_setting.vip === "object") {
-      data.pay_setting.vip.back = data.pay_setting.vip.back || "";
-    }
-    if (data.pay_setting.point && typeof data.pay_setting.point === "object") {
-      data.pay_setting.point.back = data.pay_setting.point.back || "";
-    }
-  }
-  var u = data.user;
+function patchUser(u) {
   if (!u || typeof u !== "object") return;
   u.is_vip = true;
   u.is_vip_micro_video = 1;
   u.vip_type = 4;
   u.vip_level = 4;
-  if (u.viplevel && typeof u.viplevel === "object") {
-    u.viplevel.level_id = 4;
-    u.viplevel.level_name = "永久VIP";
-    u.viplevel.views_number = 999999;
-    u.viplevel.download_times = 999999;
-    u.viplevel.micro_views_number = 999999;
-  }
+  u.vipend_date = "2099-12-31 23:59:59";
+  u.wait_pay_url = "";
+  u.view_limit_today = COIN;
+  u.view_times_today = 0;
+  u.cache_limit_today = COIN;
+  u.cache_times_today = 0;
+  u.vip_view_limit_today = COIN;
+  u.vip_view_times_today = 0;
+  u.vip_cache_limit_today = COIN;
+  u.vip_cache_times_today = 0;
+  u.vip_temp_views = COIN;
+  u.vip_temp_cache = COIN;
+  u.temp_views = COIN;
+  u.temp_cache = COIN;
+  u.micro_view_left_today = COIN;
+  u.integral = COIN;
+  patchLevel(u.level);
+  patchLevel(u.viplevel);
+  patchWallet(u.point);
+  patchWallet(u.coin);
+  patchWallet(u.diamond);
+  patchWallet(u.bonus);
   if (u.vip_show_type && typeof u.vip_show_type === "object") {
     u.vip_show_type.show_type = 1;
     u.vip_show_type.types = 4;
     u.vip_show_type.types_desc = "永久VIP";
     if (typeof u.vip_show_type.title !== "string") u.vip_show_type.title = "";
   } else {
-    u.vip_show_type = {
-      title: "",
-      show_type: 1,
-      types: 4,
-      types_desc: "永久VIP",
-    };
-  }
-  u.wait_pay_url = "";
-  u.vipend_date = "2099-12-31 23:59:59";
-  u.vip_temp_views = 999999;
-  u.vip_temp_cache = 999999;
-  u.vip_view_limit_today = 999999;
-  u.vip_view_times_today = 0;
-  u.vip_cache_limit_today = 999999;
-  u.vip_cache_times_today = 0;
-}
-
-function patchPayloadByUrl(payload, reqUrl) {
-  var u = reqUrl || "";
-  if (u.indexOf("/api/operation/ads") >= 0) {
-    if (Array.isArray(payload)) return [];
-    if (payload && typeof payload === "object") {
-      if (payload.data !== undefined) {
-        if (Array.isArray(payload.data)) {
-          payload.data = [];
-        } else if (payload.data && typeof payload.data === "object") {
-          payload.data.ads = [];
-          if (Array.isArray(payload.data.list)) payload.data.list = [];
-        } else {
-          payload.data = {};
-        }
-      }
-      if (typeof payload.code !== "number") payload.code = 200;
-      if (typeof payload.name !== "string") payload.name = "OK";
-      if (typeof payload.message !== "string") payload.message = "成功";
-    }
-    return;
-  }
-  if (u.indexOf("/api/rich_new/") >= 0) {
-    if (payload.data && typeof payload.data === "object") {
-      payload.data.ads = null;
-      payload.data.ad_list = [];
-      stripAdListItems(payload.data);
-    }
-    stripAds(payload);
-    return;
-  }
-  if (u.indexOf("/api/popup/") >= 0) {
-    stripAds(payload);
-    if (payload.data && payload.data.recommend_list && Array.isArray(payload.data.recommend_list)) {
-      payload.data.recommend_list = [];
-    }
-    if (payload.list) payload.list = [];
-    if (payload.pop_list) payload.pop_list = [];
-    if (payload.popup) payload.popup = null;
-    return;
-  }
-  if (u.indexOf("/api/vip/charge_success_list") >= 0) {
-    if (payload.data && Array.isArray(payload.data)) payload.data = [];
-    return;
-  }
-  if (u.indexOf("/api/product/indexNew") >= 0) {
-    if (payload.data && typeof payload.data === "object") {
-      if (Array.isArray(payload.data.products_first)) payload.data.products_first = [];
-      if (Array.isArray(payload.data.products_renew)) payload.data.products_renew = [];
-    }
-    return;
-  }
-  if (u.indexOf("/api/product/getUserCoupons") >= 0) {
-    if (payload.data && Array.isArray(payload.data)) payload.data = [];
-    return;
-  }
-  patchPayload(payload, reqUrl);
-}
-
-function patchPayload(payload, reqUrl) {
-  stripAds(payload);
-  stripAdListItems(payload);
-  if (payload.data) {
-    var d = payload.data;
-    if (typeof d === "object" && !Array.isArray(d)) {
-      patchHomeConfig(d);
-      patchElements(d);
-    }
-    stripAds(d);
-    stripBannerFields(d);
-    stripAdvertiseItems(d);
-    if (shouldPatchVip(reqUrl)) patchVipData(d);
-  }
-  stripBannerFields(payload);
-  stripAdvertiseItems(payload);
-  if (reqUrl && reqUrl.indexOf("getADsByPosition") >= 0) {
-    if (Array.isArray(payload.data)) payload.data = [];
-    else if (payload.data && typeof payload.data === "object") payload.data = [];
+    u.vip_show_type = { title: "", show_type: 1, types: 4, types_desc: "永久VIP" };
   }
 }
 
-function processDWrapper(body, reqUrl) {
-  if (!body || body.indexOf('"d"') < 0 || !hasDKey()) return null;
-  var wrapper;
-  try {
-    wrapper = JSON.parse(body);
-  } catch (e) {
-    return null;
-  }
-  if (!wrapper || typeof wrapper.d !== "string" || !wrapper.d) return null;
-  try {
-    var plain = decryptPayloadD(wrapper.d);
-    var payload = JSON.parse(plain);
-    patchPayloadByUrl(payload, reqUrl || "");
-    wrapper.d = encryptPayloadD(JSON.stringify(payload));
-    return JSON.stringify(wrapper);
-  } catch (e) {
-    return null;
+function patchMovie(m) {
+  if (!m || typeof m !== "object") return;
+  m.is_free = 1;
+  m.play_ctrl = 0;
+  m.p_status = 0;
+  m.flag = "FREE";
+  m.is_point = 0;
+  m.points = 0;
+  m.free_vip_level = "1,2,3,4,5,6";
+  m.p_start_time = "00:00:00";
+  m.p_end_time = "00:00:00";
+}
+
+function patchPlayNew(d) {
+  if (!d || typeof d !== "object") return;
+  d.user_is_vip = true;
+  d.is_p = 0;
+  d.is_point = 0;
+  d.points = 0;
+  delete d.p_time;
+}
+
+function patchVideoDetails(d) {
+  if (!d || typeof d !== "object") return;
+  patchMovie(d.movie);
+}
+
+function patchPoints(d) {
+  if (!d || typeof d !== "object") return;
+  if (d.points && typeof d.points === "object") patchWallet(d.points);
+  if (d.price && typeof d.price === "object") {
+    if (typeof d.price.change_view_today_price === "number") {
+      d.price.change_view_today_price = 0;
+    }
   }
 }
 
-function processBody(body, reqUrl) {
-  if (!body || body.indexOf('"data"') < 0) return null;
-  var wrapper;
-  try {
-    wrapper = JSON.parse(body);
-  } catch (e) {
-    return null;
+function patchContentNav(d) {
+  if (!d || typeof d !== "object") return;
+  d.user_vip_level = 4;
+  if (d.contentSetting && typeof d.contentSetting === "object") {
+    d.contentSetting.content_video_pay_switch = "0";
+    d.contentSetting.ios_content_video_pay_switch = "0";
+    d.contentSetting.limit_jump_pay = "";
+    d.contentSetting.trial_limit_time = "999999";
   }
-  if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return null;
-  try {
-    var plain = decryptPayload(wrapper.data);
-    var payload = JSON.parse(plain);
-    patchPayload(payload, reqUrl || "");
-    var newData = encryptPayload(JSON.stringify(payload));
-    var ts = String(wrapper.timestamp || Math.floor(Date.now() / 1000));
-    wrapper.data = newData;
-    wrapper.timestamp = ts;
-    wrapper.sign = calcSign(newData, ts);
-    if (wrapper.errcode !== undefined) wrapper.errcode = 0;
-    return JSON.stringify(wrapper);
-  } catch (e) {
-    return null;
+}
+
+function patchPayload(payload, url) {
+  if (!payload || !payload.data) return;
+  var d = payload.data;
+  var ep = "";
+  if (url) {
+    var m = url.match(/\/api\/([^?]+)/);
+    if (m) ep = m[1];
   }
+  if (ep.indexOf("video/playNew") === 0 || (d.url && typeof d.is_p !== "undefined")) {
+    patchPlayNew(d);
+  } else if (ep.indexOf("video/details") === 0 || d.movie) {
+    patchVideoDetails(d);
+  } else if (ep.indexOf("points/") === 0 || (d.points && d.points.user_id)) {
+    patchPoints(d);
+  } else if (ep.indexOf("content/getNav") === 0 || d.contentNav) {
+    patchContentNav(d);
+  } else {
+    if (typeof d.user_is_vip !== "undefined") d.user_is_vip = 1;
+    if (typeof d.user_vip_level === "number") d.user_vip_level = 4;
+    patchUser(d.user);
+    if (d.contentSetting && typeof d.contentSetting === "object") {
+      d.contentSetting.content_video_pay_switch = 0;
+      d.contentSetting.ios_content_video_pay_switch = 0;
+      d.contentSetting.limit_jump_pay = 0;
+    }
+    if (d.video_preview_switch !== undefined) d.video_preview_switch = 0;
+    if (d.ios_pay_switch !== undefined) d.ios_pay_switch = 0;
+    if (d.pay_entrance_vip !== undefined) d.pay_entrance_vip = 0;
+  }
+  delete payload.s;
 }
 
 try {
   var body = $response.body;
-  var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
-  var newBody = processDWrapper(body, reqUrl) || processBody(body, reqUrl);
-  if (newBody) {
-    $done({ body: newBody, headers: $response.headers });
-  } else {
+  if (typeof body !== "string") body = body ? String(body) : "";
+  var url = "";
+  if (typeof $request !== "undefined" && $request.url) url = $request.url;
+  if (!body || body.indexOf('"d"') < 0) {
     $done();
+  } else {
+    var w = JSON.parse(body);
+    if (w && w.d) {
+      var p = JSON.parse(decryptD(w.d));
+      patchPayload(p, url);
+      w.d = encryptD(JSON.stringify(p));
+      $done({ body: JSON.stringify(w) });
+    } else {
+      $done();
+    }
   }
 } catch (e) {
+  console.log("[naicha-vip] " + e);
   $done();
 }
