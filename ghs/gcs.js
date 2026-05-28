@@ -1,15 +1,4 @@
-/*******************************
-
-
-[rewrite_local]
-
-^https?:\/\/newapi[a-z]{2}\.[^\/]+\/api\/(user\/read|bootstrap|content\/getNav|points\/info|points\/point_limited\/info|points\/point_limited\/remind|points\/exchange\/config|video\/playNew(?:\/\d+)?|video\/details(?:\/\d+)?) url script-response-body, requires-body=1 https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gcs.js
-
-[mitm]
-
-hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, newapicf.sbhq85ek.com, *.sbhq85ek.com
-
-*******************************/
+// 奶茶视频 NeonOrb 会员 · 远程脚本 · 勿含 [rewrite_local]
 
 var CryptoJS;
 (function () {
