@@ -3,7 +3,8 @@
 脚本功能：去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
 特别说明：基于抓包 2026-05-28-185408（NeonOrb / newapisd.bhw6gjej.com）
 特别说明：必须开启 MITM 与 HTTP 抓包，并关闭同域其它去广告脚本
-特别说明：QX 请用 91-去广告-20260528-pure.js 作 script-response-body（勿用带注释头的本文件）
+特别说明：远程测试用 gcs.js（须为纯 JS，见 Downloads/ghs/gcs.js 上传至仓库）
+特别说明：本地备用 91-去广告-20260528-pure.js（勿用带注释头的本文件作 script-response-body）
 更新时间：2026-5-28
 TG反馈群：https://t.me/plus8889
 TG频道群：https://t.me/py996
@@ -17,6 +18,8 @@ TG频道群：https://t.me/py996
 
 ^https?:\/\/newapisd\.[^\/]+\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gcs.js
 
+^https?:\/\/newapicf\.[^\/]+\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gcs.js
+
 ^https?:\/\/[^\/]+\/uploads\/images\/ads\/ - reject
 
 ^https?:\/\/goc\.emscuelainka\.com\/_glaxy_c08_\/.*\/ads - reject
@@ -41,34 +44,7 @@ TG频道群：https://t.me/py996
 
 [mitm]
 
-hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, imgwm5zye4k.hzzhxcy.com, *.hzzhxcy.com, www.xinjiaodu.top, api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, line.emzjnoho.xyz, *.emzjnoho.xyz, yypwa4.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc, goc.emscuelainka.com
-
-*******************************/
-^https?:\/\/[^\/]+\/uploads\/images\/ads\/ - reject
-
-^https?:\/\/goc\.emscuelainka\.com\/_glaxy_c08_\/.*\/ads - reject
-
-^https?:\/\/ap\.dc-report\.cc\/ - reject
-
-^https?:\/\/api-dc-prod-002\.cyou\/ - reject
-
-^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
-
-[filter-local]
-
-^https?:\/\/[^\/]+\/uploads\/images\/ads\/ - reject
-
-^https?:\/\/goc\.emscuelainka\.com\/_glaxy_c08_\/.*\/ads - reject
-
-^https?:\/\/ap\.dc-report\.cc\/ - reject
-
-^https?:\/\/api-dc-prod-002\.cyou\/ - reject
-
-^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
-
-[mitm]
-
-hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, imgwm5zye4k.hzzhxcy.com, *.hzzhxcy.com, www.xinjiaodu.top, api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, line.emzjnoho.xyz, *.emzjnoho.xyz, yypwa4.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc, goc.emscuelainka.com
+hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, newapicf.sbhq85ek.com, *.sbhq85ek.com, imgwm5zye4k.hzzhxcy.com, *.hzzhxcy.com, www.xinjiaodu.top, api.axhwcxup.cc, *.axhwcxup.cc, line.axhwcxup.cc, line.emzjnoho.xyz, *.emzjnoho.xyz, yypwa4.aybvvkglr.com, *.aybvvkglr.com, ap.dc-report.cc, goc.emscuelainka.com
 
 *******************************/
 
@@ -262,6 +238,15 @@ function patchElements(node) {
   }
 }
 
+function shouldPatchVip(reqUrl) {
+  var u = reqUrl || "";
+  return (
+    u.indexOf("/api/user/read") >= 0 ||
+    u.indexOf("/api/bootstrap") >= 0 ||
+    u.indexOf("/api/v1/homeIndex") >= 0
+  );
+}
+
 function patchVipData(data) {
   if (!data || typeof data !== "object") return;
   if (typeof data.user_vip_level === "number") data.user_vip_level = 4;
@@ -283,11 +268,17 @@ function patchVipData(data) {
   }
   var u = data.user;
   if (!u || typeof u !== "object") return;
-  u.is_vip = 1;
-  u.is_vip_micro_video = 1;
+  u.is_vip = true;
+  u.is_vip_micro_video = true;
   u.vip_type = 4;
   u.vip_level = 4;
-  u.viplevel = 4;
+  if (u.viplevel && typeof u.viplevel === "object") {
+    u.viplevel.level_id = 4;
+    u.viplevel.level_name = "永久VIP";
+    u.viplevel.views_number = 999999;
+    u.viplevel.download_times = 999999;
+    u.viplevel.micro_views_number = 999999;
+  }
   u.vip_show_type = 1;
   u.wait_pay_url = "";
   u.vipend_date = "2099-12-31 23:59:59";
@@ -305,12 +296,28 @@ function patchPayloadByUrl(payload, reqUrl) {
     if (Array.isArray(payload)) return [];
     if (payload && typeof payload === "object") {
       if (payload.data !== undefined) {
-        payload.data = Array.isArray(payload.data) ? [] : {};
+        if (Array.isArray(payload.data)) {
+          payload.data = [];
+        } else if (payload.data && typeof payload.data === "object") {
+          payload.data.ads = [];
+          if (Array.isArray(payload.data.list)) payload.data.list = [];
+        } else {
+          payload.data = {};
+        }
       }
       if (typeof payload.code !== "number") payload.code = 200;
       if (typeof payload.name !== "string") payload.name = "OK";
       if (typeof payload.message !== "string") payload.message = "成功";
     }
+    return;
+  }
+  if (u.indexOf("/api/rich_new/") >= 0) {
+    if (payload.data && typeof payload.data === "object") {
+      payload.data.ads = null;
+      payload.data.ad_list = [];
+      stripAdListItems(payload.data);
+    }
+    stripAds(payload);
     return;
   }
   if (u.indexOf("/api/popup/") >= 0) {
@@ -353,7 +360,7 @@ function patchPayload(payload, reqUrl) {
     stripAds(d);
     stripBannerFields(d);
     stripAdvertiseItems(d);
-    patchVipData(d);
+    if (shouldPatchVip(reqUrl)) patchVipData(d);
   }
   stripBannerFields(payload);
   stripAdvertiseItems(payload);
@@ -408,11 +415,15 @@ function processBody(body, reqUrl) {
   }
 }
 
-var body = $response.body;
-var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
-var newBody = processDWrapper(body, reqUrl) || processBody(body, reqUrl);
-if (newBody) {
-  $done({ body: newBody, headers: $response.headers });
-} else {
+try {
+  var body = $response.body;
+  var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
+  var newBody = processDWrapper(body, reqUrl) || processBody(body, reqUrl);
+  if (newBody) {
+    $done({ body: newBody, headers: $response.headers });
+  } else {
+    $done();
+  }
+} catch (e) {
   $done();
 }
