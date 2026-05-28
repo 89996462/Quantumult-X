@@ -1,13 +1,12 @@
 /*******************************
 
-脚本名称:  奶茶视频（NeonOrb）去广告 — 一体版
-脚本功能:  去进入弹窗 — 去顶部16宫格 — 去首页Banner — 去信息流广告
+脚本名称:  奶茶视频（NeonOrb）去广告
+脚本功能:  去广告 — 底部仅保留「首页 / 头等舱 / 我的」
 特别说明:  基于抓包 2026-05-28-224356（newapisd.bhw6gjej.com）
-特别说明:  须开启 MITM；本脚本仅净化广告
-特别说明:  本文件已含配置与脚本体；不含会员改写
+特别说明:  须开启 MITM；本文件为配置+脚本一体，导入此文件即可
+特别说明:  本脚本仅净化广告，不含任何会员/充值改写
 更新时间:  2026-5-28
 使用声明:  ⚠️此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
-
 
 *******************************
 
@@ -28,6 +27,7 @@
 hostname = newapisd.bhw6gjej.com, *.bhw6gjej.com, newapicf.sbhq85ek.com, *.sbhq85ek.com, imgwm5zye4k.hzzhxcy.com, *.hzzhxcy.com
 
 *******************************/
+
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -251,12 +251,55 @@ function clearResponseSignature(payload) {
   }
 }
 
+var KEEP_BOTTOM_NAV_PAGE = {
+  homeIndex: 1,
+  superVip: 1,
+  userCenter: 1,
+};
+var HIDE_BOTTOM_NAV_PAGE = {
+  PandaGame: 1,
+  findGirl: 1,
+};
+
+function shouldKeepBottomNavItem(item) {
+  if (!item || typeof item !== "object") return false;
+  var page = item.page || item.route || "";
+  if (HIDE_BOTTOM_NAV_PAGE[page]) return false;
+  if (KEEP_BOTTOM_NAV_PAGE[page]) return true;
+  var name = item.nav_name || item.name || item.title || "";
+  if (name === "斗地主" || name === "约妹子") return false;
+  return name === "首页" || name === "头等舱" || name === "我的";
+}
+
+function patchBottomNavs(node) {
+  if (Array.isArray(node)) {
+    for (var i = 0; i < node.length; i++) patchBottomNavs(node[i]);
+    return;
+  }
+  if (!node || typeof node !== "object") return;
+  var keys = Object.keys(node);
+  for (var j = 0; j < keys.length; j++) {
+    var k = keys[j];
+    if (k === "bottom_navs" && Array.isArray(node[k])) {
+      var kept = [];
+      for (var n = 0; n < node[k].length; n++) {
+        if (shouldKeepBottomNavItem(node[k][n])) kept.push(node[k][n]);
+      }
+      node[k] = kept;
+      continue;
+    }
+    patchBottomNavs(node[k]);
+  }
+}
+
 function patchBootstrapData(data) {
   if (!data || typeof data !== "object") return;
   if (typeof data.ad_sdk_switch === "number") data.ad_sdk_switch = 0;
   if (typeof data.cj_pop_switch === "number") data.cj_pop_switch = 0;
+  if (typeof data.is_game_lobby_open === "number") data.is_game_lobby_open = 0;
   if (Array.isArray(data.ads)) data.ads = [];
   else if (data.ads && typeof data.ads === "object") data.ads = {};
+  patchBottomNavs(data);
 }
 
 function patchElements(node) {
@@ -334,6 +377,7 @@ function patchPayloadByUrl(payload, reqUrl) {
 function patchPayload(payload, reqUrl) {
   stripAds(payload);
   stripAdListItems(payload);
+  patchBottomNavs(payload);
   if (payload.data) {
     var d = payload.data;
     if (typeof d === "object" && !Array.isArray(d)) {
