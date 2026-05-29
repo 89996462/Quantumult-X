@@ -171,6 +171,42 @@ function stripAdvertiseItems(node) {
   for (var j = 0; j < keys.length; j++) stripAdvertiseItems(node[keys[j]]);
 }
 
+function patchFeedPayload(data) {
+  if (!data || typeof data !== "object") return;
+  stripMidStyleAds(data);
+  if (Array.isArray(data.list_ads)) data.list_ads = [];
+  if (Array.isArray(data.floating_ads)) data.floating_ads = [];
+  if (Array.isArray(data.banner)) {
+    data.banner = data.banner.filter(function (item) {
+      return !isAdItem(item);
+    });
+    if (data.banner.length === 0) delete data.banner;
+  }
+  if (Array.isArray(data.banners)) {
+    data.banners = data.banners.filter(function (item) {
+      return !isAdItem(item);
+    });
+    if (data.banners.length === 0) delete data.banners;
+  }
+}
+
+function patchCommunityPayload(data) {
+  if (!data || typeof data !== "object") return;
+  if ("ads" in data) data.ads = null;
+  if (Array.isArray(data.banner)) {
+    data.banner = data.banner.filter(function (item) {
+      return !isAdItem(item);
+    });
+    if (data.banner.length === 0) delete data.banner;
+  }
+  if (Array.isArray(data.banners)) {
+    data.banners = data.banners.filter(function (item) {
+      return !isAdItem(item);
+    });
+    if (data.banners.length === 0) delete data.banners;
+  }
+}
+
 function patchPayload(payload, reqUrl) {
   var root = payload;
   if (typeof payload === "string") {
@@ -179,6 +215,15 @@ function patchPayload(payload, reqUrl) {
     } catch (e) {
       return;
     }
+  }
+  var url = reqUrl || "";
+  if (/list_construct|discovery/.test(url)) {
+    if (root.data) patchFeedPayload(root.data);
+    return;
+  }
+  if (/community\/home/.test(url)) {
+    if (root.data) patchCommunityPayload(root.data);
+    return;
   }
   stripAds(root);
   if (root.data) {
