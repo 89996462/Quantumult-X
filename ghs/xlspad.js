@@ -37,11 +37,9 @@
 
 ^https?:\/\/[^\/]+\/hc237\/uploads\/default\/other\/ - reject
 
-^https?:\/\/b100\.vaowujej\.com\/ - reject
-
 [mitm]
 
-hostname = api.tsxtvams.com, *.tsxtvams.com, new.colisv.cn, *.colisv.cn, p3.bnxidvdqw.cc, *.bnxidvdqw.cc, 4fbb.vkcaskame.cc, *.vkcaskame.cc, api-dc-prod-006.cyou, api-dc2-prod-06.cyou, b100.vaowujej.com, *.vaowujej.com
+hostname = api.tsxtvams.com, *.tsxtvams.com, new.colisv.cn, *.colisv.cn, p3.bnxidvdqw.cc, *.bnxidvdqw.cc, 4fbb.vkcaskame.cc, *.vkcaskame.cc, api-dc-prod-006.cyou, api-dc2-prod-06.cyou
 
 *******************************/
 
@@ -60,9 +58,11 @@ const AES_IV = "e89225cfbbimgkcu";
 const SIGN_SALT = "cc88ddc9357ff461e08f047aedee692b";
 const GRID_APP_TITLES = /^(裸聊|抖阴|AI科技|成人抖阴|高端约炮|催情迷药|新葡京|PG棋牌|电子棋牌)$/i;
 const AD_KEY_RE = /^(ads_screen|ads_pop|floating_ads|floating|float_window|float_ad|banner|banners|mv_banner|home_banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|splash_ad|splash|open_screen|startup_ad|active_pop|pop_ads|pop_ads_v2|ads_list|pop_app_ads|pop_bottom_ads|popAds1?|notice|proxy_banner_1|proxy_banner_2|layer_ads|operation_ads|quick_entry|grid_list|diamond_list|recommend_list|icon_list|entry_list|nav_ad_list|list_ads)$/i;
+const SKIP_URL_RE = /clientsdkreport|imgUpload\.php|oauth|\/login|\/register|\/sign\//i;
 
-function calcSign(dataHex, timestamp) {
-  var raw = "client=pwa&data=" + dataHex + "&timestamp=" + timestamp + SIGN_SALT;
+function calcResponseSign(dataHex, timestamp, errcode) {
+  var ec = errcode !== undefined && errcode !== null ? errcode : 0;
+  var raw = "client=pwa&data=" + dataHex + "&errcode=" + ec + "&timestamp=" + timestamp + SIGN_SALT;
   var shaHex = CryptoJS.SHA256(raw).toString(CryptoJS.enc.Hex);
   return CryptoJS.MD5(shaHex).toString(CryptoJS.enc.Hex);
 }
@@ -132,6 +132,7 @@ function stripAds(node, depth) {
   var keys = Object.keys(node);
   for (var j = 0; j < keys.length; j++) {
     var k = keys[j];
+    if (k === "bury_point") continue;
     var v = node[k];
     if (AD_KEY_RE.test(k)) {
       if (k === "ads") node[k] = null;
@@ -225,7 +226,12 @@ function stringifyInnerPayload(payload) {
   return JSON.stringify(JSON.stringify(payload));
 }
 
+function shouldPatchUrl(reqUrl) {
+  return !(reqUrl && SKIP_URL_RE.test(reqUrl));
+}
+
 function processBody(body, reqUrl) {
+  if (!shouldPatchUrl(reqUrl || "")) return null;
   if (!body || body.indexOf('"data"') < 0) return null;
   var wrapper;
   try {
@@ -241,10 +247,11 @@ function processBody(body, reqUrl) {
     var newPlain = stringifyInnerPayload(payload);
     var newData = encryptPayload(newPlain);
     var ts = String(wrapper.timestamp || Math.floor(Date.now() / 1000));
+    var errcode = wrapper.errcode !== undefined ? wrapper.errcode : 0;
     wrapper.data = newData;
     wrapper.timestamp = ts;
-    wrapper.sign = calcSign(newData, ts);
-    if (wrapper.errcode !== undefined) wrapper.errcode = 0;
+    wrapper.errcode = errcode;
+    wrapper.sign = calcResponseSign(newData, ts, errcode);
     return JSON.stringify(wrapper);
   } catch (e) {
     return null;
