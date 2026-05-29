@@ -1,8 +1,7 @@
 /******************************
   
-# 脚本功能：50度灰——解锁—金币视频—VIP视频-净化广告
-# 特别说明：必须开启HTTP抓包，并且关闭其他脚本
-# 特别说明：捕获成功后，点击通知即可观看
+# 脚本功能：51动漫——去开屏—去弹窗—去16宫格导流—去Banner—去悬浮
+# 特别说明：仅改写广告相关 API，须开启 MITM
 # 脚本作者：彭于晏💞
 # 更新时间：2026-5-30
 # TG反馈群：https://t.me/plus8889
@@ -19,17 +18,9 @@
 
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
 
-^https?:\/\/api-dc-prod-00[26]\.cyou\/ - reject
-
-^https?:\/\/api-dc2-prod-0[26]\.cyou\/ - reject
-
 [filter-local]
 
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
-
-^https?:\/\/api-dc-prod-00[26]\.cyou\/ - reject
-
-^https?:\/\/api-dc2-prod-0[26]\.cyou\/ - reject
 
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
@@ -39,9 +30,23 @@
 
 [mitm]
 
-hostname = api.tsxtvams.com, *.tsxtvams.com, new.colisv.cn, *.colisv.cn, p3.bnxidvdqw.cc, *.bnxidvdqw.cc, 4fbb.vkcaskame.cc, *.vkcaskame.cc, api-dc-prod-006.cyou, api-dc2-prod-06.cyou
+hostname = api.tsxtvams.com, *.tsxtvams.com, new.colisv.cn, *.colisv.cn, p3.bnxidvdqw.cc, *.bnxidvdqw.cc, 4fbb.vkcaskame.cc, *.vkcaskame.cc, b100.vaowujej.com, *.vaowujej.com
 
 *******************************/
+
+var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
+var body = $response.body;
+var SKIP_URL_RE = /clientsdkreport|imgUpload\.php|oauth|\/login|\/register|\/sign\//i;
+var PATCH_URL_RE = /\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition|tabnew\/list_construct|tabnew\/discovery|community\/home)/i;
+
+function shouldPatchUrl(url) {
+  if (!url || SKIP_URL_RE.test(url)) return false;
+  return PATCH_URL_RE.test(url);
+}
+
+if (!shouldPatchUrl(reqUrl) || !body || body.indexOf('"data"') < 0) {
+  $done();
+} else try {
 
 var CryptoJS;
 (function () {
@@ -58,7 +63,6 @@ const AES_IV = "e89225cfbbimgkcu";
 const SIGN_SALT = "cc88ddc9357ff461e08f047aedee692b";
 const GRID_APP_TITLES = /^(裸聊|抖阴|AI科技|成人抖阴|高端约炮|催情迷药|新葡京|PG棋牌|电子棋牌)$/i;
 const AD_KEY_RE = /^(ads_screen|ads_pop|floating_ads|floating|float_window|float_ad|banner|banners|mv_banner|home_banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|splash_ad|splash|open_screen|startup_ad|active_pop|pop_ads|pop_ads_v2|ads_list|pop_app_ads|pop_bottom_ads|popAds1?|notice|proxy_banner_1|proxy_banner_2|layer_ads|operation_ads|quick_entry|grid_list|diamond_list|recommend_list|icon_list|entry_list|nav_ad_list|list_ads)$/i;
-const SKIP_URL_RE = /clientsdkreport|imgUpload\.php|oauth|\/login|\/register|\/sign\//i;
 
 function calcResponseSign(dataHex, timestamp, errcode) {
   var ec = errcode !== undefined && errcode !== null ? errcode : 0;
@@ -226,12 +230,7 @@ function stringifyInnerPayload(payload) {
   return JSON.stringify(JSON.stringify(payload));
 }
 
-function shouldPatchUrl(reqUrl) {
-  return !(reqUrl && SKIP_URL_RE.test(reqUrl));
-}
-
 function processBody(body, reqUrl) {
-  if (!shouldPatchUrl(reqUrl || "")) return null;
   if (!body || body.indexOf('"data"') < 0) return null;
   var wrapper;
   try {
@@ -243,7 +242,9 @@ function processBody(body, reqUrl) {
   try {
     var plain = decryptPayload(wrapper.data);
     var payload = parseInnerPayload(plain);
+    var snapshot = JSON.stringify(payload);
     patchPayload(payload, reqUrl || "");
+    if (JSON.stringify(payload) === snapshot) return null;
     var newPlain = stringifyInnerPayload(payload);
     var newData = encryptPayload(newPlain);
     var ts = String(wrapper.timestamp || Math.floor(Date.now() / 1000));
@@ -258,16 +259,17 @@ function processBody(body, reqUrl) {
   }
 }
 
-var body = $response.body;
-var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
 var newBody = processBody(body, reqUrl);
 if (newBody) {
-  var headers = $response.headers || {};
+  var headers = Object.assign({}, $response.headers || {});
   delete headers["Content-Encoding"];
   delete headers["content-encoding"];
   delete headers["Content-Length"];
   delete headers["content-length"];
   $done({ body: newBody, headers: headers });
 } else {
+  $done();
+}
+} catch (e) {
   $done();
 }
