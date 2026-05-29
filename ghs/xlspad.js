@@ -1,20 +1,19 @@
 /******************************
-  
+
 # 脚本功能：51动漫——去开屏—去弹窗—去16宫格导流—去Banner—去悬浮
-# 特别说明：仅改写广告相关 API，须开启 MITM
+# 特别说明：基于 2026-05-29 抓包适配，须开启 MITM
 # 脚本作者：彭于晏💞
 # 更新时间：2026-5-29
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
-# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️
+# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************
 
 [rewrite_local]
 
-^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition|tabnew\/list_construct|tabnew\/discovery) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
 
-^https?:\/\/ap\.dc-report\.cc\/ - reject
 
 [filter-local]
 
@@ -31,6 +30,7 @@
 hostname = api.tsxtvams.com, *.tsxtvams.com, new.colisv.cn, *.colisv.cn, p3.bnxidvdqw.cc, *.bnxidvdqw.cc, 4fbb.vkcaskame.cc, *.vkcaskame.cc, b100.vaowujej.com, *.vaowujej.com
 
 *******************************/
+
 
 var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
 var body = $response.body;
@@ -60,7 +60,9 @@ var CryptoJS;
 const AES_KEY = "cc88ddc9357ff461e08f047aedee692b";
 const AES_IV = "e89225cfbbimgkcu";
 const SIGN_SALT = "cc88ddc9357ff461e08f047aedee692b";
-const GRID_APP_TITLES = /^(裸聊|抖阴|AI科技|成人抖阴|高端约炮|催情迷药|新葡京|PG棋牌|电子棋牌)$/i;
+const GRID_APP_TITLES = /^(裸聊|抖阴|AI科技|成人抖阴|高端约炮|催情迷药|新葡京|PG棋牌|电子棋牌|男性约炮|发情增粗|开元棋牌|永利皇宫|英皇娱乐|PG游戏|PG电子|AI脱衣)$/i;
+const MID_STYLE_KEEP_RE = /^(同圈|签到|男色|直播|排行榜|男集|男漫|色界|小蓝片库)$/;
+const MID_STYLE_AD_TITLE_RE = /(约炮|增粗|棋牌|葡京|皇宫|永利|英皇|PG|电子|脱衣|抖阴|开元|裸聊|催情|迷药|AI科技|成人|娱乐|菠菜|彩票|麻豆|海角|可乐|性界|性巴克|onlyfans|fansly|油管|正能量|免费资源|男男社区|抖欲|决战僵)/i;
 const AD_KEY_RE = /^(ads_screen|ads_pop|floating_ads|floating|float_window|float_ad|banner|banners|mv_banner|home_banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|splash_ad|splash|open_screen|startup_ad|active_pop|pop_ads|pop_ads_v2|ads_list|pop_app_ads|pop_bottom_ads|popAds1?|notice|proxy_banner_1|proxy_banner_2|layer_ads|operation_ads|quick_entry|grid_list|diamond_list|recommend_list|icon_list|entry_list|nav_ad_list|list_ads)$/i;
 
 function calcResponseSign(dataHex, timestamp, errcode) {
@@ -109,8 +111,11 @@ function isAdItem(item) {
 function isMidStyleAd(item) {
   if (!item || typeof item !== "object") return false;
   var title = String(item.title || item.name || "").trim();
-  if (title && GRID_APP_TITLES.test(title)) return true;
+  if (title && MID_STYLE_KEEP_RE.test(title)) return false;
   if (item.advertise_code || item.advertise_location_code || item.ad_slot_name) return true;
+  if (title && (GRID_APP_TITLES.test(title) || MID_STYLE_AD_TITLE_RE.test(title))) return true;
+  var api = String(item.api || item.h5_url || item.url || item.link_url || "");
+  if (/^https?:\/\//i.test(api)) return true;
   return false;
 }
 
@@ -121,6 +126,7 @@ function stripMidStyleAds(node) {
     node[key] = node[key].filter(function (item) {
       return !isMidStyleAd(item);
     });
+    if (node[key].length === 0) delete node[key];
   });
 }
 
@@ -175,6 +181,7 @@ function patchFeedPayload(data) {
   stripMidStyleAds(data);
   if (Array.isArray(data.list_ads)) data.list_ads = [];
   if (Array.isArray(data.floating_ads)) data.floating_ads = [];
+  // 推荐页顶部导流宫格来自 banner（约 70+ 条），不是 mid_style_recommend
   if (Array.isArray(data.banner)) {
     data.banner = data.banner.filter(function (item) {
       return !isAdItem(item);
