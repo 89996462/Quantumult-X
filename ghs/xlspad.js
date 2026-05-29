@@ -3,7 +3,7 @@
 # 脚本功能：51动漫——去开屏—去弹窗—去16宫格导流—去Banner—去悬浮
 # 特别说明：仅改写广告相关 API，须开启 MITM
 # 脚本作者：彭于晏💞
-# 更新时间：2026-5-30
+# 更新时间：2026-5-29
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️
@@ -12,9 +12,13 @@
 
 [rewrite_local]
 
-^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition) url https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
 
-^https?:\/\/api[0-9]*\.[^\/]+\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+^https?:\/\/api[0-9]*\.[^\/]+\/api\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+
+# 若推荐/发现页出现 16 宫格导流或 Banner 广告，可取消下行注释（会增加加载耗时）
+# ^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/tabnew\/(list_construct|discovery) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+# ^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/community\/home url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
 
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
 
@@ -37,11 +41,12 @@ hostname = api.tsxtvams.com, *.tsxtvams.com, new.colisv.cn, *.colisv.cn, p3.bnxi
 var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
 var body = $response.body;
 var SKIP_URL_RE = /clientsdkreport|imgUpload\.php|oauth|\/login|\/register|\/sign\//i;
-var PATCH_URL_RE = /\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition|tabnew\/list_construct|tabnew\/discovery|community\/home)/i;
+var PATCH_URL_RE = /\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition)/i;
+var FEED_PATCH_URL_RE = /\/api\/(tabnew\/list_construct|tabnew\/discovery|community\/home)/i;
 
 function shouldPatchUrl(url) {
   if (!url || SKIP_URL_RE.test(url)) return false;
-  return PATCH_URL_RE.test(url);
+  return PATCH_URL_RE.test(url) || FEED_PATCH_URL_RE.test(url);
 }
 
 if (!shouldPatchUrl(reqUrl) || !body || body.indexOf('"data"') < 0) {
