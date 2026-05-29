@@ -1,9 +1,9 @@
 /******************************
   
-# 脚本功能：51动漫——去开屏—去弹窗—去16宫格导流—去Banner—去悬浮
+# 脚本功能：禁漫天堂——解锁—金币视频—VIP视频-净化广告-漫画无解
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
-# 更新时间：2026-5-29
+# 更新时间：2026-5-30
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -38,7 +38,7 @@ hostname = api2.fzijhmqj.cc, *.fzijhmqj.cc, p2.vlmrffdge.com, *.vlmrffdge.com, n
 
 *******************************/
 
-// 51动漫-noad v1
+
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
