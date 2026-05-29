@@ -12,7 +12,7 @@
 
 [rewrite_local]
 
-^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition) url https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
 
 ^https?:\/\/api[0-9]*\.[^\/]+\/api\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
 
