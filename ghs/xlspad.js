@@ -14,12 +14,6 @@
 
 ^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
 
-^https?:\/\/api[0-9]*\.[^\/]+\/api\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
-
-# 若推荐/发现页出现 16 宫格导流或 Banner 广告，可取消下行注释（会增加加载耗时）
-# ^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/tabnew\/(list_construct|discovery) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
-# ^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/community\/home url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
-
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
 
 [filter-local]
