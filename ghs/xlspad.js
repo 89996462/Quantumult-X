@@ -1,8 +1,8 @@
 /******************************
 
 # 脚本功能：51动漫——去开屏—去弹窗—去16宫格导流—去Banner—去悬浮
-# 特别说明：基于 2026-05-29 抓包适配，须开启 MITM
-# list_construct 包体大，QX 脚本超时建议 ≥10s（设置-脚本-脚本超时）
+# 特别说明：推荐页不改写 list_construct（与独家/发现等 Tab 一致），保证视频稳定
+# 开屏/弹窗/悬浮仍由 getConfig 等接口处理
 # 脚本作者：彭于晏💞
 # 更新时间：2026-5-29
 # TG反馈群：https://t.me/plus8889
@@ -13,8 +13,12 @@
 
 [rewrite_local]
 
-^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition|tabnew\/list_construct) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/(home\/getConfig|home\/getOpenAdsAndVersion|getADsByPosition) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
 
+# 改写 list_construct 可去推荐页顶部宫格，但易导致推荐 Tab 无视频，默认关闭
+# ^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/tabnew\/list_construct url script-response-body 51动漫-noad-20260529.js
+
+# ^https?:\/\/api[0-9]*\.[^\/]+\/pwa\.php\/api\/community\/home url script-response-body 51动漫-noad-20260529.js
 
 [filter-local]
 
@@ -222,7 +226,6 @@ function patchFeedPayload(data) {
   stripMidStyleAds(data);
   if (Array.isArray(data.list_ads)) data.list_ads = [];
   if (Array.isArray(data.floating_ads)) data.floating_ads = [];
-  // 推荐页顶部大宫格 = banner（70+ 导流）；须删字段，勿留 []（部分版本会挡住 bot_style_one）
   if (Array.isArray(data.banner)) {
     data.banner = data.banner.filter(function (item) {
       return !isAdItem(item);
