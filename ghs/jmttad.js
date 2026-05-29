@@ -1,9 +1,9 @@
 /******************************
   
-# 脚本功能：禁漫天堂——解锁—金币视频—VIP视频-净化广告-漫画无解
+# 脚本功能：51动漫——去开屏—去弹窗—去16宫格导流—去Banner—去悬浮
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
-# 更新时间：2026-5-30
+# 更新时间：2026-5-29
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -28,13 +28,17 @@
 
 ^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
 
+^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
+
+^https?:\/\/b100\.vaowujej\.com\/ - reject
+
 [mitm]
 
-hostname = api2.zwcdjpuxs.cc, *.zwcdjpuxs.cc, *.zwntwhem.cc, p1.lpegbefn.com
+hostname = api2.fzijhmqj.cc, *.fzijhmqj.cc, p2.vlmrffdge.com, *.vlmrffdge.com, new.pqpgoaya.cn, *.pqpgoaya.cn, b100.vaowujej.com, *.vaowujej.com
 
 *******************************/
 
-// hjsq-noad-140641 v1
+// 51动漫-noad v1
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -45,13 +49,14 @@ var CryptoJS;
   }
 })();
 
-const AES_KEY = "0nxG8fD2kqlrEv5M";
-const AES_IV = "u0r3GcsdXsYmAfhT";
-const SIGN_SALT = "Ibc2blO8BHHUbRF9w4YiEC9mcOL8oBtt";
-const AD_KEY_RE = /^(ads_screen|ads_pop|floating_ads|banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|pop_ads|ads_list|pop_app_ads|pop_bottom_ads|proxy_banner_1|proxy_banner_2|layer_ads)$/i;
+const AES_KEY = "d1c157917be8e275";
+const AES_IV = "df2b70485274b292";
+const SIGN_SALT = "d1c157917be8e275";
+const AD_KEY_RE = /^(ads_screen|ads_pop|floating_ads|floating_ai|banner|activity_banner|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|ads|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|pop_ads|ads_list|pop_app_ads|pop_bottom_ads|proxy_banner_1|proxy_banner_2|layer_ads|agent_ads|mid_style_recommend|mid_style_category|mid_style_up|run_light)$/i;
 
-function calcSign(dataB64, timestamp) {
-  var raw = "data=" + dataB64 + "&timestamp=" + timestamp + SIGN_SALT;
+function calcSign(dataB64, timestamp, ver) {
+  var v = ver || "v1";
+  var raw = "_ver=" + v + "&data=" + dataB64 + "&timestamp=" + timestamp + SIGN_SALT;
   var shaHex = CryptoJS.SHA256(raw).toString();
   return CryptoJS.MD5(CryptoJS.enc.Utf8.parse(shaHex)).toString();
 }
@@ -89,6 +94,7 @@ function stripAds(node) {
     var v = node[k];
     if (AD_KEY_RE.test(k)) {
       if (k === "ads") node[k] = null;
+      else if (k === "floating_ai") node[k] = "0";
       else node[k] = Array.isArray(v) ? [] : v && typeof v === "object" ? {} : v;
       continue;
     }
@@ -100,6 +106,10 @@ function stripAds(node) {
       node[k] = [];
       continue;
     }
+    if (/^mid_style_/i.test(k) && Array.isArray(v)) {
+      node[k] = [];
+      continue;
+    }
     stripAds(v);
   }
 }
@@ -108,7 +118,11 @@ function stripAdvertiseItems(node) {
   if (Array.isArray(node)) {
     for (var i = node.length - 1; i >= 0; i--) {
       var item = node[i];
-      if (item && typeof item === "object" && item.advertise_code) {
+      if (
+        item &&
+        typeof item === "object" &&
+        (item.advertise_code || item.ad_type || item.ad_slot_name)
+      ) {
         node.splice(i, 1);
       } else {
         stripAdvertiseItems(item);
@@ -148,9 +162,10 @@ function processBody(body, reqUrl) {
     patchPayload(payload, reqUrl || "");
     var newData = encryptPayload(JSON.stringify(payload));
     var ts = String(wrapper.timestamp || Math.floor(Date.now() / 1000));
+    var ver = wrapper._ver || "v1";
     wrapper.data = newData;
     wrapper.timestamp = ts;
-    wrapper.sign = calcSign(newData, ts);
+    wrapper.sign = calcSign(newData, ts, ver);
     if (wrapper.errcode !== undefined) wrapper.errcode = 0;
     return JSON.stringify(wrapper);
   } catch (e) {
@@ -162,7 +177,12 @@ var body = $response.body;
 var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
 var newBody = processBody(body, reqUrl);
 if (newBody) {
-  $done({ body: newBody, headers: $response.headers });
+  var headers = $response.headers || {};
+  delete headers["Content-Encoding"];
+  delete headers["content-encoding"];
+  delete headers["Content-Length"];
+  delete headers["content-length"];
+  $done({ body: newBody, headers: headers });
 } else {
   $done();
 }
