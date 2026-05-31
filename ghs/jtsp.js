@@ -1,7 +1,7 @@
 /******************************
 
 脚本功能：奶茶视频 - 解锁VIP（纯会员，不含去广告）
-数据来源：抓包 2026-05-31-113950
+数据来源：抓包 2026-05-31-114940
 长视频/短视频次数：9999
 更新时间：2026-5-31
 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！
@@ -10,11 +10,14 @@
 
 [rewrite_local]
 
-# 会员专用（getKey 必须劫持；勿与去广告脚本同时启用）
-^https?:\/\/[^\/]+\.(fit|app|my)(:\d+)?\/(wxuser\/key\/getKey|wxuser\/user\/info\/(getUser|register|activeLogin|tokenLogin)|wxuser\/user\/sys\/(appConfigList|sysConfigList)) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/jtsp.js
+# getKey 请求阶段：QX 的 script-response-body 拿不到 $request.body，必须加这一条
+^https?:\/\/[^\/]+\.(fit|app|my)(:\d+)?\/wxuser\/key\/getKey url script-request-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/jtsp.js
+
+# 会员 + 试看解锁（抓包 2026-05-31-114940）
+^https?:\/\/[^\/]+\.(fit|app|my)(:\d+)?\/(wxuser\/key\/getKey|wxuser\/user\/info\/(getUser|getUserVip|register|activeLogin|tokenLogin)|wxuser\/user\/sys\/(appConfigList|sysConfigList)|iqiyi\/media\/longer\/info\/detail|iqiyi\/media\/user\/look\/) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/jtsp.js
 
 [mitm]
-hostname = *.05gdmiz.fit, *.ezhbcsx.fit, *.k58z3gl.my, *.9axfvb8.fit, *.e5z78kz.fit, *.47s1ri1.fit, *.fzmhe5lai.app, bp7jul0.05gdmiz.fit, 11vg1mr.ezhbcsx.fit, 8non608.k58z3gl.my, l4f5xk6.9axfvb8.fit
+hostname = *.05gdmiz.fit, *.ezhbcsx.fit, *.k58z3gl.my, *.9axfvb8.fit, *.e5z78kz.fit, *.47s1ri1.fit, *.fzmhe5lai.app, l4f5xk6.9axfvb8.fit, fn7ci71.e5z78kz.fit, ap1v7cw.47s1ri1.fit, xuhie6x.fzmhe5lai.app, ivbn79kb.tonghetjzx.com, bp7jul0.05gdmiz.fit, 11vg1mr.ezhbcsx.fit, 8non608.k58z3gl.my
 
 *******************************/
 
@@ -31,7 +34,8 @@ var CryptoJS;
 
 
 
-const PREF_AES = "naicha_20260531_113950_aes";
+const PREF_AES = "naicha_20260531_114940_aes";
+const PREF_PUBKEY = "naicha_20260531_114940_pubkey";
 const WATCH_NUM = 9999;
 
 const VIP_BOOL_RE = /^(is_?vip|vip_?status|vip_?flag|vip_?state|vipuser|vip_?user|member|is_?member|is_?svip|svip|pay_?vip)$/i;
@@ -43,6 +47,24 @@ const LONG_VIDEO_RE = /(long_?video|longvideo|long_?view|long_?times|views_?numb
 const SHORT_VIDEO_RE = /(short_?video|shortvideo|micro_?video|micro_?view|micro_?times|micro_?views_?number|short_?view|short_?times|remain_?short|short_?remain|short_?num|short_?count|free_?short|sage_?times)/i;
 const WATCH_USED_RE = /^(view_?times_?today|used_?times|watch_?times|play_?times|today_?times|consume_?times)$/i;
 const WATCH_LIMIT_RE = /^(view_?limit_?today|limit_?times|free_?times|max_?times|total_?times|remain_?times|left_?times|watch_?num|views_?number|micro_?views_?number|download_?times)$/i;
+const PREVIEW_RE = /(preview|trial|try_?see|trysee|p_?time|pre_?time|limit_?time|watch_?time|play_?ctrl|playctrl|need_?vip|vip_?only|is_?p|charge|pay_?type|coin_?price|gold_?price|unlock|buy_?type)$/i;
+const FREE_RE = /^(is_?free|can_?play|free_?watch|vip_?free|allow_?play|play_?free|no_?charge)$/i;
+
+function bodyText(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "object" && typeof v.toString === "function") return v.toString();
+  return String(v);
+}
+
+function parseJsonSafe(text, fallback) {
+  try {
+    if (!text) return fallback;
+    return JSON.parse(text);
+  } catch (e) {
+    return fallback;
+  }
+}
 
 function modPow(b, e, m) {
   var r = 1n;
@@ -153,6 +175,11 @@ function patchVipDeep(obj, depth) {
     var lk = k.toLowerCase();
     if (VIP_BOOL_RE.test(lk)) obj[k] = true;
     else if (PAY_BOOL_RE.test(lk)) obj[k] = typeof v === "boolean" ? false : 0;
+    else if (PREVIEW_RE.test(lk)) {
+      if (typeof v === "number") obj[k] = 0;
+      else if (typeof v === "boolean") obj[k] = false;
+      else if (typeof v === "string" && /^\d+$/.test(v)) obj[k] = "0";
+    } else if (FREE_RE.test(lk)) obj[k] = typeof v === "boolean" ? true : 1;
     else if (VIP_LEVEL_RE.test(lk) && typeof v === "number") obj[k] = v < 4 ? 4 : v;
     else if (VIP_LEVEL_RE.test(lk) && typeof v === "string" && /^\d+$/.test(v)) obj[k] = "4";
     else if (VIP_TIME_RE.test(lk) && typeof v === "string") obj[k] = "2099-12-31 23:59:59";
@@ -221,16 +248,31 @@ function patchAppConfig(data) {
   }
 }
 
+function patchMediaDetail(data) {
+  patchVipDeep(data, 0);
+  if (data.data && typeof data.data === "object") patchVipDeep(data.data, 0);
+}
+
 function patchCaptureData(data, url) {
   if (!data || typeof data !== "object") return data;
 
-  if (/\/wxuser\/user\/info\/(getUser|register|activeLogin|tokenLogin)/.test(url)) {
+  if (/\/wxuser\/user\/info\/(getUser|getUserVip|register|activeLogin|tokenLogin)/.test(url)) {
     patchUserInfo(data);
     return data;
   }
 
   if (/\/wxuser\/user\/sys\/(appConfigList|sysConfigList)/.test(url)) {
     patchAppConfig(data);
+    return data;
+  }
+
+  if (/\/iqiyi\/media\/longer\/info\/detail/.test(url)) {
+    patchMediaDetail(data);
+    return data;
+  }
+
+  if (/\/iqiyi\/media\/user\/look\//.test(url)) {
+    patchVipDeep(data, 0);
     return data;
   }
 
@@ -255,33 +297,48 @@ function patchCaptureEncrypted(wrap, url) {
   return wrap;
 }
 
-function handleGetKey() {
-  var reqBody = $request.body;
-  if (typeof reqBody !== "string") reqBody = reqBody ? String(reqBody) : "";
-  var respBody = $response.body;
-  if (typeof respBody !== "string") respBody = respBody ? String(respBody) : "";
-  var req = JSON.parse(reqBody);
-  var resp = JSON.parse(respBody);
-  var sessionHex = randomHex(16);
-  $prefs.setValueForKey(sessionHex, PREF_AES);
-  var nHex = parseRsaModulus(req.clientPublicKey);
-  if (!nHex) throw new Error("RSA pubkey parse failed");
+function handleGetKeyRequest() {
+  var req = parseJsonSafe(bodyText($request.body), {});
+  if (req.clientPublicKey) $prefs.setValueForKey(req.clientPublicKey, PREF_PUBKEY);
+  var sessionHex = getSessionKey();
+  if (!sessionHex) {
+    sessionHex = randomHex(16);
+    $prefs.setValueForKey(sessionHex, PREF_AES);
+  }
+  console.log("[naicha-vip] getKey request ok, session=" + sessionHex.slice(0, 8));
+  $done({});
+}
+
+function handleGetKeyResponse() {
+  var req = parseJsonSafe(bodyText($request.body), {});
+  var resp = parseJsonSafe(bodyText($response.body), { code: 200, message: "SUCCESS", data: {} });
+  var pubkey = req.clientPublicKey || $prefs.valueForKey(PREF_PUBKEY) || "";
+  var sessionHex = getSessionKey();
+  if (!sessionHex) {
+    sessionHex = randomHex(16);
+    $prefs.setValueForKey(sessionHex, PREF_AES);
+  }
+  var nHex = parseRsaModulus(pubkey);
+  if (!nHex) throw new Error("RSA pubkey missing, check getKey script-request-body rule");
   var bytes = [];
   for (var i = 0; i < sessionHex.length; i += 2) bytes.push(parseInt(sessionHex.substr(i, 2), 16));
   if (!resp.data || typeof resp.data !== "object") resp.data = {};
   resp.data.key = rsaEncrypt16(bytes, nHex);
   resp.code = resp.code || 200;
   resp.msg = resp.msg || resp.message || "SUCCESS";
-  return JSON.stringify(resp);
+  resp.message = resp.message || resp.msg || "SUCCESS";
+  console.log("[naicha-vip] getKey response ok, session=" + sessionHex.slice(0, 8));
+  $done({ body: JSON.stringify(resp) });
 }
 
 try {
-  var body = $response.body;
-  if (typeof body !== "string") body = body ? String(body) : "";
   var url = ($request && $request.url) || "";
+  var body = bodyText($response && $response.body);
 
   if (/\/wxuser\/key\/getKey/.test(url)) {
-    $done({ body: handleGetKey() });
+    var hasResp = $response && (body || $response.statusCode || $response.status);
+    if (hasResp) handleGetKeyResponse();
+    else handleGetKeyRequest();
   } else if (body.indexOf('"encrypt"') >= 0) {
     var wrap = JSON.parse(body);
     var patched = patchCaptureEncrypted(wrap, url);
