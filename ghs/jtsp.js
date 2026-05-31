@@ -1,7 +1,8 @@
 /******************************
 
-脚本功能：奶茶视频 - 去开屏 / 去弹窗 / 去宫格导流 / 去底部弹窗 + 解锁VIP
-数据来源：抓包 2026-05-31-024216（仅此份，不含旧版 newapi）
+脚本功能：奶茶视频 - 解锁VIP（纯会员，不含去广告）
+数据来源：抓包 2026-05-31-113950
+长视频/短视频次数：9999
 更新时间：2026-5-31
 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！
 
@@ -9,14 +10,11 @@
 
 [rewrite_local]
 
-# 抓包 API 合并一条（getKey / 配置 / 弹窗 / 会员 / 广告 / 宫格）
-^https?:\/\/[^\/]+\.(fit|app)(:\d+)?\/(wxuser\/key\/getKey|wxuser\/user\/sys\/(appConfigList|sysConfigList|notice)|wxuser\/user\/notice\/count|wxuser\/user\/info\/(getUser|register|activeLogin)|iqiyi\/media\/ad\/|iqiyi\/media\/longer\/(nvg\/list|module\/listPage)) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/jtsp.js
-
-# 广告素材 CDN
-^https?:\/\/3o6jouda\.czybtx\.com\/adimg\/ url reject
+# 会员专用（getKey 必须劫持；勿与去广告脚本同时启用）
+^https?:\/\/[^\/]+\.(fit|app|my)(:\d+)?\/(wxuser\/key\/getKey|wxuser\/user\/info\/(getUser|register|activeLogin|tokenLogin)|wxuser\/user\/sys\/(appConfigList|sysConfigList)) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/jtsp.js
 
 [mitm]
-hostname = *.9axfvb8.fit, *.e5z78kz.fit, *.47s1ri1.fit, *.fzmhe5lai.app, ivbn79kb.tonghetjzx.com, 3o6jouda.czybtx.com, l4f5xk6.9axfvb8.fit, fn7ci71.e5z78kz.fit, ap1v7cw.47s1ri1.fit, xuhie6x.fzmhe5lai.app
+hostname = *.05gdmiz.fit, *.ezhbcsx.fit, *.k58z3gl.my, *.9axfvb8.fit, *.e5z78kz.fit, *.47s1ri1.fit, *.fzmhe5lai.app, bp7jul0.05gdmiz.fit, 11vg1mr.ezhbcsx.fit, 8non608.k58z3gl.my, l4f5xk6.9axfvb8.fit
 
 *******************************/
 
@@ -32,17 +30,19 @@ var CryptoJS;
 
 
 
-const PREF_AES = "naicha_20260531_aes_key";
 
-const AD_KEY_RE =
-  /^(ads?|adList|ad_list|advert|advertise|banner|banners|popup|popups|pop_ad|pop_ads|pop_bottom|pop_bottom_ads|pop_app|pop_app_ads|splash|splash_ad|splash_ads|open_screen|startup|startup_ad|launch|launch_ad|screen_ad|float|floating|float_ad|float_window|layer_ad|layer_ads|operation_ad|operation_ads|notice|notice_list|home_pop|index_pop|bottom_pop|bottom_banner|grid_ad|grid_list|diamond|diamond_list|quick_entry|icon_ad|entry_ad|recommend_apps|partner_apps|app_ads|mv_banner|home_banner|interstitial|full_screen|gg|gg_list)$/i;
+const PREF_AES = "naicha_20260531_113950_aes";
+const WATCH_NUM = 9999;
 
-const AD_VAL_RE = /(开屏|弹窗|启动页|闪屏|广告|导流|宫格|底部|浮窗|banner|splash|popup|float|launch|interstitial|adimg)/i;
-const AD_SWITCH_RE = /(switch|enable|show|open|display|status|visible|popup|splash|screen|launch|float|banner|ad|gg|notice|alert|tips|guide|redirect|jump)$/i;
-const VIP_BOOL_RE = /^(is_?vip|vip_?status|vipuser|member|is_?member|is_?svip|svip)$/i;
-const VIP_LEVEL_RE = /^(vip_?level|vip_?type|vip_?grade|member_?level|member_?type|user_?level|grade)$/i;
-const VIP_TIME_RE = /^(vip_?end|vip_?expire|expire_?time|vip_?time|vip_?date|member_?expire|deadline)$/i;
-const WALLET_RE = /^(gold|coin|coins|balance|integral|points|money|diamond|wallet|currency)$/i;
+const VIP_BOOL_RE = /^(is_?vip|vip_?status|vip_?flag|vip_?state|vipuser|vip_?user|member|is_?member|is_?svip|svip|pay_?vip)$/i;
+const VIP_LEVEL_RE = /^(vip_?level|vip_?type|vip_?grade|member_?level|member_?type|user_?level|user_?type|grade|identity|role_?type)$/i;
+const VIP_TIME_RE = /^(vip_?end|vip_?expire|expire_?time|vip_?time|vip_?date|member_?expire|deadline|valid_?time|valid_?date)$/i;
+const WALLET_RE = /^(gold|coin|coins|balance|integral|points|money|diamond|wallet|currency|amount|bonus)$/i;
+const PAY_BOOL_RE = /^(need_?pay|is_?pay|pay_?status|charge|preview|trial|limit_?play|free_?watch|is_?p|play_?ctrl)$/i;
+const LONG_VIDEO_RE = /(long_?video|longvideo|long_?view|long_?times|views_?number|view_?limit|view_?times|video_?limit|video_?times|remain_?long|long_?remain|long_?num|long_?count|free_?long)/i;
+const SHORT_VIDEO_RE = /(short_?video|shortvideo|micro_?video|micro_?view|micro_?times|micro_?views_?number|short_?view|short_?times|remain_?short|short_?remain|short_?num|short_?count|free_?short|sage_?times)/i;
+const WATCH_USED_RE = /^(view_?times_?today|used_?times|watch_?times|play_?times|today_?times|consume_?times)$/i;
+const WATCH_LIMIT_RE = /^(view_?limit_?today|limit_?times|free_?times|max_?times|total_?times|remain_?times|left_?times|watch_?num|views_?number|micro_?views_?number|download_?times)$/i;
 
 function modPow(b, e, m) {
   var r = 1n;
@@ -132,51 +132,12 @@ function aesEncryptResp(plain, keyHex) {
   return ivHex + enc.ciphertext.toString(CryptoJS.enc.Hex);
 }
 
-function isAdItem(val, key) {
-  if (val == null) return false;
-  if (key && AD_KEY_RE.test(key)) return true;
-  if (typeof val === "string" && AD_VAL_RE.test(val) && /https?:\/\//i.test(val)) return true;
-  if (typeof val !== "object" || !val) return false;
-  if (val.isAd === 1 || val.is_ad === 1 || val.adType > 0 || val.ad_type > 0) return true;
-  if (val.jumpType > 0 && val.url) return true;
-  if (val.jump_type > 0 && (val.url || val.link || val.jumpUrl)) return true;
-  if (typeof val.type === "string" && AD_VAL_RE.test(val.type)) return true;
-  if (typeof val.name === "string" && AD_VAL_RE.test(val.name)) return true;
-  if (typeof val.title === "string" && AD_VAL_RE.test(val.title)) return true;
-  return false;
+function isLongVideoKey(k) {
+  return LONG_VIDEO_RE.test(String(k || ""));
 }
 
-function stripAdsDeep(obj, depth) {
-  if (!obj || typeof obj !== "object" || depth > 16) return;
-  if (Array.isArray(obj)) {
-    for (var i = obj.length - 1; i >= 0; i--) {
-      if (isAdItem(obj[i], "")) obj.splice(i, 1);
-      else stripAdsDeep(obj[i], depth + 1);
-    }
-    return;
-  }
-  var keys = Object.keys(obj);
-  for (var ki = 0; ki < keys.length; ki++) {
-    var k = keys[ki];
-    var v = obj[k];
-    if (AD_KEY_RE.test(k)) {
-      if (Array.isArray(v)) obj[k] = [];
-      else if (v && typeof v === "object") obj[k] = {};
-      else if (typeof v === "number") obj[k] = 0;
-      else if (typeof v === "boolean") obj[k] = false;
-      else obj[k] = "";
-      continue;
-    }
-    if (typeof v === "number" && AD_SWITCH_RE.test(k) && v > 0) obj[k] = 0;
-    if (typeof v === "boolean" && AD_SWITCH_RE.test(k) && v) obj[k] = false;
-    if (typeof v === "string" && AD_SWITCH_RE.test(k) && AD_VAL_RE.test(v)) obj[k] = "";
-    if (isAdItem(v, k)) {
-      if (Array.isArray(obj[k])) obj[k] = [];
-      else delete obj[k];
-      continue;
-    }
-    stripAdsDeep(v, depth + 1);
-  }
+function isShortVideoKey(k) {
+  return SHORT_VIDEO_RE.test(String(k || ""));
 }
 
 function patchVipDeep(obj, depth) {
@@ -191,99 +152,80 @@ function patchVipDeep(obj, depth) {
     var v = obj[k];
     var lk = k.toLowerCase();
     if (VIP_BOOL_RE.test(lk)) obj[k] = true;
+    else if (PAY_BOOL_RE.test(lk)) obj[k] = typeof v === "boolean" ? false : 0;
     else if (VIP_LEVEL_RE.test(lk) && typeof v === "number") obj[k] = v < 4 ? 4 : v;
+    else if (VIP_LEVEL_RE.test(lk) && typeof v === "string" && /^\d+$/.test(v)) obj[k] = "4";
     else if (VIP_TIME_RE.test(lk) && typeof v === "string") obj[k] = "2099-12-31 23:59:59";
+    else if (VIP_TIME_RE.test(lk) && typeof v === "number") obj[k] = 4102415999000;
     else if (WALLET_RE.test(lk) && typeof v === "number") obj[k] = 999999;
+    else if (WATCH_USED_RE.test(lk)) obj[k] = 0;
+    else if (WATCH_LIMIT_RE.test(lk) && typeof v === "number") obj[k] = WATCH_NUM;
+    else if ((isLongVideoKey(lk) || isShortVideoKey(lk)) && typeof v === "number") obj[k] = WATCH_NUM;
+    else if ((isLongVideoKey(lk) || isShortVideoKey(lk)) && typeof v === "string" && /^-?\d+$/.test(v)) obj[k] = String(WATCH_NUM);
     else if (lk === "nickname" && typeof v === "string") obj[k] = "VIP用户";
+    else if (lk === "types_desc" && typeof v === "string") obj[k] = "永久VIP";
+    else if (lk === "vip_name" && typeof v === "string") obj[k] = "永久VIP";
+    else if (lk === "status" && typeof v === "number" && depth <= 3) obj[k] = 1;
     else if (typeof v === "object") patchVipDeep(v, depth + 1);
   }
 }
 
-function patchAppConfig(data) {
-  stripAdsDeep(data, 0);
-  if (data.data !== undefined) {
-    if (Array.isArray(data.data)) {
-      for (var i = data.data.length - 1; i >= 0; i--) {
-        var item = data.data[i];
-        if (!item || typeof item !== "object") continue;
-        var code = String(item.configCode || item.code || item.key || item.name || "");
-        var val = String(item.configValue || item.value || "");
-        if (AD_VAL_RE.test(code) || AD_VAL_RE.test(val)) {
-          if (typeof item.configValue === "number") item.configValue = 0;
-          else if (typeof item.configValue === "boolean") item.configValue = false;
-          else item.configValue = "0";
-          if (typeof item.value === "number") item.value = 0;
-          else if (typeof item.value === "boolean") item.value = false;
-          else if (item.value !== undefined) item.value = "0";
-        }
-        if (/pay|vip|charge|preview|trial/i.test(code)) {
-          if (typeof item.configValue === "number") item.configValue = 0;
-          else if (typeof item.configValue === "boolean") item.configValue = false;
-          else if (item.configValue !== undefined) item.configValue = "0";
-        }
+function patchVipLevel(obj) {
+  if (!obj || typeof obj !== "object") return;
+  obj.level_id = 4;
+  obj.level_name = "永久VIP";
+  if (typeof obj.views_number === "number") obj.views_number = WATCH_NUM;
+  if (typeof obj.micro_views_number === "number") obj.micro_views_number = WATCH_NUM;
+  if (typeof obj.download_times === "number") obj.download_times = WATCH_NUM;
+  if (typeof obj.long_video_num === "number") obj.long_video_num = WATCH_NUM;
+  if (typeof obj.short_video_num === "number") obj.short_video_num = WATCH_NUM;
+}
+
+function patchUserInfo(data) {
+  patchVipDeep(data, 0);
+  if (data.data && typeof data.data === "object") {
+    patchVipDeep(data.data, 0);
+    if (data.data.user && typeof data.data.user === "object") {
+      patchVipDeep(data.data.user, 0);
+      if (data.data.user.viplevel && typeof data.data.user.viplevel === "object") {
+        patchVipLevel(data.data.user.viplevel);
       }
-    } else if (typeof data.data === "object") {
-      stripAdsDeep(data.data, 0);
     }
+    if (data.data.viplevel && typeof data.data.viplevel === "object") patchVipLevel(data.data.viplevel);
   }
 }
 
-function patchNavModule(data) {
-  function filterList(list) {
-    if (!Array.isArray(list)) return;
-    for (var i = list.length - 1; i >= 0; i--) {
-      if (isAdItem(list[i], "")) list.splice(i, 1);
-      else if (list[i] && typeof list[i] === "object") {
-        if (Array.isArray(list[i].list)) filterList(list[i].list);
-        if (Array.isArray(list[i].items)) filterList(list[i].items);
-        if (Array.isArray(list[i].modules)) filterList(list[i].modules);
-        if (Array.isArray(list[i].children)) filterList(list[i].children);
+function patchAppConfig(data) {
+  patchVipDeep(data, 0);
+  if (!data.data) return;
+  if (Array.isArray(data.data)) {
+    for (var i = 0; i < data.data.length; i++) {
+      var item = data.data[i];
+      if (!item || typeof item !== "object") continue;
+      var code = String(item.configCode || item.code || item.key || item.name || "");
+      var val = item.configValue !== undefined ? item.configValue : item.value;
+      if (/pay|vip|charge|preview|trial/i.test(code)) {
+        if (typeof val === "number") val = 0;
+        else if (typeof val === "boolean") val = false;
+        else val = "0";
       }
+      if (isLongVideoKey(code) || isShortVideoKey(code) || /long.*video|short.*video|micro.*view|view.*limit|view.*times/i.test(code)) {
+        if (typeof val === "number") val = WATCH_NUM;
+        else val = String(WATCH_NUM);
+      }
+      if (item.configValue !== undefined) item.configValue = val;
+      if (item.value !== undefined) item.value = val;
     }
-  }
-  if (data.data !== undefined) {
-    if (Array.isArray(data.data)) filterList(data.data);
-    else if (typeof data.data === "object") {
-      ["list", "items", "modules", "records", "rows", "nvgList", "moduleList"].forEach(function (f) {
-        if (Array.isArray(data.data[f])) filterList(data.data[f]);
-      });
-      stripAdsDeep(data.data, 0);
-    }
-  } else {
-    stripAdsDeep(data, 0);
+  } else if (typeof data.data === "object") {
+    patchVipDeep(data.data, 0);
   }
 }
 
 function patchCaptureData(data, url) {
   if (!data || typeof data !== "object") return data;
 
-  if (/\/iqiyi\/media\/ad\//.test(url)) {
-    data.code = 200;
-    data.message = data.message || "SUCCESS";
-    data.data = Array.isArray(data.data) ? [] : {};
-    return data;
-  }
-
-  if (/\/wxuser\/user\/sys\/notice/.test(url)) {
-    data.code = 200;
-    data.message = data.message || "SUCCESS";
-    if (Array.isArray(data.data)) data.data = [];
-    else if (data.data && typeof data.data === "object") {
-      data.data.list = [];
-      data.data.records = [];
-      data.data.rows = [];
-    } else data.data = [];
-    return data;
-  }
-
-  if (/\/wxuser\/user\/notice\/count/.test(url)) {
-    if (data.data !== undefined) data.data = 0;
-    if (data.count !== undefined) data.count = 0;
-    return data;
-  }
-
-  if (/\/wxuser\/user\/info\/(getUser|register|activeLogin)/.test(url)) {
-    patchVipDeep(data, 0);
+  if (/\/wxuser\/user\/info\/(getUser|register|activeLogin|tokenLogin)/.test(url)) {
+    patchUserInfo(data);
     return data;
   }
 
@@ -292,12 +234,7 @@ function patchCaptureData(data, url) {
     return data;
   }
 
-  if (/\/iqiyi\/media\/longer\//.test(url)) {
-    patchNavModule(data);
-    return data;
-  }
-
-  stripAdsDeep(data, 0);
+  patchVipDeep(data, 0);
   return data;
 }
 
@@ -331,7 +268,10 @@ function handleGetKey() {
   if (!nHex) throw new Error("RSA pubkey parse failed");
   var bytes = [];
   for (var i = 0; i < sessionHex.length; i += 2) bytes.push(parseInt(sessionHex.substr(i, 2), 16));
+  if (!resp.data || typeof resp.data !== "object") resp.data = {};
   resp.data.key = rsaEncrypt16(bytes, nHex);
+  resp.code = resp.code || 200;
+  resp.msg = resp.msg || resp.message || "SUCCESS";
   return JSON.stringify(resp);
 }
 
@@ -346,7 +286,10 @@ try {
     var wrap = JSON.parse(body);
     var patched = patchCaptureEncrypted(wrap, url);
     if (patched) $done({ body: JSON.stringify(patched) });
-    else $done();
+    else {
+      console.log("[naicha-vip] skip encrypt (no session key?): " + url);
+      $done();
+    }
   } else if (body && body.charAt(0) === "{") {
     var plain = JSON.parse(body);
     patchCaptureData(plain, url);
@@ -355,6 +298,6 @@ try {
     $done();
   }
 } catch (e) {
-  console.log("[naicha-capture] " + e);
+  console.log("[naicha-vip] " + e);
   $done();
 }
