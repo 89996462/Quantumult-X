@@ -1,7 +1,7 @@
 /******************************
 
 脚本功能：奶茶视频 - 解锁VIP（纯会员，不含去广告）
-数据来源：抓包 2026-05-31-114940
+数据来源：抓包 2026-05-31-115809
 长视频/短视频次数：9999
 更新时间：2026-5-31
 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！
@@ -10,14 +10,17 @@
 
 [rewrite_local]
 
-# getKey 请求阶段：QX 的 script-response-body 拿不到 $request.body，必须加这一条
+# getKey 请求阶段（必须）
 ^https?:\/\/[^\/]+\.(fit|app|my)(:\d+)?\/wxuser\/key\/getKey url script-request-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/jtsp.js
 
-# 会员 + 试看解锁（抓包 2026-05-31-114940）
-^https?:\/\/[^\/]+\.(fit|app|my)(:\d+)?\/(wxuser\/key\/getKey|wxuser\/user\/info\/(getUser|getUserVip|register|activeLogin|tokenLogin)|wxuser\/user\/sys\/(appConfigList|sysConfigList)|iqiyi\/media\/longer\/info\/detail|iqiyi\/media\/user\/look\/) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/jtsp.js
+# 所有 encrypt 请求阶段（配合响应阶段从 request.body 校验 session）
+^https?:\/\/[^\/]+\.(fit|app|my)(:\d+)?\/(wxuser\/|iqiyi\/media\/) url script-request-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/jtsp.js
+
+# 会员 + 试看解锁（抓包 2026-05-31-115809）
+^https?:\/\/[^\/]+\.(fit|app|my)(:\d+)?\/(wxuser\/key\/getKey|wxuser\/user\/info\/(getUser|getUserVip|register|activeLogin|tokenLogin)|wxuser\/user\/sys\/(appConfigList|sysConfigList)|iqiyi\/media\/longer\/info\/(detail|superiorList)|iqiyi\/media\/user\/look\/) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/jtsp.js
 
 [mitm]
-hostname = *.05gdmiz.fit, *.ezhbcsx.fit, *.k58z3gl.my, *.9axfvb8.fit, *.e5z78kz.fit, *.47s1ri1.fit, *.fzmhe5lai.app, l4f5xk6.9axfvb8.fit, fn7ci71.e5z78kz.fit, ap1v7cw.47s1ri1.fit, xuhie6x.fzmhe5lai.app, ivbn79kb.tonghetjzx.com, bp7jul0.05gdmiz.fit, 11vg1mr.ezhbcsx.fit, 8non608.k58z3gl.my
+hostname = *.05gdmiz.fit, *.ezhbcsx.fit, *.k58z3gl.my, *.9axfvb8.fit, *.e5z78kz.fit, *.47s1ri1.fit, *.fzmhe5lai.app, l4f5xk6.9axfvb8.fit, fn7ci71.e5z78kz.fit, ap1v7cw.47s1ri1.fit, xuhie6x.fzmhe5lai.app, ivbn79kb.tonghetjzx.com, bp7jul0.05gdmiz.fit, 11vg1mr.ezhbcsx.fit, 8non608.k58z3gl.my, *.shidaaa.com, pphe5m7n.shidaaa.com
 
 *******************************/
 
@@ -34,8 +37,8 @@ var CryptoJS;
 
 
 
-const PREF_AES = "naicha_20260531_114940_aes";
-const PREF_PUBKEY = "naicha_20260531_114940_pubkey";
+const PREF_AES = "naicha_20260531_115809_aes";
+const PREF_PUBKEY = "naicha_20260531_115809_pubkey";
 const WATCH_NUM = 9999;
 
 const VIP_BOOL_RE = /^(is_?vip|vip_?status|vip_?flag|vip_?state|vipuser|vip_?user|member|is_?member|is_?svip|svip|pay_?vip)$/i;
@@ -126,7 +129,87 @@ function randomHex(n) {
 }
 
 function getSessionKey() {
-  return $prefs.valueForKey(PREF_AES) || "";
+  var key = $prefs.valueForKey(PREF_AES) || "";
+  if (!key && typeof $persistentStore !== "undefined") {
+    try {
+      key = $persistentStore.read(PREF_AES) || "";
+    } catch (e) {}
+  }
+  return key;
+}
+
+function setSessionKey(hex) {
+  if (!hex) return;
+  $prefs.setValueForKey(hex, PREF_AES);
+  if (typeof $persistentStore !== "undefined") {
+    try {
+      $persistentStore.write(PREF_AES, hex);
+    } catch (e) {}
+  }
+}
+
+function clearSessionKey() {
+  try {
+    $prefs.removeValueForKey(PREF_AES);
+  } catch (e) {}
+  if (typeof $persistentStore !== "undefined") {
+    try {
+      $persistentStore.write(PREF_AES, "");
+    } catch (e) {}
+  }
+}
+
+function tryDecryptJson(encHex, keyHex) {
+  if (!encHex || !keyHex) return null;
+  try {
+    var plain = aesDecryptResp(encHex, keyHex);
+    if (plain && plain.charAt(0) === "{") return plain;
+  } catch (e) {}
+  return null;
+}
+
+function resolveSessionKey(encHex) {
+  var key = getSessionKey();
+  if (key && tryDecryptJson(encHex, key)) return key;
+  if (key) clearSessionKey();
+  var req = parseJsonSafe(bodyText($request && $request.body), {});
+  if (req.encrypt && req.encrypt.length >= 32) {
+    var cand = req.encrypt.slice(0, 32);
+    if (tryDecryptJson(encHex, cand)) {
+      setSessionKey(cand);
+      console.log("[naicha-vip] session verified: " + cand.slice(0, 8));
+      return cand;
+    }
+  }
+  return "";
+}
+
+function patchPlayUrlString(s) {
+  if (typeof s !== "string" || !s) return s;
+  if (!/try\.m3u8|\/asy\/try|preview|trial/i.test(s)) return s;
+  return s
+    .replace(/\/asy\/try\.m3u8/gi, "/asy/index.m3u8")
+    .replace(/try\.m3u8/gi, "index.m3u8")
+    .replace(/\/asy\/try\//gi, "/asy/");
+}
+
+function patchPlayUrlsDeep(obj, depth) {
+  if (obj == null || depth > 20) return;
+  if (typeof obj === "string") return;
+  if (Array.isArray(obj)) {
+    for (var i = 0; i < obj.length; i++) {
+      if (typeof obj[i] === "string") obj[i] = patchPlayUrlString(obj[i]);
+      else patchPlayUrlsDeep(obj[i], depth + 1);
+    }
+    return;
+  }
+  if (typeof obj !== "object") return;
+  var keys = Object.keys(obj);
+  for (var ki = 0; ki < keys.length; ki++) {
+    var k = keys[ki];
+    if (typeof obj[k] === "string") obj[k] = patchPlayUrlString(obj[k]);
+    else patchPlayUrlsDeep(obj[k], depth + 1);
+  }
 }
 
 function waFromHex(hex) {
@@ -251,10 +334,17 @@ function patchAppConfig(data) {
 function patchMediaDetail(data) {
   patchVipDeep(data, 0);
   if (data.data && typeof data.data === "object") patchVipDeep(data.data, 0);
+  patchPlayUrlsDeep(data, 0);
 }
 
 function patchCaptureData(data, url) {
   if (!data || typeof data !== "object") return data;
+  patchCaptureDataInner(data, url);
+  patchPlayUrlsDeep(data, 0);
+  return data;
+}
+
+function patchCaptureDataInner(data, url) {
 
   if (/\/wxuser\/user\/info\/(getUser|getUserVip|register|activeLogin|tokenLogin)/.test(url)) {
     patchUserInfo(data);
@@ -266,7 +356,7 @@ function patchCaptureData(data, url) {
     return data;
   }
 
-  if (/\/iqiyi\/media\/longer\/info\/detail/.test(url)) {
+  if (/\/iqiyi\/media\/longer\/info\/(detail|superiorList)/.test(url)) {
     patchMediaDetail(data);
     return data;
   }
@@ -282,14 +372,18 @@ function patchCaptureData(data, url) {
 
 function patchCaptureEncrypted(wrap, url) {
   if (!wrap || !wrap.encrypt) return null;
-  var keyHex = getSessionKey();
+  var keyHex = resolveSessionKey(wrap.encrypt);
   if (!keyHex) return null;
+  var plain = tryDecryptJson(wrap.encrypt, keyHex);
+  if (!plain) {
+    console.log("[naicha-vip] decrypt fail: " + url);
+    return null;
+  }
   var data;
   try {
-    var plain = aesDecryptResp(wrap.encrypt, keyHex);
-    if (!plain) return null;
     data = JSON.parse(plain);
   } catch (e) {
+    console.log("[naicha-vip] json fail: " + url);
     return null;
   }
   patchCaptureData(data, url);
@@ -301,10 +395,8 @@ function handleGetKeyRequest() {
   var req = parseJsonSafe(bodyText($request.body), {});
   if (req.clientPublicKey) $prefs.setValueForKey(req.clientPublicKey, PREF_PUBKEY);
   var sessionHex = getSessionKey();
-  if (!sessionHex) {
-    sessionHex = randomHex(16);
-    $prefs.setValueForKey(sessionHex, PREF_AES);
-  }
+  if (!sessionHex) sessionHex = randomHex(16);
+  setSessionKey(sessionHex);
   console.log("[naicha-vip] getKey request ok, session=" + sessionHex.slice(0, 8));
   $done({});
 }
@@ -314,10 +406,8 @@ function handleGetKeyResponse() {
   var resp = parseJsonSafe(bodyText($response.body), { code: 200, message: "SUCCESS", data: {} });
   var pubkey = req.clientPublicKey || $prefs.valueForKey(PREF_PUBKEY) || "";
   var sessionHex = getSessionKey();
-  if (!sessionHex) {
-    sessionHex = randomHex(16);
-    $prefs.setValueForKey(sessionHex, PREF_AES);
-  }
+  if (!sessionHex) sessionHex = randomHex(16);
+  setSessionKey(sessionHex);
   var nHex = parseRsaModulus(pubkey);
   if (!nHex) throw new Error("RSA pubkey missing, check getKey script-request-body rule");
   var bytes = [];
@@ -331,24 +421,34 @@ function handleGetKeyResponse() {
   $done({ body: JSON.stringify(resp) });
 }
 
+function handleGenericRequest() {
+  var req = parseJsonSafe(bodyText($request.body), {});
+  if (req.clientPublicKey) $prefs.setValueForKey(req.clientPublicKey, PREF_PUBKEY);
+  $done({});
+}
+
 try {
   var url = ($request && $request.url) || "";
-  var body = bodyText($response && $response.body);
+  var respBody = bodyText($response && $response.body);
+  var isResp = !!($response && ($response.statusCode || $response.status || respBody));
 
-  if (/\/wxuser\/key\/getKey/.test(url)) {
-    var hasResp = $response && (body || $response.statusCode || $response.status);
-    if (hasResp) handleGetKeyResponse();
-    else handleGetKeyRequest();
-  } else if (body.indexOf('"encrypt"') >= 0) {
-    var wrap = JSON.parse(body);
+  if (!isResp) {
+    if (/\/wxuser\/key\/getKey/.test(url)) handleGetKeyRequest();
+    else handleGenericRequest();
+  } else if (/\/wxuser\/key\/getKey/.test(url)) {
+    handleGetKeyResponse();
+  } else if (respBody.indexOf('"encrypt"') >= 0) {
+    var wrap = JSON.parse(respBody);
     var patched = patchCaptureEncrypted(wrap, url);
-    if (patched) $done({ body: JSON.stringify(patched) });
-    else {
-      console.log("[naicha-vip] skip encrypt (no session key?): " + url);
+    if (patched) {
+      console.log("[naicha-vip] patched: " + url.split("/").slice(-1).join("/"));
+      $done({ body: JSON.stringify(patched) });
+    } else {
+      console.log("[naicha-vip] skip (no session, 请删App重装并先开QX): " + url);
       $done();
     }
-  } else if (body && body.charAt(0) === "{") {
-    var plain = JSON.parse(body);
+  } else if (respBody && respBody.charAt(0) === "{") {
+    var plain = JSON.parse(respBody);
     patchCaptureData(plain, url);
     $done({ body: JSON.stringify(plain) });
   } else {
