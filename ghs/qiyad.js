@@ -1,7 +1,7 @@
 /******************************
   
 # 脚本功能：妻友——去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
-# 特别说明：基于抓包 2026-05-31-133901，须开启 HTTP 抓包
+# 特别说明：基于抓包 2026-05-31-133901 / 2026-05-31-135533，须开启 HTTP 抓包
 # 特别说明：请关闭同域其它去广告脚本，避免冲突
 # 脚本作者：彭于晏💞
 # 更新时间：2026-5-31
@@ -28,12 +28,17 @@
 
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
+
+^https?:\/\/new\.jfxgtd\.cn\/hc237\/uploads\/default\/other\/.*\.(gif|png) - reject
+
+
+^https?:\/\/new\.jfxgtd\.cn\/upload_01\/(upload|xiao)\/ - reject
+
 [mitm]
 
 hostname = api1.ifdhptplk.cc, *.ifdhptplk.cc, p4.esbvzuui.cc, *.esbvzuui.cc, new.jfxgtd.cn, *.jfxgtd.cn, ap.dc-report.cc
 
 *******************************/
-
 
 var CryptoJS;
 (function () {
@@ -166,12 +171,24 @@ function patchHomeConfig(data) {
 function patchIndex(data) {
   if (!data || typeof data !== "object") return;
   data.banners = [];
+  if (Array.isArray(data.navs)) stripAdvertiseItems(data.navs);
   if (Array.isArray(data.list)) {
     for (var i = 0; i < data.list.length; i++) {
       var block = data.list[i];
       if (block && Array.isArray(block.items)) stripAdvertiseItems(block.items);
     }
   }
+}
+
+function patchListConstruct(data) {
+  if (!data || typeof data !== "object") return;
+  data.banner = [];
+  if (Array.isArray(data.list)) stripAdvertiseItems(data.list);
+}
+
+function patchUserInfo(data) {
+  if (!data || typeof data !== "object") return;
+  if ("ads" in data) data.ads = null;
 }
 
 function patchElements(node) {
@@ -191,6 +208,8 @@ function patchPayload(payload, reqUrl) {
     if (typeof d === "object" && !Array.isArray(d)) {
       if (url.indexOf("home/config") >= 0) patchHomeConfig(d);
       if (url.indexOf("index/index") >= 0) patchIndex(d);
+      if (url.indexOf("mv/list_construct") >= 0) patchListConstruct(d);
+      if (url.indexOf("user/userInfo") >= 0) patchUserInfo(d);
       patchElements(d);
     }
     stripAds(d);
