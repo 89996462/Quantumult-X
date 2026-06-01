@@ -16,14 +16,6 @@
 
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
 
-^https?:\/\/api-dc-prod-002\.cyou\/ - reject
-
-^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
-
-^https?:\/\/api-dc-prod-006\.cyou\/ - reject
-
-^https?:\/\/api-dc2-prod-06\.cyou\/ - reject
-
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
 ^https?:\/\/[^\/]+\/upload\/ads\/ - reject
@@ -32,7 +24,7 @@
 
 [mitm]
 
-hostname = pfzpnj.rsvurzldo.cc, *.rsvurzldo.cc, ujvxsl.rsvurzldo.cc, zwsfxv.rsvurzldo.cc, pwa1.drkusdmul.cc, *.drkusdmul.cc, new.jfxgtd.cn, *.jfxgtd.cn, tp2.jfxgtd.cn, tp3.jfxgtd.cn, 10play.ncbfdb.cn, 10play.*.cn, api-dc-prod-006.cyou, api-dc2-prod-06.cyou
+hostname = pfzpnj.rsvurzldo.cc, *.rsvurzldo.cc, ujvxsl.rsvurzldo.cc, zwsfxv.rsvurzldo.cc, pwa1.drkusdmul.cc, *.drkusdmul.cc, new.jfxgtd.cn, *.jfxgtd.cn, tp2.jfxgtd.cn, tp3.jfxgtd.cn, 10play.ncbfdb.cn, 10play.*.cn
 
 *******************************/
 
@@ -140,6 +132,48 @@ function patchPayload(payload) {
   if (payload.data) stripAds(payload.data);
 }
 
+function getRequestBody() {
+  var body = "";
+  try {
+    if (typeof $request !== "undefined") {
+      if ($request.body) body = $request.body;
+      else if ($request.bodyBytes instanceof ArrayBuffer && $request.bodyBytes.byteLength) {
+        var bytes = new Uint8Array($request.bodyBytes);
+        for (var i = 0; i < bytes.length; i++) body += String.fromCharCode(bytes[i]);
+      } else if (typeof $request.bodyBytes === "string" && $request.bodyBytes.length) {
+        body = $request.bodyBytes;
+      }
+    }
+  } catch (e) {}
+  return body || "";
+}
+
+function parseRequestApi() {
+  var raw = getRequestBody();
+  if (!raw || raw.indexOf("data=") < 0) return null;
+  var dataHex = "";
+  var parts = raw.split("&");
+  for (var i = 0; i < parts.length; i++) {
+    var kv = parts[i].split("=");
+    if (kv[0] === "data" && kv[1]) dataHex = kv.slice(1).join("=");
+  }
+  if (!dataHex || !/^[0-9a-fA-F]{32,}$/.test(dataHex)) return null;
+  try {
+    var req = JSON.parse(decryptPayload(decodeURIComponent(dataHex)));
+    return { mod: req.mod || "", code: req.code || "" };
+  } catch (e) {
+    return null;
+  }
+}
+
+function shouldPatchRequest() {
+  var api = parseRequestApi();
+  if (!api) return true;
+  if (api.mod === "system" && api.code === "index") return true;
+  if (api.mod === "element" && api.code === "getConstructById") return true;
+  return false;
+}
+
 function getResponseBody() {
   var body = $response.body;
   if (typeof body === "string" && body.length) return body;
@@ -191,8 +225,11 @@ function processBody(body) {
     var plain = decryptPayload(wrapper.data);
     if (!plain) return null;
     var payload = JSON.parse(plain);
+    var before = JSON.stringify(payload);
     patchPayload(payload);
-    var newData = encryptPayload(JSON.stringify(payload));
+    var after = JSON.stringify(payload);
+    if (before === after) return null;
+    var newData = encryptPayload(after);
     wrapper.data = newData;
     if (wrapper.timestamp === undefined) {
       wrapper.timestamp = Math.floor(Date.now() / 1000);
@@ -207,11 +244,19 @@ function processBody(body) {
 
 try {
   var body = getResponseBody();
-  var newBody = processBody(body);
-  if (newBody) {
-    $done({ body: newBody, headers: cleanHeaders($response.headers) });
-  } else {
+  if (!body) {
     $done();
+  } else if (!shouldPatchRequest()) {
+    $done();
+  } else {
+    var newBody = processBody(body);
+    if (!newBody) {
+      $done();
+    } else if (newBody === body) {
+      $done();
+    } else {
+      $done({ body: newBody, headers: cleanHeaders($response.headers) });
+    }
   }
 } catch (e) {
   $done();
