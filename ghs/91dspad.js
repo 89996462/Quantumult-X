@@ -84,7 +84,7 @@ function encryptPayload(plainText) {
     padding: CryptoJS.pad.NoPadding,
   })
     .ciphertext.toString()
-    .toUpperCase();
+    .toLowerCase();
 }
 
 function isAdItem(item) {
@@ -112,7 +112,7 @@ function stripAds(node) {
       if (k === "notice" && v && typeof v === "object") {
         node[k] = { id: v.id || 0, title: "", content: "", created_at: 0, start_at: 0, end_at: 0 };
       } else if (k === "screen" && v && typeof v === "object") {
-        node[k] = {};
+        node[k] = null;
       } else if (k === "popupWindowAds") {
         node[k] = null;
       } else {
@@ -140,6 +140,43 @@ function patchPayload(payload) {
   if (payload.data) stripAds(payload.data);
 }
 
+function getResponseBody() {
+  var body = $response.body;
+  if (typeof body === "string" && body.length) return body;
+  if (typeof $response.bodyBytes === "string" && $response.bodyBytes.length) {
+    return $response.bodyBytes;
+  }
+  if ($response.bodyBytes instanceof ArrayBuffer && $response.bodyBytes.byteLength) {
+    var bytes = new Uint8Array($response.bodyBytes);
+    var out = "";
+    for (var i = 0; i < bytes.length; i++) {
+      out += String.fromCharCode(bytes[i]);
+    }
+    return out;
+  }
+  return body || "";
+}
+
+function cleanHeaders(headers) {
+  var h = {};
+  if (headers && typeof headers === "object") {
+    var keys = Object.keys(headers);
+    for (var i = 0; i < keys.length; i++) {
+      h[keys[i]] = headers[keys[i]];
+    }
+  }
+  delete h["Content-Encoding"];
+  delete h["content-encoding"];
+  delete h["Content-Length"];
+  delete h["content-length"];
+  delete h["Transfer-Encoding"];
+  delete h["transfer-encoding"];
+  if (!h["Content-Type"] && !h["content-type"]) {
+    h["Content-Type"] = "application/json";
+  }
+  return h;
+}
+
 function processBody(body) {
   if (!body || body.indexOf('"data"') < 0) return null;
   var wrapper;
@@ -149,8 +186,10 @@ function processBody(body) {
     return null;
   }
   if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return null;
+  if (!/^[0-9a-fA-F]{32,}$/.test(wrapper.data)) return null;
   try {
     var plain = decryptPayload(wrapper.data);
+    if (!plain) return null;
     var payload = JSON.parse(plain);
     patchPayload(payload);
     var newData = encryptPayload(JSON.stringify(payload));
@@ -166,10 +205,14 @@ function processBody(body) {
   }
 }
 
-var body = $response.body;
-var newBody = processBody(body);
-if (newBody) {
-  $done({ body: newBody, headers: $response.headers });
-} else {
+try {
+  var body = getResponseBody();
+  var newBody = processBody(body);
+  if (newBody) {
+    $done({ body: newBody, headers: cleanHeaders($response.headers) });
+  } else {
+    $done();
+  }
+} catch (e) {
   $done();
 }
