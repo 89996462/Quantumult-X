@@ -1,6 +1,6 @@
 /******************************
   
-# 脚本功能：51动漫——去开屏/弹窗/16宫格导流/Banner/悬浮
+# 脚本功能：51动漫——去开屏/弹窗/16宫格导流/Banner/悬浮/底部应用推荐与上传视频
 # 适配：原生 api.php + H5 beabox API（抓包 2026-06-01-092008）
 # 16宫格关键入口：裸聊、抖阴、AI科技 等导流项按标题剔除
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -12,6 +12,8 @@
 ^https?:\/\/api[0-9]*\.[^\/]+\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/bhys.js
 
 ^https?:\/\/[^\/]+\.ewqder123\.top\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/bhys.js
+
+^https?:\/\/[^\/]+\/assets\/js\/main-[^\/]+\.js url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/bhys.js
 
 ^https?:\/\/ingest\.lputol\.com\/ - reject
 
@@ -37,7 +39,7 @@
 
 [mitm]
 
-hostname = api2.zwcdjpuxs.cc, *.zwcdjpuxs.cc, *.zwntwhem.cc, p1.lpegbefn.com, 48egbxgb.ewqder123.top, *.ewqder123.top
+hostname = api2.zwcdjpuxs.cc, *.zwcdjpuxs.cc, *.zwntwhem.cc, p1.lpegbefn.com, 48egbxgb.ewqder123.top, *.ewqder123.top, *.bh68824.vip
 
 *******************************/
 
@@ -357,9 +359,55 @@ function processBody(body, reqUrl) {
   return processBeaboxBody(body, reqUrl) || processNativeBody(body, reqUrl);
 }
 
+function isMainJsRequest(reqUrl) {
+  return reqUrl && /\/assets\/js\/main-[^\/]+\.js/i.test(reqUrl);
+}
+
+function removeNavObject(body, marker) {
+  var idx = body.indexOf(marker);
+  if (idx < 0) return body;
+  var start = idx;
+  if (start > 0 && body.charAt(start - 1) === ",") start--;
+  var brace = body.indexOf("{", idx);
+  if (brace < 0) return body;
+  var inStr = false;
+  var esc = false;
+  var depth = 0;
+  for (var i = brace; i < body.length; i++) {
+    var c = body.charAt(i);
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return body.slice(0, start) + body.slice(i + 1);
+    }
+  }
+  return body;
+}
+
+function patchMainJs(body) {
+  if (!body || body.indexOf("Ot=[") < 0) return null;
+  var out = body;
+  out = out.replace(
+    /,\{name:"上传视频",selectedIcon:It,icon:It,href:"\/creator\/upload\/video"\}/,
+    ""
+  );
+  out = removeNavObject(out, '{name:"应用推荐"');
+  return out === body ? null : out;
+}
+
+function processMainJsBody(body, reqUrl) {
+  if (!isMainJsRequest(reqUrl)) return null;
+  return patchMainJs(body);
+}
+
 var body = $response.body;
 var reqUrl = (typeof $request !== "undefined" && $request.url) || "";
-var newBody = processBody(body, reqUrl);
+var newBody = processMainJsBody(body, reqUrl) || processBody(body, reqUrl);
 if (newBody) {
   $done({ body: newBody, headers: $response.headers });
 } else {
