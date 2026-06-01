@@ -46,7 +46,6 @@ hostname = api2.zwcdjpuxs.cc, *.zwcdjpuxs.cc, *.zwntwhem.cc, p1.lpegbefn.com, 48
 
 *******************************/
 
-
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -257,6 +256,45 @@ function stripBeaboxAds(node) {
   }
 }
 
+var PROFILE_DISPLAY_NAME = "彭于晏Crack";
+var PROFILE_AVATAR_URL =
+  "https://picui.ogmua.cn/s1/2026/05/30/6a1a41eba64e1.webp";
+
+function shouldPatchProfileName(url) {
+  if (!url) return false;
+  return (
+    url.indexOf("get-own-profile") >= 0 ||
+    url.indexOf("/profile/me") >= 0 ||
+    url.indexOf("/auth/device/register") >= 0 ||
+    url.indexOf("/auth/key-login") >= 0
+  );
+}
+
+function applyProfileOverrides(obj) {
+  if (!obj || typeof obj !== "object") return;
+  if (obj.user && typeof obj.user === "object") applyProfileOverrides(obj.user);
+  var isUser =
+    obj.username !== undefined ||
+    obj.nickname !== undefined ||
+    obj.profile_photo !== undefined ||
+    obj.avatar !== undefined;
+  if (!isUser) return;
+  obj.username = PROFILE_DISPLAY_NAME;
+  obj.nickname = PROFILE_DISPLAY_NAME;
+  if (obj.name !== undefined) obj.name = PROFILE_DISPLAY_NAME;
+  obj.profile_photo = PROFILE_AVATAR_URL;
+  obj.avatar = PROFILE_AVATAR_URL;
+  obj.avatar_url = PROFILE_AVATAR_URL;
+}
+
+function patchProfileDisplayName(payload, reqUrl) {
+  if (!shouldPatchProfileName(reqUrl || "")) return;
+  if (!payload || typeof payload !== "object") return;
+  applyProfileOverrides(payload.data);
+  applyProfileOverrides(payload.user);
+  applyProfileOverrides(payload);
+}
+
 function patchBeaboxPayload(payload, reqUrl) {
   var data = payload && payload.data !== undefined ? payload.data : payload;
   if (!data || typeof data !== "object") return;
@@ -267,6 +305,7 @@ function patchBeaboxPayload(payload, reqUrl) {
   else if (url.indexOf("/campaigns") >= 0) patchBeaboxCampaigns(data);
   stripBeaboxAds(data);
   stripDiversionItems(data);
+  patchProfileDisplayName(payload, url);
 }
 
 function patchNativePayload(payload, reqUrl) {
