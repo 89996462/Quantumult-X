@@ -1,12 +1,13 @@
 /******************************
   
 # 脚本功能：51动漫 PWA——去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
-# 特别说明：基于抓包 2026-06-01-144724 适配 api.php 接口
+# 特别说明：基于抓包 2026-06-01-150121 适配 api.php 接口
 # 前端：p4.zkcrhculx.cc  接口：*.zjjjfbyo.cc/api.php/api/
 # 更新时间：2026-06-01
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************
+
 
 [rewrite_local]
 
@@ -44,23 +45,9 @@ const AES_KEY = "2acf7e91e9864673";
 const AES_IV = "1c29882d3ddfcfd6";
 const SIGN_SALT = "5589d41f92a597d016b037ac37db243d";
 const AD_KEY_RE =
-  /^(ads|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|banner|home_banner|home_ads|notice|start_screen_ads|screen|home_pop_ads|notice_app|popupWindowAds|indexFloat|indexBanner|gameFloat|buoy|upload_banner|topbanner|post_detail_ads|person_ads)$/i;
-const AD_ITEM_RE = /\/ads\/|advertise_code|advertise_location_code|ad_slot_name/i;
-// 1x1 透明图：start_screen_ads 为空时 App 会卡在内置 splash 图，需保留 length>=1 以 loading=false
-const SPLASH_SKIP_ITEM = {
-  id: 0,
-  title: "",
-  description: "",
-  img_url: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-  url_config: "",
-  type: 1,
-  status: 1,
-  redirect_type: 0,
-  show_time: 1,
-  duration: 1,
-  start_at: 0,
-  end_at: 0,
-};
+  /^(ads|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|banner|banners|home_banner|home_ads|notice|start_screen_ads|screen|home_pop_ads|notice_app|popupWindowAds|indexFloat|indexBanner|gameFloat|buoy|upload_banner|topbanner|post_detail_ads|person_ads|part)$/i;
+const AD_ITEM_RE =
+  /\/ads\/|advertise_code|advertise_location_code|ad_slot_name|ad_type|jfxgtd\.cn\/hc237\/uploads\/default\/other/i;
 
 function calcSign(wrapper) {
   var parts = [];
@@ -96,7 +83,17 @@ function isAdItem(item) {
   if (!item || typeof item !== "object") return false;
   if (item.advertise_code || item.advertise_location_code) return true;
   if (item.ad_slot_name && AD_ITEM_RE.test(String(item.ad_slot_name))) return true;
-  var u = String(item.img_url || item.url || item.link_url || item.image || item.icon || "");
+  if (item.ad_type !== undefined && item.ad_type !== null && item.ad_type !== "") return true;
+  var u = String(
+    item.img_url ||
+      item.url ||
+      item.link_url ||
+      item.image ||
+      item.icon ||
+      item.resource_url ||
+      item.url_config ||
+      ""
+  );
   return AD_ITEM_RE.test(u);
 }
 
@@ -118,12 +115,8 @@ function stripAds(node) {
         node[k] = { id: v.id || 0, title: "", content: "", created_at: 0, start_at: 0, end_at: 0 };
       } else if (k === "ads" && v && typeof v === "object" && !Array.isArray(v)) {
         node[k] = null;
-      } else if (k === "start_screen_ads" && Array.isArray(v)) {
-        var keptAds = [];
-        for (var ai = 0; ai < v.length; ai++) {
-          if (!isAdItem(v[ai])) keptAds.push(v[ai]);
-        }
-        node[k] = keptAds;
+      } else if (k === "start_screen_ads") {
+        node[k] = [];
       } else if (k === "screen" && v && typeof v === "object") {
         node[k] = null;
       } else if (k === "popupWindowAds") {
@@ -167,47 +160,13 @@ function stripAds(node) {
   }
 }
 
-function fixSplashAds(data) {
-  if (!data || typeof data !== "object") return;
-  data.screen = null;
-  var list = Array.isArray(data.start_screen_ads) ? data.start_screen_ads : [];
-  var kept = [];
-  for (var i = 0; i < list.length; i++) {
-    if (!isAdItem(list[i])) kept.push(list[i]);
-  }
-  if (kept.length === 0) kept.push(SPLASH_SKIP_ITEM);
-  data.start_screen_ads = kept;
-}
-
-function patchListConstruct(data) {
-  if (!data || typeof data !== "object") return;
-  if (Array.isArray(data.banner)) data.banner = [];
-  if (Array.isArray(data.part)) data.part = [];
-}
-
 function patchPayload(payload) {
   stripAds(payload);
   if (payload.data) {
     stripAds(payload.data);
-    fixSplashAds(payload.data);
-    patchListConstruct(payload.data);
+    if (payload.data.screen) payload.data.screen = null;
+    if (Array.isArray(payload.data.start_screen_ads)) payload.data.start_screen_ads = [];
   }
-}
-
-function getRequestUrl() {
-  try {
-    if (typeof $request !== "undefined" && $request.url) return String($request.url);
-  } catch (e) {}
-  return "";
-}
-
-function shouldPatchRequest() {
-  var url = getRequestUrl();
-  if (!url) return true;
-  if (/\/home\/config/i.test(url)) return true;
-  if (/\/element\/getElementById/i.test(url)) return true;
-  if (/\/mv\/list_construct/i.test(url)) return true;
-  return false;
 }
 
 function getResponseBody() {
@@ -281,8 +240,6 @@ function processBody(body) {
 try {
   var body = getResponseBody();
   if (!body) {
-    $done();
-  } else if (!shouldPatchRequest()) {
     $done();
   } else {
     var newBody = processBody(body);
