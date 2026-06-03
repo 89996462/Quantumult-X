@@ -1,18 +1,19 @@
 /******************************
-
-# 脚本功能：汤头条——解锁—金币视频—VIP视频
+  
+# 脚本功能：汤头条 PWA——去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
-# 更新时间：2026-5-25
+# 更新时间：2026-06-03（抓包 2026-06-03-132947 / api.php v3 AES-CBC）
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************
 
+
 [rewrite_local]
 
-^https?:\/\/[^\/]+\/pwa\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
+^https?:\/\/[^\/]+\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
 
 [filter-local]
 
@@ -24,13 +25,14 @@
 
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
+^https?:\/\/18\.162\.65\.153\/api\/eventTracking\/ - reject
+
 [mitm]
 
-hostname = p1.ceogberj.cc, *.ceogberj.cc, api3.caanrrim.cc, *.caanrrim.cc, new.iajckz.cn, *.iajckz.cn, ap.dc-report.cc, api-dc-prod-002.cyou, api-dc2-prod-02.cyou
+hostname = wapi.yeuxqifz.cc, *.yeuxqifz.cc, api4.yeuxqifz.cc, api5.yeuxqifz.cc, p4.xoceiqxo.cc, *.xoceiqxo.cc, p1.ceogberj.cc, *.ceogberj.cc, api3.caanrrim.cc, *.caanrrim.cc, new.iajckz.cn, *.iajckz.cn, tp5.iajckz.cn, tp6.iajckz.cn, tp7.iajckz.cn, 120play.*.cn, long.*.cn, *.wpyxbxt.cn, h5play.*.com, *.fipxor.cn, ap.dc-report.cc, api-dc-prod-002.cyou, api-dc2-prod-02.cyou
 
 *******************************/
 
-// hjsq-api-noad v2 — 抓包 2026-06-03-131155（api.php + pwa.php）
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -41,63 +43,107 @@ var CryptoJS;
   }
 })();
 
-// PWA/api 加密参数（p1.ceogberj.cc 主包 + 2026-06-03 wapi.yeuxqifz.cc 抓包）
-const AES_KEY = "7205a6c3883caf95b52db5b534e12ec3";
-const AES_IV = "81d7beac44a86f43";
-const SIGN_SALT = "7205a6c3883caf95b52db5b534e12ec3";
+// Flutter PWA api.php _ver=v3（main.dart.js $.c1t / $.c1s / sign salt）
+const AES_KEY_V3 = "09565a017ed8a5a0";
+const AES_IV_V3 = "0bc190bd3b565af4";
+const SIGN_SALT_V3 = "8ea5dc30d6cf17acd1531e11cfef5e30";
+// 旧版 pwa.php FF07BB 十六进制密文
+const AES_KEY_HEX = "7205a6c3883caf95b52db5b534e12ec3";
+const AES_IV_HEX = "81d7beac44a86f43";
+const SIGN_SALT_HEX = "7205a6c3883caf95b52db5b534e12ec3";
 const AD_KEY_RE =
-  /^(ads|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|float_window|float|banner|home_banner|home_ads|splash|splash_ads|open_screen|open_screen_ad|screen_ad|layer|notice|element_list|quick_list|icon_list|grid_list|partner_list|module_list|launch_config|home_element|diversion|guide_apps|guide_list)$/i;
+  /^(ads|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|start_screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|float_window|float|banner|home_banner|home_ads|splash|splash_ads|open_screen|open_screen_ad|screen_ad|layer|notice|element_list|quick_list|icon_list|grid_list|partner_list|module_list|launch_config|home_element|diversion|guide_apps|guide_list)$/i;
 const AD_ITEM_RE = /\/ads\/|advertise_code|advertise_location_code|upload_01\/ads/i;
 const GRID_ENTRY_RE =
   /裸聊|抖阴|AI科技|AI\s*科技|16宫格|宫格导流|吃瓜|污漫|次元|萝莉|约炮|直播|棋牌|菠菜|新版图标/i;
 const GRID_KEY_RE = /宫格|导流|grid|partner|quick_entry|icon_list|guide/i;
 
-function calcSign(wrapper) {
+function md5sha256(raw) {
+  return CryptoJS.MD5(CryptoJS.SHA256(raw).toString()).toString();
+}
+
+function calcSignSorted(wrapper, salt) {
+  var keys = Object.keys(wrapper);
+  keys.sort();
+  var parts = [];
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    if (k === "sign") continue;
+    var v = wrapper[k];
+    if (v === undefined || v === null) continue;
+    if (k === "data") v = String(v).replace(/ /g, "+");
+    parts.push(k + "=" + v);
+  }
+  return md5sha256(parts.join("&") + salt);
+}
+
+function calcSignLegacy(wrapper) {
   var parts = [];
   if (wrapper.client !== undefined) parts.push("client=" + wrapper.client);
   if (wrapper.data !== undefined) parts.push("data=" + wrapper.data);
   if (wrapper.errcode !== undefined) parts.push("errcode=" + wrapper.errcode);
   if (wrapper.timestamp !== undefined) parts.push("timestamp=" + wrapper.timestamp);
-  var raw = parts.join("&") + SIGN_SALT;
-  return CryptoJS.MD5(CryptoJS.SHA256(raw).toString()).toString();
+  return md5sha256(parts.join("&") + SIGN_SALT_HEX);
 }
 
-function aesOptions() {
+function aesOptionsCfb(ivStr) {
   return {
-    iv: CryptoJS.enc.Utf8.parse(AES_IV),
+    iv: CryptoJS.enc.Utf8.parse(ivStr),
     mode: CryptoJS.mode.CFB,
     padding: CryptoJS.pad.NoPadding,
   };
 }
 
+function aesOptionsCbc(ivStr) {
+  return {
+    iv: CryptoJS.enc.Utf8.parse(ivStr),
+    mode: CryptoJS.mode.CBC,
+    padding: CryptoJS.pad.Pkcs7,
+  };
+}
+
 function decryptPayloadHex(dataHex) {
-  var key = CryptoJS.enc.Utf8.parse(AES_KEY);
+  var key = CryptoJS.enc.Utf8.parse(AES_KEY_HEX);
   var hexWords = CryptoJS.enc.Hex.parse(dataHex);
   var b64 = CryptoJS.enc.Base64.stringify(hexWords);
-  var dec = CryptoJS.AES.decrypt(b64, key, aesOptions());
+  var dec = CryptoJS.AES.decrypt(b64, key, aesOptionsCfb(AES_IV_HEX));
   return dec.toString(CryptoJS.enc.Utf8);
 }
 
-function decryptPayloadB64(dataB64) {
-  var key = CryptoJS.enc.Utf8.parse(AES_KEY);
+function decryptPayloadB64V3(dataB64) {
+  var key = CryptoJS.enc.Utf8.parse(AES_KEY_V3);
   var params = CryptoJS.lib.CipherParams.create({
     ciphertext: CryptoJS.enc.Base64.parse(dataB64),
   });
-  var dec = CryptoJS.AES.decrypt(params, key, aesOptions());
+  var dec = CryptoJS.AES.decrypt(params, key, aesOptionsCbc(AES_IV_V3));
   return dec.toString(CryptoJS.enc.Utf8);
 }
 
 function encryptPayloadHex(plainText) {
-  var key = CryptoJS.enc.Utf8.parse(AES_KEY);
-  return CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(plainText), key, aesOptions())
+  var key = CryptoJS.enc.Utf8.parse(AES_KEY_HEX);
+  return CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(plainText), key, aesOptionsCfb(AES_IV_HEX))
     .ciphertext.toString()
     .toUpperCase();
 }
 
-function encryptPayloadB64(plainText) {
-  var key = CryptoJS.enc.Utf8.parse(AES_KEY);
-  var enc = CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(plainText), key, aesOptions());
+function encryptPayloadB64V3(plainText) {
+  var key = CryptoJS.enc.Utf8.parse(AES_KEY_V3);
+  var enc = CryptoJS.AES.encrypt(
+    CryptoJS.enc.Utf8.parse(plainText),
+    key,
+    aesOptionsCbc(AES_IV_V3)
+  );
   return CryptoJS.enc.Base64.stringify(enc.ciphertext);
+}
+
+function isValidJsonPlain(plain) {
+  if (!plain || plain.charAt(0) !== "{") return false;
+  try {
+    JSON.parse(plain);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 function isHexCipher(data) {
@@ -201,21 +247,33 @@ function processBody(body) {
   var useB64 = !useHex && isB64Cipher(wrapper.data);
   if (!useHex && !useB64) return null;
   try {
-    var plain = useHex
-      ? decryptPayloadHex(wrapper.data)
-      : decryptPayloadB64(wrapper.data);
-    if (!plain) return null;
+    var plain = "";
+    var mode = "";
+    if (useHex) {
+      plain = decryptPayloadHex(wrapper.data);
+      if (!isValidJsonPlain(plain)) return null;
+      mode = "hex";
+    } else {
+      plain = decryptPayloadB64V3(wrapper.data);
+      if (isValidJsonPlain(plain)) mode = "v3";
+      else return null;
+    }
     var payload = JSON.parse(plain);
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
-    wrapper.data = useHex
-      ? encryptPayloadHex(JSON.stringify(payload))
-      : encryptPayloadB64(JSON.stringify(payload));
-    if (wrapper.client === undefined) wrapper.client = "pwa";
+    wrapper.data =
+      mode === "hex"
+        ? encryptPayloadHex(JSON.stringify(payload))
+        : encryptPayloadB64V3(JSON.stringify(payload));
     if (wrapper.timestamp === undefined) {
       wrapper.timestamp = Math.floor(Date.now() / 1000);
     }
-    wrapper.sign = calcSign(wrapper);
+    delete wrapper.sign;
+    if (mode === "v3") {
+      wrapper.sign = calcSignSorted(wrapper, SIGN_SALT_V3);
+    } else {
+      wrapper.sign = calcSignLegacy(wrapper);
+    }
     if (wrapper.errcode !== undefined) wrapper.errcode = 0;
     return JSON.stringify(wrapper);
   } catch (e) {
