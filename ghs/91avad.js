@@ -3,7 +3,7 @@
 # 脚本功能：汤头条 PWA——去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
-# 更新时间：2026-06-03（抓包 2026-06-03-143224 / v8 v0 加密 + screen 开屏）
+# 更新时间：2026-06-03（抓包 2026-06-03-144230 / v9 elements.value 16宫格）
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -29,13 +29,13 @@
 
 ^https?:\/\/[^\/]+\/new\/ads\/ - reject
 
-^https?:\/\/[^\/]+\/hc237\/uploads\/ - reject
+^https?:\/\/[^\/]+\/hc237\/ - reject
 
 ^https?:\/\/18\.162\.65\.153\/api\/eventTracking\/ - reject
 
 [mitm]
 
-hostname = *.yeuxqifz.cc, *.xoceiqxo.cc, *.ceogberj.cc, *.caanrrim.cc, *.iajckz.cn, *.xmwemv.cn, *.bwkhawkdv.cc, p4.bxlpxkmvh.com, *.bxlpxkmvh.com, 120play.*.cn, long.*.cn, *.wpyxbxt.cn, h5play.*.com, *.fipxor.cn, ap.dc-report.cc, api-dc-prod-002.cyou, api-dc2-prod-02.cyou
+hostname = *.yeuxqifz.cc, *.xoceiqxo.cc, *.ceogberj.cc, *.caanrrim.cc, *.iajckz.cn, *.xmwemv.cn, *.bwkhawkdv.cc, p4.bxlpxkmvh.com, *.bxlpxkmvh.com, tp6.xmwemv.cn, tp7.xmwemv.cn, 120play.*.cn, long.*.cn, *.wpyxbxt.cn, h5play.*.com, *.fipxor.cn, ap.dc-report.cc, api-dc-prod-002.cyou, api-dc2-prod-02.cyou
 
 *******************************/
 
@@ -66,7 +66,7 @@ const AD_FIELD_RE =
 const AD_ITEM_RE =
   /\/ads\/|\/upload\/ads\/|advertise_code|advertise_location_code|upload_01\/ads/i;
 const GRID_ENTRY_RE =
-  /裸聊|抖阴|AI科技|AI\s*科技|16宫格|宫格导流|吃瓜|污漫|次元|约炮|菠菜|新版图标|PG棋牌|PG电子|PG发|青楼|春药|永利|外围品茶|91PORN|点我福利|Hot\s*girls|电子棋牌|大发娱乐|澳门娱乐|澳门新|新葡京|葡萄京|皇宫|饥渴欲女|品茶|迷奸|校园直播|杏吧|免费看片|潘多拉|送1888/i;
+  /裸聊|抖阴|AI科技|AI\s*科技|16宫格|宫格导流|吃瓜|污漫|次元|约炮|菠菜|新版图标|首页图标|PG棋牌|PG电子|PG发|青楼|春药|永利|外围品茶|91PORN|点我福利|Hot\s*girls|电子棋牌|大发娱乐|澳门娱乐|澳门新|新葡京|葡萄京|皇宫|饥渴欲女|品茶|迷奸|校园直播|杏吧|免费看片|潘多拉|送1888|在线约炮/i;
 const EXTERNAL_URL_RE = /^https?:\/\//i;
 const DIVERSION_HOST_RE =
   /kvbxetxl\.com|x17sui|xmwemv\.cn\/upload\/ads\//i;
@@ -304,6 +304,18 @@ function stripPageAds(data) {
   }
   filterAdArray(data.banner);
   filterAdArray(data.banners);
+  filterAdArray(data.pop_ads);
+  filterAdArray(data.value);
+  if (Array.isArray(data.elements)) {
+    for (var ei = 0; ei < data.elements.length; ei++) {
+      var el = data.elements[ei];
+      if (!el || typeof el !== "object") continue;
+      filterAdArray(el.value);
+      filterAdArray(el.banner);
+      filterAdArray(el.list);
+      stripPartNested(el);
+    }
+  }
   if (Array.isArray(data.part)) {
     var part = data.part;
     for (var i = part.length - 1; i >= 0; i--) {
@@ -340,12 +352,16 @@ function stripFeedData(data) {
 }
 
 function isGridDiversionArray(arr) {
-  if (!Array.isArray(arr) || arr.length < 9 || arr.length > 16) return false;
+  if (!Array.isArray(arr) || arr.length < 6) return false;
   var hit = 0;
+  var adHit = 0;
   for (var i = 0; i < arr.length; i++) {
     if (GRID_ENTRY_RE.test(itemText(arr[i]))) hit++;
+    if (isInjectedListAd(arr[i]) || isAdItem(arr[i])) adHit++;
   }
-  return hit >= 3;
+  if (adHit >= 6) return true;
+  if (arr.length >= 9 && arr.length <= 32 && hit >= 3) return true;
+  return false;
 }
 
 function filterArray(arr) {
@@ -434,6 +450,21 @@ function stripAds(node) {
       filterAdArray(v);
       continue;
     }
+    if (k === "pop_ads" && Array.isArray(v)) {
+      filterAdArray(v);
+      continue;
+    }
+    if (k === "value" && Array.isArray(v)) {
+      if (isGridDiversionArray(v)) node[k] = [];
+      else filterAdArray(v);
+      continue;
+    }
+    if (k === "elements" && Array.isArray(v)) {
+      for (var ei = 0; ei < v.length; ei++) {
+        stripAds(v[ei]);
+      }
+      continue;
+    }
     if (Array.isArray(v)) {
       if (isGridDiversionArray(v)) {
         node[k] = [];
@@ -466,11 +497,11 @@ function processBody(body) {
       if (!isValidJsonPlain(plain)) return null;
       mode = "hex";
     } else {
-      plain = decryptPayloadB64V3(wrapper.data);
-      if (isValidJsonPlain(plain)) mode = "v3";
+      plain = decryptPayloadB64V0(wrapper.data);
+      if (isValidJsonPlain(plain)) mode = "v0";
       else {
-        plain = decryptPayloadB64V0(wrapper.data);
-        if (isValidJsonPlain(plain)) mode = "v0";
+        plain = decryptPayloadB64V3(wrapper.data);
+        if (isValidJsonPlain(plain)) mode = "v3";
         else return null;
       }
     }
@@ -485,6 +516,7 @@ function processBody(body) {
     }
     stripPageAds(inner);
     stripSplashScreen(inner);
+    stripAds(inner);
     if (JSON.stringify(payload) === before) return null;
     wrapper.data =
       mode === "hex"
@@ -510,14 +542,32 @@ function processBody(body) {
   }
 }
 
+function normalizeResponseBody(body) {
+  if (body == null) return "";
+  if (typeof body === "string") return body;
+  if (typeof body === "object" && body.byteLength != null) {
+    var u8 = new Uint8Array(body);
+    var s = "";
+    for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+    return s;
+  }
+  return String(body);
+}
+
 var reqUrl = ($request && $request.url) || "";
 if (!AD_API_PATH_RE.test(reqUrl.split("?")[0])) {
   $done();
 } else {
-  var body = $response.body;
+  var body = normalizeResponseBody($response.body);
   var newBody = processBody(body);
   if (newBody) {
-    $done({ body: newBody, headers: $response.headers });
+    var hdrs = $response.headers || {};
+    if (hdrs["Content-Encoding"]) {
+      hdrs = Object.assign({}, hdrs);
+      delete hdrs["Content-Encoding"];
+      delete hdrs["content-encoding"];
+    }
+    $done({ body: newBody, headers: hdrs });
   } else {
     $done();
   }
