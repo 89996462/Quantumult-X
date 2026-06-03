@@ -3,7 +3,7 @@
 # 脚本功能：汤头条 PWA——去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
-# 更新时间：2026-06-03（抓包 2026-06-03-140711 / v6 list 夹杂广告 + notice 弹窗）
+# 更新时间：2026-06-03（抓包 2026-06-03-141559 / v7 全 API + banners 16宫格）
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -13,7 +13,7 @@
 
 [rewrite_local]
 
-^https?:\/\/[^\/]+\/(?:api|pwa)\.php\/api(?:\/api)?\/(?:home\/config|element\/getElementById|mv\/discover2|mv\/list_construct) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
+^https?:\/\/[^\/]+\/(?:api|pwa)\.php\/api(?:\/api)?\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
 
 [filter-local]
 
@@ -27,7 +27,7 @@
 
 ^https?:\/\/[^\/]+\/upload\/ads\/ - reject
 
-^https?:\/\/[^\/]+\/hc237\/uploads\/default\/other\/ - reject
+^https?:\/\/[^\/]+\/hc237\/uploads\/ - reject
 
 ^https?:\/\/18\.162\.65\.153\/api\/eventTracking\/ - reject
 
@@ -64,9 +64,9 @@ const GRID_ENTRY_RE =
 const EXTERNAL_URL_RE = /^https?:\/\//i;
 const DIVERSION_HOST_RE =
   /kvbxetxl\.com|x17sui|xmwemv\.cn\/upload\/ads\//i;
-const AD_API_PATH_RE =
-  /\/(?:api\.php\/api|pwa\.php\/api)(?:\/api)?\/(?:home\/config|element\/getElementById|mv\/discover2|mv\/list_construct)(?:\/|$|\?)/i;
+const AD_API_PATH_RE = /\/(?:api|pwa)\.php\/api(?:\/api)?\//i;
 const FEED_API_PATH_RE = /\/mv\/(?:discover2|list_construct)(?:\/|$|\?)/i;
+const HOME_CONFIG_PATH_RE = /\/home\/config(?:\/|$|\?)/i;
 
 function md5sha256(raw) {
   return CryptoJS.MD5(CryptoJS.SHA256(raw).toString()).toString();
@@ -249,13 +249,25 @@ function stripPartNested(item) {
   }
 }
 
-function stripFeedData(data) {
+function filterAdArray(arr) {
+  if (!Array.isArray(arr)) return arr;
+  for (var i = arr.length - 1; i >= 0; i--) {
+    if (isInjectedListAd(arr[i]) || isDiversionPartItem(arr[i]) || isAdItem(arr[i])) {
+      arr.splice(i, 1);
+    }
+  }
+  return arr;
+}
+
+function stripPageAds(data) {
   if (!data || typeof data !== "object") return;
   if (Array.isArray(data.list)) {
     for (var li = data.list.length - 1; li >= 0; li--) {
       if (isInjectedListAd(data.list[li])) data.list.splice(li, 1);
     }
   }
+  filterAdArray(data.banner);
+  filterAdArray(data.banners);
   if (Array.isArray(data.part)) {
     var part = data.part;
     for (var i = part.length - 1; i >= 0; i--) {
@@ -267,12 +279,27 @@ function stripFeedData(data) {
       stripPartNested(item);
     }
   }
-  if (Array.isArray(data.banner)) filterArray(data.banner);
   if (Array.isArray(data.nav)) {
     for (var j = data.nav.length - 1; j >= 0; j--) {
-      if (isDiversionPartItem(data.nav[j]) || isAdItem(data.nav[j])) data.nav.splice(j, 1);
+      if (isDiversionPartItem(data.nav[j]) || isInjectedListAd(data.nav[j])) data.nav.splice(j, 1);
     }
   }
+  var keys = Object.keys(data);
+  for (var k = 0; k < keys.length; k++) {
+    var key = keys[k];
+    if (AD_FIELD_RE.test(key)) {
+      if (key === "ads" && data[key] && typeof data[key] === "object" && !Array.isArray(data[key])) {
+        data[key] = null;
+      } else {
+        data[key] = emptyValue(data[key]);
+      }
+    }
+  }
+  if (isNoticeAd(data.notice)) data.notice = {};
+}
+
+function stripFeedData(data) {
+  stripPageAds(data);
 }
 
 function isGridDiversionArray(arr) {
@@ -362,7 +389,11 @@ function stripAds(node) {
       continue;
     }
     if (k === "banner" && Array.isArray(v)) {
-      filterArray(v);
+      filterAdArray(v);
+      continue;
+    }
+    if (k === "banners" && Array.isArray(v)) {
+      filterAdArray(v);
       continue;
     }
     if (Array.isArray(v)) {
@@ -405,15 +436,10 @@ function processBody(body) {
     var before = JSON.stringify(payload);
     var req = ($request && $request.url) || "";
     var inner = payload.data || payload;
-    if (/\/home\/config/i.test(req) && payload.data) {
+    if (HOME_CONFIG_PATH_RE.test(req) && payload.data) {
       stripHomeConfig(payload.data);
     }
-    if (FEED_API_PATH_RE.test(req)) {
-      stripFeedData(inner);
-    } else {
-      stripAds(payload);
-      if (payload.data) stripAds(payload.data);
-    }
+    stripPageAds(inner);
     if (JSON.stringify(payload) === before) return null;
     wrapper.data =
       mode === "hex"
