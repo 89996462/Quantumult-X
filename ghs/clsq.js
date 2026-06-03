@@ -1,9 +1,11 @@
+
+
 /******************************
   
 # 脚本功能：汤头条 PWA——去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
-# 更新时间：2026-06-03（抓包 2026-06-03-133924 / v4 仅广告接口 + 无改动透传）
+# 更新时间：2026-06-03（抓包 2026-06-03-133924 / v5 + discover2/list_construct 去 part 导流）
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -13,10 +15,7 @@
 
 [rewrite_local]
 
-^https?:\/\/[^\/]+\/api\.php\/api\/home\/config url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
-
-^https?:\/\/[^\/]+\/api\.php\/api\/element\/getElementById url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
-
+^https?:\/\/[^\/]+\/(?:api|pwa)\.php\/api(?:\/api)?\/(?:home\/config|element\/getElementById|mv\/discover2|mv\/list_construct) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
 
 [filter-local]
 
@@ -34,10 +33,11 @@
 
 [mitm]
 
-hostname = wapi.yeuxqifz.cc, *.yeuxqifz.cc, api4.yeuxqifz.cc, api5.yeuxqifz.cc, p4.xoceiqxo.cc, *.xoceiqxo.cc, p1.ceogberj.cc, *.ceogberj.cc, api3.caanrrim.cc, *.caanrrim.cc, new.iajckz.cn, *.iajckz.cn, tp5.iajckz.cn, tp6.iajckz.cn, tp7.iajckz.cn, 120play.*.cn, long.*.cn, *.wpyxbxt.cn, h5play.*.com, *.fipxor.cn, new.xmwemv.cn, *.xmwemv.cn, ap.dc-report.cc, api-dc-prod-002.cyou, api-dc2-prod-02.cyou
+hostname = *.yeuxqifz.cc, *.xoceiqxo.cc, *.ceogberj.cc, *.caanrrim.cc, *.iajckz.cn, *.xmwemv.cn, 120play.*.cn, long.*.cn, *.wpyxbxt.cn, h5play.*.com, *.fipxor.cn, ap.dc-report.cc, api-dc-prod-002.cyou, api-dc2-prod-02.cyou
 
 *******************************/
 
+// hjsq-api-noad v5 — 抓包 2026-06-03-133924（+ discover2/list_construct 去 part 导流；无改动透传）
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -61,9 +61,12 @@ const AD_FIELD_RE =
 const AD_ITEM_RE =
   /\/ads\/|\/upload\/ads\/|advertise_code|advertise_location_code|upload_01\/ads/i;
 const GRID_ENTRY_RE =
-  /裸聊|抖阴|AI科技|AI\s*科技|16宫格|宫格导流|吃瓜|污漫|次元|萝莉|约炮|直播|棋牌|菠菜|新版图标/i;
+  /裸聊|抖阴|AI科技|AI\s*科技|16宫格|宫格导流|吃瓜|污漫|次元|约炮|菠菜|新版图标|PG棋牌|PG电子|PG发|青楼|春药|永利|外围品茶|91PORN|点我福利|Hot\s*girls|电子棋牌|大发娱乐|澳门娱乐|澳门新|葡萄京|皇宫|饥渴欲女|品茶|迷奸|校园直播|杏吧|免费看片/i;
+const DIVERSION_HOST_RE =
+  /kvbxetxl\.com|x17sui|xmwemv\.cn\/upload\/ads\//i;
 const AD_API_PATH_RE =
-  /\/(?:api\.php\/api|pwa\.php\/api)\/(?:home\/config|element\/getElementById)(?:\/|$|\?)/i;
+  /\/(?:api\.php\/api|pwa\.php\/api)(?:\/api)?\/(?:home\/config|element\/getElementById|mv\/discover2|mv\/list_construct)(?:\/|$|\?)/i;
+const FEED_API_PATH_RE = /\/mv\/(?:discover2|list_construct)(?:\/|$|\?)/i;
 
 function md5sha256(raw) {
   return CryptoJS.MD5(CryptoJS.SHA256(raw).toString()).toString();
@@ -186,13 +189,65 @@ function isAdItem(item) {
       item.image ||
       item.jump_url ||
       item.resource_url ||
+      item.icon ||
+      item.config ||
+      item.url_str ||
       ""
   );
   if (AD_ITEM_RE.test(u)) return true;
+  if (DIVERSION_HOST_RE.test(u)) return true;
   if (GRID_ENTRY_RE.test(itemText(item))) return true;
   var tp = String(item.type || item.element_type || item.ad_type || "");
   if (/^(launch|splash|popup|float|screen_ad|ad)$/i.test(tp)) return true;
   return false;
+}
+
+function isDiversionPartItem(item) {
+  if (!item || typeof item !== "object") return false;
+  if (isAdItem(item)) return true;
+  var router = String(item.router || "");
+  var config = String(item.config || "");
+  var urlStr = String(item.url_str || "");
+  if (/ktloadwebview/i.test(router) && /https?:\/\//i.test(config + urlStr)) return true;
+  if (/https?:\/\//i.test(config) && DIVERSION_HOST_RE.test(config)) return true;
+  if (GRID_ENTRY_RE.test(itemText(item))) return true;
+  return false;
+}
+
+function stripPartNested(item) {
+  var keys = ["items", "list", "icons", "children", "value", "data"];
+  for (var i = 0; i < keys.length; i++) {
+    var sub = item[keys[i]];
+    if (!Array.isArray(sub)) continue;
+    if (isGridDiversionArray(sub)) {
+      item[keys[i]] = [];
+      continue;
+    }
+    item[keys[i]] = sub.filter(function (x) {
+      return !isDiversionPartItem(x) && !isAdItem(x);
+    });
+  }
+}
+
+function stripFeedData(data) {
+  if (!data || typeof data !== "object") return;
+  if (Array.isArray(data.part)) {
+    var part = data.part;
+    for (var i = part.length - 1; i >= 0; i--) {
+      var item = part[i];
+      if (isDiversionPartItem(item)) {
+        part.splice(i, 1);
+        continue;
+      }
+      stripPartNested(item);
+    }
+  }
+  if (Array.isArray(data.banner)) filterArray(data.banner);
+  if (Array.isArray(data.nav)) {
+    for (var j = data.nav.length - 1; j >= 0; j--) {
+      if (isDiversionPartItem(data.nav[j]) || isAdItem(data.nav[j])) data.nav.splice(j, 1);
+    }
+  }
 }
 
 function isGridDiversionArray(arr) {
@@ -227,13 +282,22 @@ function stripHomeConfig(data) {
     }
   }
   if (Array.isArray(data.notice_app)) data.notice_app = [];
-  if (data.config && Array.isArray(data.config.community_nav)) {
-    data.config.community_nav = data.config.community_nav.filter(function (item) {
-      return (
-        !GRID_ENTRY_RE.test(itemText(item)) &&
-        !GRID_ENTRY_RE.test(String(item.desc || item.description || ""))
-      );
-    });
+  if (data.notice && typeof data.notice === "object" && !Array.isArray(data.notice)) {
+    if (GRID_ENTRY_RE.test(JSON.stringify(data.notice))) data.notice = {};
+  }
+  if (data.config && typeof data.config === "object") {
+    var cfg = data.config;
+    if (Array.isArray(cfg.community_nav)) {
+      cfg.community_nav = cfg.community_nav.filter(function (item) {
+        return (
+          !GRID_ENTRY_RE.test(itemText(item)) &&
+          !GRID_ENTRY_RE.test(String(item.desc || item.description || ""))
+        );
+      });
+    }
+    if (Array.isArray(cfg.person_ads)) cfg.person_ads = [];
+    if (Array.isArray(cfg.buoy)) cfg.buoy = [];
+    if (Array.isArray(cfg.post_detail_ads)) cfg.post_detail_ads = [];
   }
 }
 
@@ -265,6 +329,13 @@ function stripAds(node) {
     }
     if (/^ads_/i.test(k) && (Array.isArray(v) || (v && typeof v === "object"))) {
       node[k] = emptyValue(v);
+      continue;
+    }
+    if (k === "part" && Array.isArray(v)) {
+      for (var pi = v.length - 1; pi >= 0; pi--) {
+        if (isDiversionPartItem(v[pi])) v.splice(pi, 1);
+        else stripPartNested(v[pi]);
+      }
       continue;
     }
     if (k === "banner" && Array.isArray(v)) {
@@ -309,11 +380,17 @@ function processBody(body) {
     }
     var payload = JSON.parse(plain);
     var before = JSON.stringify(payload);
-    if (payload.data && /\/home\/config/i.test(($request && $request.url) || "")) {
+    var req = ($request && $request.url) || "";
+    var inner = payload.data || payload;
+    if (/\/home\/config/i.test(req) && payload.data) {
       stripHomeConfig(payload.data);
     }
-    stripAds(payload);
-    if (payload.data) stripAds(payload.data);
+    if (FEED_API_PATH_RE.test(req)) {
+      stripFeedData(inner);
+    } else {
+      stripAds(payload);
+      if (payload.data) stripAds(payload.data);
+    }
     if (JSON.stringify(payload) === before) return null;
     wrapper.data =
       mode === "hex"
