@@ -1,11 +1,9 @@
-
-
 /******************************
   
 # 脚本功能：汤头条 PWA——去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
-# 更新时间：2026-06-03（抓包 2026-06-03-133924 / v5 + discover2/list_construct 去 part 导流）
+# 更新时间：2026-06-03（抓包 2026-06-03-140711 / v6 list 夹杂广告 + notice 弹窗）
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -29,6 +27,8 @@
 
 ^https?:\/\/[^\/]+\/upload\/ads\/ - reject
 
+^https?:\/\/[^\/]+\/hc237\/uploads\/default\/other\/ - reject
+
 ^https?:\/\/18\.162\.65\.153\/api\/eventTracking\/ - reject
 
 [mitm]
@@ -37,7 +37,6 @@ hostname = *.yeuxqifz.cc, *.xoceiqxo.cc, *.ceogberj.cc, *.caanrrim.cc, *.iajckz.
 
 *******************************/
 
-// hjsq-api-noad v5 — 抓包 2026-06-03-133924（+ discover2/list_construct 去 part 导流；无改动透传）
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -61,7 +60,8 @@ const AD_FIELD_RE =
 const AD_ITEM_RE =
   /\/ads\/|\/upload\/ads\/|advertise_code|advertise_location_code|upload_01\/ads/i;
 const GRID_ENTRY_RE =
-  /裸聊|抖阴|AI科技|AI\s*科技|16宫格|宫格导流|吃瓜|污漫|次元|约炮|菠菜|新版图标|PG棋牌|PG电子|PG发|青楼|春药|永利|外围品茶|91PORN|点我福利|Hot\s*girls|电子棋牌|大发娱乐|澳门娱乐|澳门新|葡萄京|皇宫|饥渴欲女|品茶|迷奸|校园直播|杏吧|免费看片/i;
+  /裸聊|抖阴|AI科技|AI\s*科技|16宫格|宫格导流|吃瓜|污漫|次元|约炮|菠菜|新版图标|PG棋牌|PG电子|PG发|青楼|春药|永利|外围品茶|91PORN|点我福利|Hot\s*girls|电子棋牌|大发娱乐|澳门娱乐|澳门新|新葡京|葡萄京|皇宫|饥渴欲女|品茶|迷奸|校园直播|杏吧|免费看片|潘多拉|送1888/i;
+const EXTERNAL_URL_RE = /^https?:\/\//i;
 const DIVERSION_HOST_RE =
   /kvbxetxl\.com|x17sui|xmwemv\.cn\/upload\/ads\//i;
 const AD_API_PATH_RE =
@@ -179,6 +179,26 @@ function itemText(item) {
   );
 }
 
+function isInjectedListAd(item) {
+  if (!item || typeof item !== "object") return false;
+  if (item.url_config && EXTERNAL_URL_RE.test(String(item.url_config))) return true;
+  if (item.advertise_code || item.advertise_location_code) return true;
+  if (item.ad_slot_name) return true;
+  if (item.ad_type !== undefined && item.ad_type !== null && item.ad_type !== "" && item.ad_type !== 0)
+    return true;
+  return isAdItem(item);
+}
+
+function isNoticeAd(notice) {
+  if (!notice || typeof notice !== "object" || Array.isArray(notice)) return false;
+  if (notice.advertise_code || notice.advertise_location_code || notice.ad_slot_name) return true;
+  if (notice.ad_type !== undefined && notice.ad_type !== null && notice.ad_type !== "" && notice.ad_type !== 0)
+    return true;
+  var u = String(notice.url || notice.url_str || notice.link_url || "");
+  if (EXTERNAL_URL_RE.test(u) && !/\.(mp4|m3u8)(\?|$)/i.test(u)) return true;
+  return isAdItem(notice);
+}
+
 function isAdItem(item) {
   if (!item || typeof item !== "object") return false;
   if (item.advertise_code || item.advertise_location_code) return true;
@@ -231,6 +251,11 @@ function stripPartNested(item) {
 
 function stripFeedData(data) {
   if (!data || typeof data !== "object") return;
+  if (Array.isArray(data.list)) {
+    for (var li = data.list.length - 1; li >= 0; li--) {
+      if (isInjectedListAd(data.list[li])) data.list.splice(li, 1);
+    }
+  }
   if (Array.isArray(data.part)) {
     var part = data.part;
     for (var i = part.length - 1; i >= 0; i--) {
@@ -282,9 +307,7 @@ function stripHomeConfig(data) {
     }
   }
   if (Array.isArray(data.notice_app)) data.notice_app = [];
-  if (data.notice && typeof data.notice === "object" && !Array.isArray(data.notice)) {
-    if (GRID_ENTRY_RE.test(JSON.stringify(data.notice))) data.notice = {};
-  }
+  if (isNoticeAd(data.notice)) data.notice = {};
   if (data.config && typeof data.config === "object") {
     var cfg = data.config;
     if (Array.isArray(cfg.community_nav)) {
