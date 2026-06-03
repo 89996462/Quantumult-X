@@ -3,7 +3,7 @@
 # 脚本功能：汤头条 PWA——去开屏——去弹窗——去16宫格导流——去Banner——去悬浮
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
-# 更新时间：2026-06-03（抓包 2026-06-03-132947 / api.php v3 AES-CBC）
+# 更新时间：2026-06-03（抓包 2026-06-03-133924 / v4 仅广告接口 + 无改动透传）
 # TG反馈群：https://t.me/plus8889
 # TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
@@ -13,7 +13,10 @@
 
 [rewrite_local]
 
-^https?:\/\/[^\/]+\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
+^https?:\/\/[^\/]+\/api\.php\/api\/home\/config url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
+
+^https?:\/\/[^\/]+\/api\.php\/api\/element\/getElementById url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/clsq.js
+
 
 [filter-local]
 
@@ -25,11 +28,13 @@
 
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
+^https?:\/\/[^\/]+\/upload\/ads\/ - reject
+
 ^https?:\/\/18\.162\.65\.153\/api\/eventTracking\/ - reject
 
 [mitm]
 
-hostname = wapi.yeuxqifz.cc, *.yeuxqifz.cc, api4.yeuxqifz.cc, api5.yeuxqifz.cc, p4.xoceiqxo.cc, *.xoceiqxo.cc, p1.ceogberj.cc, *.ceogberj.cc, api3.caanrrim.cc, *.caanrrim.cc, new.iajckz.cn, *.iajckz.cn, tp5.iajckz.cn, tp6.iajckz.cn, tp7.iajckz.cn, 120play.*.cn, long.*.cn, *.wpyxbxt.cn, h5play.*.com, *.fipxor.cn, ap.dc-report.cc, api-dc-prod-002.cyou, api-dc2-prod-02.cyou
+hostname = wapi.yeuxqifz.cc, *.yeuxqifz.cc, api4.yeuxqifz.cc, api5.yeuxqifz.cc, p4.xoceiqxo.cc, *.xoceiqxo.cc, p1.ceogberj.cc, *.ceogberj.cc, api3.caanrrim.cc, *.caanrrim.cc, new.iajckz.cn, *.iajckz.cn, tp5.iajckz.cn, tp6.iajckz.cn, tp7.iajckz.cn, 120play.*.cn, long.*.cn, *.wpyxbxt.cn, h5play.*.com, *.fipxor.cn, new.xmwemv.cn, *.xmwemv.cn, ap.dc-report.cc, api-dc-prod-002.cyou, api-dc2-prod-02.cyou
 
 *******************************/
 
@@ -51,12 +56,14 @@ const SIGN_SALT_V3 = "8ea5dc30d6cf17acd1531e11cfef5e30";
 const AES_KEY_HEX = "7205a6c3883caf95b52db5b534e12ec3";
 const AES_IV_HEX = "81d7beac44a86f43";
 const SIGN_SALT_HEX = "7205a6c3883caf95b52db5b534e12ec3";
-const AD_KEY_RE =
-  /^(ads|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|start_screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|float_window|float|banner|home_banner|home_ads|splash|splash_ads|open_screen|open_screen_ad|screen_ad|layer|notice|element_list|quick_list|icon_list|grid_list|partner_list|module_list|launch_config|home_element|diversion|guide_apps|guide_list)$/i;
-const AD_ITEM_RE = /\/ads\/|advertise_code|advertise_location_code|upload_01\/ads/i;
+const AD_FIELD_RE =
+  /^(ads|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|start_screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|float_window|float|splash|splash_ads|open_screen|open_screen_ad|screen_ad|launch_config|home_element|diversion|guide_apps|guide_list)$/i;
+const AD_ITEM_RE =
+  /\/ads\/|\/upload\/ads\/|advertise_code|advertise_location_code|upload_01\/ads/i;
 const GRID_ENTRY_RE =
   /裸聊|抖阴|AI科技|AI\s*科技|16宫格|宫格导流|吃瓜|污漫|次元|萝莉|约炮|直播|棋牌|菠菜|新版图标/i;
-const GRID_KEY_RE = /宫格|导流|grid|partner|quick_entry|icon_list|guide/i;
+const AD_API_PATH_RE =
+  /\/(?:api\.php\/api|pwa\.php\/api)\/(?:home\/config|element\/getElementById)(?:\/|$|\?)/i;
 
 function md5sha256(raw) {
   return CryptoJS.MD5(CryptoJS.SHA256(raw).toString()).toString();
@@ -173,22 +180,61 @@ function isAdItem(item) {
   if (!item || typeof item !== "object") return false;
   if (item.advertise_code || item.advertise_location_code) return true;
   var u = String(
-    item.img_url || item.url || item.link_url || item.image || item.jump_url || ""
+    item.img_url ||
+      item.url ||
+      item.link_url ||
+      item.image ||
+      item.jump_url ||
+      item.resource_url ||
+      ""
   );
   if (AD_ITEM_RE.test(u)) return true;
   if (GRID_ENTRY_RE.test(itemText(item))) return true;
   var tp = String(item.type || item.element_type || item.ad_type || "");
-  if (/launch|splash|popup|float|banner|ad|partner|grid|screen/i.test(tp)) return true;
+  if (/^(launch|splash|popup|float|screen_ad|ad)$/i.test(tp)) return true;
   return false;
 }
 
 function isGridDiversionArray(arr) {
-  if (!Array.isArray(arr) || arr.length < 6 || arr.length > 16) return false;
+  if (!Array.isArray(arr) || arr.length < 9 || arr.length > 16) return false;
   var hit = 0;
   for (var i = 0; i < arr.length; i++) {
-    if (isAdItem(arr[i]) || GRID_ENTRY_RE.test(itemText(arr[i]))) hit++;
+    if (GRID_ENTRY_RE.test(itemText(arr[i]))) hit++;
   }
-  return hit >= 2;
+  return hit >= 3;
+}
+
+function filterArray(arr) {
+  if (!Array.isArray(arr)) return arr;
+  for (var i = arr.length - 1; i >= 0; i--) {
+    if (isAdItem(arr[i])) arr.splice(i, 1);
+    else stripAds(arr[i]);
+  }
+  return arr;
+}
+
+function stripHomeConfig(data) {
+  if (!data || typeof data !== "object") return;
+  var keys = Object.keys(data);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    if (AD_FIELD_RE.test(k)) {
+      if (k === "ads" && data[k] && typeof data[k] === "object" && !Array.isArray(data[k])) {
+        data[k] = null;
+      } else {
+        data[k] = emptyValue(data[k]);
+      }
+    }
+  }
+  if (Array.isArray(data.notice_app)) data.notice_app = [];
+  if (data.config && Array.isArray(data.config.community_nav)) {
+    data.config.community_nav = data.config.community_nav.filter(function (item) {
+      return (
+        !GRID_ENTRY_RE.test(itemText(item)) &&
+        !GRID_ENTRY_RE.test(String(item.desc || item.description || ""))
+      );
+    });
+  }
 }
 
 function emptyValue(v) {
@@ -201,10 +247,7 @@ function stripAds(node) {
       node.length = 0;
       return;
     }
-    for (var i = node.length - 1; i >= 0; i--) {
-      if (isAdItem(node[i])) node.splice(i, 1);
-      else stripAds(node[i]);
-    }
+    filterArray(node);
     return;
   }
   if (!node || typeof node !== "object") return;
@@ -212,11 +255,9 @@ function stripAds(node) {
   for (var j = 0; j < keys.length; j++) {
     var k = keys[j];
     var v = node[k];
-    if (AD_KEY_RE.test(k) || GRID_KEY_RE.test(k)) {
+    if (AD_FIELD_RE.test(k)) {
       if (k === "ads" && v && typeof v === "object" && !Array.isArray(v)) {
         node[k] = null;
-      } else if (k === "notice" && v && typeof v === "object") {
-        node[k] = {};
       } else {
         node[k] = emptyValue(v);
       }
@@ -226,8 +267,16 @@ function stripAds(node) {
       node[k] = emptyValue(v);
       continue;
     }
-    if (Array.isArray(v) && isGridDiversionArray(v)) {
-      node[k] = [];
+    if (k === "banner" && Array.isArray(v)) {
+      filterArray(v);
+      continue;
+    }
+    if (Array.isArray(v)) {
+      if (isGridDiversionArray(v)) {
+        node[k] = [];
+      } else {
+        filterArray(v);
+      }
       continue;
     }
     stripAds(v);
@@ -259,8 +308,13 @@ function processBody(body) {
       else return null;
     }
     var payload = JSON.parse(plain);
+    var before = JSON.stringify(payload);
+    if (payload.data && /\/home\/config/i.test(($request && $request.url) || "")) {
+      stripHomeConfig(payload.data);
+    }
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
+    if (JSON.stringify(payload) === before) return null;
     wrapper.data =
       mode === "hex"
         ? encryptPayloadHex(JSON.stringify(payload))
@@ -281,10 +335,15 @@ function processBody(body) {
   }
 }
 
-var body = $response.body;
-var newBody = processBody(body);
-if (newBody) {
-  $done({ body: newBody, headers: $response.headers });
-} else {
+var reqUrl = ($request && $request.url) || "";
+if (!AD_API_PATH_RE.test(reqUrl.split("?")[0])) {
   $done();
+} else {
+  var body = $response.body;
+  var newBody = processBody(body);
+  if (newBody) {
+    $done({ body: newBody, headers: $response.headers });
+  } else {
+    $done();
+  }
 }
