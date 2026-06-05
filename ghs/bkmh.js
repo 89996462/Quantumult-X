@@ -37,6 +37,7 @@ hostname = h5.bkh056.com, h5.bkh057.com, h5.bkh058.com, *.bkh056.com, *.bkh057.c
 
 *******************************/
 
+
 const M3U8_RE = /\/bkapi\/m3u8\/link\/[a-f0-9]{32}\.m3u8/i;
 const PREFS_KEY = "bkh056_capture_last";
 
@@ -46,6 +47,61 @@ const isLoon = typeof $loon !== "undefined";
 const isResponse = typeof $response !== "undefined" && $response != null;
 
 let playURL = $request.url;
+
+// 尝试的CDN域名列表（基于常见模式）
+const CDN_DOMAINS = [
+    "ghtawi.timemate.top",
+    "media.timemate.top",
+    "video.timemate.top",
+    "cdn.timemate.top",
+    "bk-copilot.bytedance.net",
+    "bk.bytedance.net"
+];
+
+// 尝试替换域名
+function tryReplaceDomain(url) {
+    // 原始CDN域名模式
+    const patterns = [
+        /\/\/ghtawi\.timemate\.top\//,
+        /\/\/[^\/]+\.timemate\.top\//,
+        /\/\/[^\/]+\.bytedance\.net\//
+    ];
+    
+    // 尝试替换为不同的CDN节点
+    for (const domain of CDN_DOMAINS) {
+        for (const pattern of patterns) {
+            const newUrl = url.replace(pattern, `//${domain}/`);
+            if (newUrl !== url) {
+                console.log(`[bkh056-crack] 尝试域名替换: ${url} -> ${newUrl}`);
+                return newUrl;
+            }
+        }
+    }
+    return url;
+}
+
+// 修改m3u8响应体中的ts文件域名
+function modifyM3U8Body(body) {
+    if (!body) return body;
+    
+    let modifiedBody = body;
+    
+    // 尝试替换ts文件的域名
+    for (const domain of CDN_DOMAINS) {
+        modifiedBody = modifiedBody.replace(
+            /https?:\/\/[^\/]+\.timemate\.top\//g,
+            `https://${domain}/`
+        );
+    }
+    
+    // 如果替换了域名，尝试移除preview标识
+    if (modifiedBody !== body) {
+        modifiedBody = modifiedBody.replace(/m3u8-preview/g, "m3u8");
+        console.log("[bkh056-crack] 已修改m3u8响应体，尝试解锁完整流");
+    }
+    
+    return modifiedBody;
+}
 
 function hasPlaybackHeader(hdrs) {
     if (!hdrs) return false;
@@ -70,15 +126,17 @@ function alreadyCaptured(link) {
 }
 
 function notifyCapture(url) {
-    const title = "哔咔H5 · 视频已捕获";
+    const title = "🎬 哔咔H5 · 视频已捕获";
     const subtitle = "点击通知用 Safari 打开";
     const opts = { "open-url": url };
 
+    console.log(`[bkh056-crack] === 捕获成功 ===`);
+    console.log(`[bkh056-crack] 链接: ${url}`);
+    console.log(`[bkh056-crack] ===================`);
+
     if (isQX) {
         $notify(title, subtitle, "", opts);
-        try {
-            $copy(url);
-        } catch (e) {}
+        try { $copy(url); } catch (e) {}
         return;
     }
     if (isSurge) {
@@ -90,35 +148,49 @@ function notifyCapture(url) {
     }
 }
 
-function shouldCapture() {
-    if (!M3U8_RE.test(playURL)) return false;
-
-    if (isResponse) {
-        const body = $response.body || "";
-        if (body.length > 0 && body.indexOf("#EXTM3U") === -1) return false;
-        return true;
-    }
-
-    // 请求阶段：匹配 m3u8/link 即可；有播放头更可信
-    return hasPlaybackHeader($request.headers) || true;
-}
-
 function runCapture() {
-    if (!shouldCapture()) return;
-    if (alreadyCaptured(playURL)) return;
-    console.log("[bkh056-capture] " + (isResponse ? "response" : "request") + ": " + playURL);
-    notifyCapture(playURL);
+    console.log(`[bkh056-crack] 检测到请求: ${playURL}`);
+    
+    if (!M3U8_RE.test(playURL)) {
+        console.log("[bkh056-crack] URL不匹配");
+        $done({});
+        return;
+    }
+    
+    if (alreadyCaptured(playURL)) {
+        console.log("[bkh056-crack] 重复捕获");
+        $done({});
+        return;
+    }
+    
+    if (isResponse) {
+        // 修改响应体中的域名
+        const modifiedBody = modifyM3U8Body($response.body);
+        
+        if (modifiedBody !== $response.body) {
+            // 如果成功修改了响应体，返回修改后的内容
+            console.log("[bkh056-crack] 返回修改后的m3u8");
+            notifyCapture(playURL);
+            $done({ body: modifiedBody });
+            return;
+        }
+    }
+    
+    // 请求阶段：尝试替换域名
+    const newURL = tryReplaceDomain(playURL);
+    
+    if (newURL !== playURL) {
+        notifyCapture(newURL);
+    } else {
+        notifyCapture(playURL);
+    }
+    
+    $done({});
 }
 
 try {
     runCapture();
 } catch (e) {
-    console.log("[bkh056-capture] error: " + e);
-}
-
-// QX：request-header 用 $done({})；勿写 $done({ response: { headers } })
-if (isResponse) {
-    $done({});
-} else {
+    console.log("[bkh056-crack] error: " + e);
     $done({});
 }
