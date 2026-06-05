@@ -1,41 +1,38 @@
 /******************************
   
-脚本功能：哔咔漫画——解锁—金币视频—VIP视频-漫画無解
-特别说明：开启脚本即可在线观看视频-漫画無解
-特别说明：必须开启HTTP抓包,并且关闭其他的脚本
-脚本作者：彭于晏💞
-更新时间：2026—6-6
-TG反馈群：https://t.me/plus8889
-TG频道群：https://t.me/py996
-使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+# 脚本功能：黑料社——去开屏—去弹窗—去16宫格导流—去Banner—去悬浮
+# 目标站点：https://p5.fibpcmbwl.cc
+# 特别说明：捕获成功后，点击通知即可观看
+# 脚本作者：彭于晏💞
+# 更新时间：2026-6-5
+# TG反馈群：https://t.me/plus8889
+# TG频道群：https://t.me/py996
+# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************
 
 
 [rewrite_local]
 
-^https?:\/\/[^\/]+\/bkapi\/(?!line|m3u8) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/bkmhad.js
+^https?:\/\/[^\/]+\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/hls.js
 
 [filter-local]
 
-^https?:\/\/api-dc-prod-008\.cyou\/ - reject
+^https?:\/\/ap\.dc-report\.cc\/ - reject
 
 ^https?:\/\/api-dc-prod-002\.cyou\/ - reject
 
 ^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
 
-^https?:\/\/ap\.dc-report\.cc\/ - reject
-
-^https?:\/\/ghtawi\.timemate\.top\/hc237\/uploads\/default\/other\/ - reject
-
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
+
+^https?:\/\/www\.google-analytics\.com\/ - reject
 
 [mitm]
 
-hostname = h5.bkh056.com, h5.bkh057.com, h5.bkh058.com, *.bkh056.com, *.bkh057.com, *.bkh058.com, pwhu.bkk065.com, api-dc-prod-008.cyou, api-dc-prod-002.cyou, api-dc2-prod-02.cyou, ap.dc-report.cc
+hostname = p5.fibpcmbwl.cc, *.fibpcmbwl.cc, api1.pbczffhs.cc, *.pbczffhs.cc, new.dhaikt.cn, *.dhaikt.cn, tp3.dhaikt.cn, tp4.dhaikt.cn, 10play.rqtsrf.cn
 
 *******************************/
-
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -45,25 +42,40 @@ var CryptoJS;
     CryptoJS = module.exports;
   }
 })();
-// bkapi 加密参数（来自 h5.bkh056.com/assets/index-a95d6f6a.js）
-const AES_KEY = "664b25fb3e41c1bc";
 
-const CLEAR_AD_KEYS =
-  /^(ads|bottom_ad|activity|pop_ads|layer_ads|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|home_ads)$/i;
+// 黑料社 Flutter PWA 去广告 v1 — 抓包 2026-06-05-145225 / main.dart.js 校验
+const AES_KEY = "2c6c4af75677b68f";
+const AES_IV = "f6fc10d05612b0f7";
+const SIGN_SALT = "cceede1d42ed8c00459c21ddf652410f";
 
-const FILTER_AD_KEYS =
-  /^(banner|apps|ad_items|items|app_list|recommend_apps|partner_apps)$/i;
+const AD_KEY_RE =
+  /^(ads|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|buoy)$/i;
 
-const AD_POS_RE =
-  /^(start_ad|layer_ad|bottom_ad|common_app|advapp_|cartoon_home_banner|movie_home_banner|platform_home_banner|home_banner)/i;
+const AD_SLOT_RE = /^(启动页|弹框|浮框|新版图标|黑料插入|长视频夹杂|-1_null)$/i;
+const AD_ITEM_RE = /\/ads\/|advertise_code|advertise_location_code|ad_slot_name/i;
 
-const AD_URL_RE =
-  /\/hc237\/uploads\/default\/other\/|upload_01\/ads\/|\/ads\/|advertise_code|advertise_location_code/i;
+function calcSign(wrapper) {
+  var keys = Object.keys(wrapper).sort();
+  var parts = [];
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    if (k === "sign") continue;
+    var v = wrapper[k];
+    if (v === undefined || v === null) continue;
+    var s = String(v);
+    if (k === "data") s = s.replace(/ /g, "+");
+    parts.push(k + "=" + s);
+  }
+  var raw = parts.join("&") + SIGN_SALT;
+  return CryptoJS.MD5(CryptoJS.SHA256(raw).toString()).toString();
+}
 
-function decryptPayload(cipherText) {
+function decryptPayload(dataB64) {
   var key = CryptoJS.enc.Utf8.parse(AES_KEY);
-  var dec = CryptoJS.AES.decrypt(cipherText, key, {
-    mode: CryptoJS.mode.ECB,
+  var iv = CryptoJS.enc.Utf8.parse(AES_IV);
+  var dec = CryptoJS.AES.decrypt(dataB64, key, {
+    iv: iv,
+    mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7,
   });
   return dec.toString(CryptoJS.enc.Utf8);
@@ -71,53 +83,22 @@ function decryptPayload(cipherText) {
 
 function encryptPayload(plainText) {
   var key = CryptoJS.enc.Utf8.parse(AES_KEY);
-  return CryptoJS.AES.encrypt(plainText, key, {
-    mode: CryptoJS.mode.ECB,
+  var iv = CryptoJS.enc.Utf8.parse(AES_IV);
+  return CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(plainText), key, {
+    iv: iv,
+    mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7,
   }).toString();
 }
 
 function isAdItem(item) {
   if (!item || typeof item !== "object") return false;
-  if (item.is_ad === "y" || item.is_ad === true) return true;
-  if (item.object_type === "ad") return true;
-  if (item.type === "ad") return true;
-  if (item.object_type === "app" && (item.link || item.url)) return true;
-  var pos = String(
-    item.position_code ||
-      (item.report_data && item.report_data.position_code) ||
-      ""
-  );
-  if (pos && (AD_POS_RE.test(pos) || pos.indexOf("advapp") >= 0)) return true;
-  var u = String(
-    item.img_url || item.url || item.link_url || item.image || item.content || item.link || ""
-  );
-  if (AD_URL_RE.test(u)) return true;
   if (item.advertise_code || item.advertise_location_code) return true;
-  return false;
-}
-
-function filterAdItems(arr) {
-  if (!Array.isArray(arr)) return arr;
-  var out = [];
-  for (var i = 0; i < arr.length; i++) {
-    if (!isAdItem(arr[i])) out.push(arr[i]);
-  }
-  return out;
-}
-
-function patchLaunchAds(data) {
-  if (!data || typeof data !== "object") return;
-  data.ads = [];
-  data.bottom_ad = [];
-  data.activity = [];
-  data.ad_auto_jump = "n";
-  data.ad_show_time = "0";
-  if (Array.isArray(data.layer)) {
-    data.layer = data.layer.filter(function (item) {
-      return item && item.type !== "ad" && item.type !== "apps";
-    });
-  }
+  if (item.ad_slot_name && AD_SLOT_RE.test(String(item.ad_slot_name))) return true;
+  if (item.report_type !== undefined && item.ad_type !== undefined && item.ad_type !== 0)
+    return true;
+  var u = String(item.img_url || item.url || item.link_url || item.image || item.url_str || "");
+  return AD_ITEM_RE.test(u) && (item.advertise_code || item.ad_slot_name);
 }
 
 function stripAds(node) {
@@ -129,75 +110,61 @@ function stripAds(node) {
     return;
   }
   if (!node || typeof node !== "object") return;
-
   var keys = Object.keys(node);
   for (var j = 0; j < keys.length; j++) {
     var k = keys[j];
     var v = node[k];
-
-    if (k === "layer" && Array.isArray(v)) {
-      node[k] = v.filter(function (item) {
-        return item && item.type !== "ad" && item.type !== "apps";
-      });
-      continue;
-    }
-
-    if (k === "group_items" && Array.isArray(v)) {
-      for (var gi = 0; gi < v.length; gi++) {
-        if (v[gi] && Array.isArray(v[gi].items)) {
-          v[gi].items = filterAdItems(v[gi].items);
-        }
+    if (AD_KEY_RE.test(k)) {
+      if (k === "ads" && v && typeof v === "object" && !Array.isArray(v)) {
+        node[k] = null;
+      } else if (k === "notice" && v && typeof v === "object") {
+        node[k] = {};
+      } else if (k === "config" && v && typeof v === "object") {
+        if (Array.isArray(v.buoy)) v.buoy = [];
+        stripAds(v);
+      } else {
+        node[k] = Array.isArray(v) ? [] : v && typeof v === "object" ? {} : v;
       }
       continue;
     }
-
-    if (CLEAR_AD_KEYS.test(k)) {
-      node[k] = Array.isArray(v) ? [] : v && typeof v === "object" ? {} : v;
-      continue;
-    }
-
-    if (FILTER_AD_KEYS.test(k) && Array.isArray(v)) {
-      node[k] = filterAdItems(v);
-      continue;
-    }
-
     if (/^ads_/i.test(k) && (Array.isArray(v) || (v && typeof v === "object"))) {
       node[k] = Array.isArray(v) ? [] : {};
       continue;
     }
-
     stripAds(v);
   }
 }
 
-function looksLikeCipher(body) {
-  if (!body || typeof body !== "string") return false;
-  body = body.trim();
-  if (body.length < 16) return false;
-  if (body.charAt(0) === "{" || body.charAt(0) === "[") return false;
-  return /^[A-Za-z0-9+/=]+$/.test(body);
-}
-
-function processBody(body, url) {
-  if (!looksLikeCipher(body)) return null;
+function processBody(body) {
+  if (!body || body.indexOf('"data"') < 0) return null;
+  var wrapper;
   try {
-    var plain = decryptPayload(body.trim());
+    wrapper = JSON.parse(body);
+  } catch (e) {
+    return null;
+  }
+  if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return null;
+  if (/^FF07BB[0-9A-F]/i.test(wrapper.data)) return null;
+  try {
+    var plain = decryptPayload(wrapper.data);
     if (!plain) return null;
     var payload = JSON.parse(plain);
-    var path = String(url || "");
-    if (path.indexOf("/bkapi/system/info") >= 0 && payload.data) {
-      patchLaunchAds(payload.data);
-    }
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
-    return encryptPayload(JSON.stringify(payload));
+    wrapper.data = encryptPayload(JSON.stringify(payload));
+    if (wrapper.timestamp === undefined) {
+      wrapper.timestamp = Math.floor(Date.now() / 1000);
+    }
+    wrapper.sign = calcSign(wrapper);
+    if (wrapper.errcode !== undefined) wrapper.errcode = 0;
+    return JSON.stringify(wrapper);
   } catch (e) {
     return null;
   }
 }
 
 var body = $response.body;
-var newBody = processBody(body, $request.url);
+var newBody = processBody(body);
 if (newBody) {
   $done({ body: newBody, headers: $response.headers });
 } else {
