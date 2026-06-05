@@ -14,7 +14,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https?:\/\/[^\/]+\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/hls.js
+^https?:\/\/[^\/]+\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/hlsad.js
 
 [filter-local]
 
