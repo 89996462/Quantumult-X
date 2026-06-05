@@ -1,10 +1,13 @@
 /******************************
   
-# 脚本功能：哔咔H5——净化广告（不改页面布局/导航/会员）
-# 目标站点：https://h5.bkh056.com
-# 脚本文件：bkh056-noad.js（请放入 Quantumult X Scripts 目录）
-# 抓包校验：2026-06-05-125338
-# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+脚本功能：哔咔漫画——解锁—金币视频—VIP视频-漫画無解
+特别说明：开启脚本即可在线观看视频-漫画無解
+特别说明：必须开启HTTP抓包,并且关闭其他的脚本
+脚本作者：彭于晏💞
+更新时间：2026—6-6
+TG反馈群：https://t.me/plus8889
+TG频道群：https://t.me/py996
+使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************
 
@@ -32,7 +35,7 @@
 hostname = h5.bkh056.com, h5.bkh057.com, h5.bkh058.com, *.bkh056.com, *.bkh057.com, *.bkh058.com, pwhu.bkk065.com, api-dc-prod-008.cyou, api-dc-prod-002.cyou, api-dc2-prod-02.cyou, ap.dc-report.cc
 
 *******************************/
-// bkh056-bkapi-noad v2
+
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
