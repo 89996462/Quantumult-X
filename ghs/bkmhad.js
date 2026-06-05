@@ -1,6 +1,6 @@
 /******************************
   
-# 脚本功能：哔咔H5——去开屏—去弹窗—去16宫格—去Banner—去悬浮
+# 脚本功能：哔咔H5——净化广告（不改页面布局/导航/会员）
 # 目标站点：https://h5.bkh056.com
 # 脚本文件：bkh056-noad.js（请放入 Quantumult X Scripts 目录）
 # 抓包校验：2026-06-05-125338
@@ -23,15 +23,16 @@
 
 ^https?:\/\/ap\.dc-report\.cc\/ - reject
 
-^https?:\/\/ghtawi\.timemate\.top\/ - reject
+^https?:\/\/ghtawi\.timemate\.top\/hc237\/uploads\/default\/other\/ - reject
 
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
 [mitm]
 
-hostname = h5.bkh056.com, h5.bkh057.com, h5.bkh058.com, *.bkh056.com, *.bkh057.com, *.bkh058.com, pwhu.bkk065.com, ghtawi.timemate.top, api-dc-prod-008.cyou, api-dc-prod-002.cyou, api-dc2-prod-02.cyou, ap.dc-report.cc
+hostname = h5.bkh056.com, h5.bkh057.com, h5.bkh058.com, *.bkh056.com, *.bkh057.com, *.bkh058.com, pwhu.bkk065.com, api-dc-prod-008.cyou, api-dc-prod-002.cyou, api-dc2-prod-02.cyou, ap.dc-report.cc
 
 *******************************/
+// bkh056-bkapi-noad v2
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -44,20 +45,17 @@ var CryptoJS;
 // bkapi 加密参数（来自 h5.bkh056.com/assets/index-a95d6f6a.js）
 const AES_KEY = "664b25fb3e41c1bc";
 
-const AD_KEY_RE =
-  /^(ads|layer|bottom_ad|activity|banner|apps|items|group_items|ad_items|pop_ads|layer_ads|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|home_banner|home_ads|notice)$/i;
+const CLEAR_AD_KEYS =
+  /^(ads|bottom_ad|activity|pop_ads|layer_ads|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|home_ads)$/i;
+
+const FILTER_AD_KEYS =
+  /^(banner|apps|ad_items|items|app_list|recommend_apps|partner_apps)$/i;
 
 const AD_POS_RE =
   /^(start_ad|layer_ad|bottom_ad|common_app|advapp_|cartoon_home_banner|movie_home_banner|platform_home_banner|home_banner)/i;
 
-const BLOCK_NAME_RE =
-  /裸聊|抖阴|AI科技|Ai引擎|AI引擎|萝莉岛|情涩|同城约|新葡京|开云|开元|PG|澳门|春药|约炮|约啪|约爱|棋牌|直播|体育|娱乐城|黄游|看片|海角|小米视频|pornhub|tiktok|91禁|欲漫|番茄|嘿咻|波多/i;
-
-const BLOCK_NAV_CODE_RE = /^(dark|ai)$/i;
-const BLOCK_NAV_NAME_RE = /萝莉岛|情涩|情涩AI/i;
-
 const AD_URL_RE =
-  /ghtawi\.timemate\.top|upload_01\/ads\/|\/ads\/|advertise_code|advertise_location_code/i;
+  /\/hc237\/uploads\/default\/other\/|upload_01\/ads\/|\/ads\/|advertise_code|advertise_location_code/i;
 
 function decryptPayload(cipherText) {
   var key = CryptoJS.enc.Utf8.parse(AES_KEY);
@@ -80,23 +78,23 @@ function isAdItem(item) {
   if (!item || typeof item !== "object") return false;
   if (item.is_ad === "y" || item.is_ad === true) return true;
   if (item.object_type === "ad") return true;
+  if (item.type === "ad") return true;
   if (item.object_type === "app" && (item.link || item.url)) return true;
   var pos = String(
     item.position_code ||
       (item.report_data && item.report_data.position_code) ||
       ""
   );
-  if (pos && AD_POS_RE.test(pos)) return true;
-  if (pos && pos.indexOf("advapp") >= 0) return true;
-  var name = String(item.name || item.title || "");
-  if (name && BLOCK_NAME_RE.test(name)) return true;
-  var u = String(item.img_url || item.url || item.link_url || item.image || item.content || item.link || "");
+  if (pos && (AD_POS_RE.test(pos) || pos.indexOf("advapp") >= 0)) return true;
+  var u = String(
+    item.img_url || item.url || item.link_url || item.image || item.content || item.link || ""
+  );
   if (AD_URL_RE.test(u)) return true;
   if (item.advertise_code || item.advertise_location_code) return true;
   return false;
 }
 
-function filterArray(arr) {
+function filterAdItems(arr) {
   if (!Array.isArray(arr)) return arr;
   var out = [];
   for (var i = 0; i < arr.length; i++) {
@@ -105,36 +103,17 @@ function filterArray(arr) {
   return out;
 }
 
-function patchSystemInfo(data) {
+function patchLaunchAds(data) {
   if (!data || typeof data !== "object") return;
   data.ads = [];
-  data.layer = [];
   data.bottom_ad = [];
   data.activity = [];
   data.ad_auto_jump = "n";
   data.ad_show_time = "0";
-  data.open_ai = "n";
-  data.dark_tips = "";
-  if (Array.isArray(data.app_menu)) {
-    data.app_menu = data.app_menu.filter(function (m) {
-      if (!m) return false;
-      if (BLOCK_NAV_CODE_RE.test(String(m.code || ""))) return false;
-      if (BLOCK_NAV_NAME_RE.test(String(m.name || ""))) return false;
-      return true;
+  if (Array.isArray(data.layer)) {
+    data.layer = data.layer.filter(function (item) {
+      return item && item.type !== "ad" && item.type !== "apps";
     });
-  }
-}
-
-function patchAppStore(data) {
-  if (!data || typeof data !== "object") return;
-  data.banner = [];
-  data.items = [];
-  data.ad_items = [];
-  if (Array.isArray(data.group_items)) {
-    for (var i = 0; i < data.group_items.length; i++) {
-      var g = data.group_items[i];
-      if (g && Array.isArray(g.items)) g.items = [];
-    }
   }
 }
 
@@ -148,11 +127,6 @@ function stripAds(node) {
   }
   if (!node || typeof node !== "object") return;
 
-  if (node.data && typeof node.data === "object") {
-    patchSystemInfo(node.data);
-    patchAppStore(node.data);
-  }
-
   var keys = Object.keys(node);
   for (var j = 0; j < keys.length; j++) {
     var k = keys[j];
@@ -160,37 +134,27 @@ function stripAds(node) {
 
     if (k === "layer" && Array.isArray(v)) {
       node[k] = v.filter(function (item) {
-        return !item || (item.type !== "ad" && item.type !== "apps" && item.type !== "notice");
-      });
-      continue;
-    }
-
-    if (k === "buttons" && Array.isArray(v)) {
-      node[k] = v.filter(function (item) {
-        if (!item) return false;
-        var name = String(item.name || "");
-        return !BLOCK_NAME_RE.test(name) && !isAdItem(item);
+        return item && item.type !== "ad" && item.type !== "apps";
       });
       continue;
     }
 
     if (k === "group_items" && Array.isArray(v)) {
       for (var gi = 0; gi < v.length; gi++) {
-        if (v[gi] && Array.isArray(v[gi].items)) v[gi].items = [];
+        if (v[gi] && Array.isArray(v[gi].items)) {
+          v[gi].items = filterAdItems(v[gi].items);
+        }
       }
       continue;
     }
 
-    if (AD_KEY_RE.test(k)) {
-      if (k === "notice" && v && typeof v === "object") {
-        node[k] = {};
-      } else if (Array.isArray(v)) {
-        node[k] = [];
-      } else if (v && typeof v === "object") {
-        node[k] = {};
-      } else {
-        node[k] = Array.isArray(v) ? [] : v;
-      }
+    if (CLEAR_AD_KEYS.test(k)) {
+      node[k] = Array.isArray(v) ? [] : v && typeof v === "object" ? {} : v;
+      continue;
+    }
+
+    if (FILTER_AD_KEYS.test(k) && Array.isArray(v)) {
+      node[k] = filterAdItems(v);
       continue;
     }
 
@@ -211,12 +175,16 @@ function looksLikeCipher(body) {
   return /^[A-Za-z0-9+/=]+$/.test(body);
 }
 
-function processBody(body) {
+function processBody(body, url) {
   if (!looksLikeCipher(body)) return null;
   try {
     var plain = decryptPayload(body.trim());
     if (!plain) return null;
     var payload = JSON.parse(plain);
+    var path = String(url || "");
+    if (path.indexOf("/bkapi/system/info") >= 0 && payload.data) {
+      patchLaunchAds(payload.data);
+    }
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
     return encryptPayload(JSON.stringify(payload));
@@ -226,7 +194,7 @@ function processBody(body) {
 }
 
 var body = $response.body;
-var newBody = processBody(body);
+var newBody = processBody(body, $request.url);
 if (newBody) {
   $done({ body: newBody, headers: $response.headers });
 } else {
