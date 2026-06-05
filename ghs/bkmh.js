@@ -18,7 +18,7 @@ TG频道群：https://t.me/py996
 
 [mitm]
 
-hostname = 120play.*.cn, tp5.iajckz.cn, h5play.*.com, long.*.cn, *.fipxor.cn, p4.aozngkwm.com, *.aozngkwm.com, api2.fnomellx.cc, *.fnomellx.cc, api2.anpbbxdyo.com, *.anpbbxdyo.com
+hostname = 120play.*.cn, tp5.iajckz.cn, h5play.*.com, long.*.cn, *.fipxor.cn, p4.aozngkwm.com, *.aozngkwm.com, api2.fnomellx.cc, *.fnomellx.cc, api2.anpbbxdyo.com, *.anpbbxdyo.com, h5.bkh056.com, h5.bkh057.com, h5.bkh058.com, *.bkh056.com, *.bkh057.com, *.bkh058.com, pwhu.bkk065.com, api-dc-prod-008.cyou, api-dc-prod-002.cyou, api-dc2-prod-02.cyou, ap.dc-report.cc
 
 *******************************/
 
