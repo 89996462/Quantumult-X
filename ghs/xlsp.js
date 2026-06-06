@@ -17,7 +17,8 @@
 
 [mitm]
 
-hostname = 120play.*.cn, tp5.iajckz.cn, h5play.*.com, long.*.cn, *.fipxor.cn, p4.aozngkwm.com, *.aozngkwm.com, api2.fnomellx.cc, *.fnomellx.cc, api2.anpbbxdyo.com, *.anpbbxdyo.com, api.tsxtvams.com, *.tsxtvams.com, new.colisv.cn, *.colisv.cn, p3.bnxidvdqw.cc, *.bnxidvdqw.cc, 4fbb.vkcaskame.cc, *.vkcaskame.cc, b100.vaowujej.com, *.vaowujej.com
+hostname = 120play.*.cn, tp5.iajckz.cn, h5play.*.com, long.*.cn, *.fipxor.cn, p4.aozngkwm.com, *.aozngkwm.com, api2.fnomellx.cc, *.fnomellx.cc, api2.anpbbxdyo.com, *.anpbbxdyo.com, api.tsxtvams.com, *.tsxtvams.com, new.colisv.cn, *.colisv.cn, p3.bnxidvdqw.cc, *.bnxidvdqw.cc, 4fbb.vkcaskame.cc, *.vkcaskame.cc, b100.vaowujej.com, *.vaowujej.com, p4.bnxidvdqw.cc, *.bnxidvdqw.cc, api.tsxtvams.com, *.tsxtvams.com, new.ebrgxi.cn, *.ebrgxi.cn, tp7.ebrgxi.cn, new.wpzatg.cn, *.wpzatg.cn, tp3.wpzatg.cn, wyyl-120play.rnhqeo.cn, 10play.ujnuvx.cn
+
 
 *******************************/
 
