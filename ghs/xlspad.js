@@ -1,11 +1,11 @@
 /******************************
   
-# 脚本功能:BNXIDVDQW PWA——解锁—净化广告
-# 特别说明:捕获成功后,点击通知即可观看
-# 脚本作者:彭于晏💞
-# 更新时间:2026-6-6
-# TG反馈群：https://t.me/plus8889
-# TG频道群：https://t.me/py996
+# 脚本功能：小蓝视频——去开屏—去弹窗—去16宫格导流—去Banner—去悬浮
+# 目标站点：https://p4.bnxidvdqw.cc/?
+# 特别说明：捕获成功后，点击通知即可观看
+# 脚本作者：彭于晏💞
+# 更新时间：2026-6-6
+# 抓包校验：2026-06-06-134236 / api.tsxtvams.com / pwa.php
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************
@@ -13,22 +13,23 @@
 
 [rewrite_local]
 
-^https?:\/\/api\.tsxtvams\.com\/pwa\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+^https?:\/\/[^\/]+\/pwa\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
 
 [filter-local]
 
-^https?:\/\/[^\/]+\/upload.*\/ads\/ - reject
+^https?:\/\/api-dc-prod-008\.cyou\/ - reject
 
-^https?:\/\/tp[0-9]+\.wpzatg\.cn\/ - reject
+^https?:\/\/api-dc2-prod-08\.cyou\/ - reject
 
-^https?:\/\/10play\.ujnuvx\.cn\/ - reject
+^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
 [mitm]
 
-hostname = p4.bnxidvdqw.cc, *.bnxidvdqw.cc, api.tsxtvams.com, *.tsxtvams.com, tp*.wpzatg.cn, 10play.ujnuvx.cn
+hostname = p4.bnxidvdqw.cc, *.bnxidvdqw.cc, api.tsxtvams.com, *.tsxtvams.com, new.ebrgxi.cn, *.ebrgxi.cn, tp7.ebrgxi.cn, new.wpzatg.cn, *.wpzatg.cn, tp3.wpzatg.cn, wyyl-120play.rnhqeo.cn, 10play.ujnuvx.cn
 
 
 *******************************/
+
 
 // hls-noad v1
 var CryptoJS;
@@ -41,17 +42,21 @@ var CryptoJS;
   }
 })();
 
-// BNXIDVDQW PWA 去广告 v1 — 抓包 2026-06-06-134236 / api.tsxtvams.com/pwa.php/api
-const AES_KEY = "6435a8c95c5ab9c0";
-const AES_IV = "3c451ea1fbd72f04";
-const SIGN_SALT = "e62c8d1db825a4f83861c3e74e9277f2";
+// 小蓝视频 PWA 去广告 v1 — 抓包 2026-06-06-134236 / Dndj7SUT.js 校验
+const AES_KEY = "cc88ddc9357ff461e08f047aedee692b";
+const AES_IV = "e89225cfbbimgkcu";
+const SIGN_SALT = "cc88ddc9357ff461e08f047aedee692b";
 
 const AD_KEY_RE =
-  /^(ads|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|buoy|nav_prepend)$/i;
+  /^(ads|pop_ads|pop_ads_v2|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|buoy|nav_prepend|list_ads)$/i;
 
-const AD_SLOT_RE = /^(启动页|弹框|浮框|新版图标|黑料插入|长视频夹杂|-1_null|个人中心)$/i;
-const AD_TITLE_RE = /(裸聊|抖阴|AI科技)/i;
-const AD_ITEM_RE = /\/ads\/|advertise_code|advertise_location_code|ad_slot_name/i;
+const AD_SLOT_RE =
+  /^(启动页|启屏页|弹框|弹窗九宫格\/应用中心图标|浮框|悬浮广告|活动弹窗|新版图标|黑料插入|长视频夹杂|-1_null|个人中心|首页推荐顶部1|首页推荐顶部2|视频详情图标|视频混合列表|社区banner广告|社区-求片-图标)$/i;
+
+const AD_TITLE_RE =
+  /(裸聊|抖阴|AI科技|AI脱衣|男性约炮|发情增粗|开元棋牌|新葡京|永利皇宫|英皇娱乐|PG游戏|PG电子|同圈速配|性界大战|决战僵尸舞娘|可乐视频|免费海角|91男漫|抖欲男漫|男男社区|爱威奶|全网片源|Pornhub|铁粉空间|免费抖阴)/i;
+
+const AD_ITEM_RE = /\/ads\/|\/upload_01\/ads\/|advertise_code|advertise_location_code|ad_slot_name/i;
 
 function calcSign(wrapper) {
   var keys = Object.keys(wrapper).sort();
@@ -61,21 +66,20 @@ function calcSign(wrapper) {
     if (k === "sign") continue;
     var v = wrapper[k];
     if (v === undefined || v === null) continue;
-    var s = String(v);
-    if (k === "data") s = s.replace(/ /g, "+");
-    parts.push(k + "=" + s);
+    parts.push(k + "=" + String(v));
   }
   var raw = parts.join("&") + SIGN_SALT;
   return CryptoJS.MD5(CryptoJS.SHA256(raw).toString()).toString();
 }
 
-function decryptPayload(dataB64) {
+function decryptPayload(dataHex) {
   var key = CryptoJS.enc.Utf8.parse(AES_KEY);
   var iv = CryptoJS.enc.Utf8.parse(AES_IV);
-  var dec = CryptoJS.AES.decrypt(dataB64, key, {
+  var b64 = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Hex.parse(dataHex));
+  var dec = CryptoJS.AES.decrypt(b64, key, {
     iv: iv,
-    mode: CryptoJS.mode.CBC,
-    padding: CryptoJS.pad.Pkcs7,
+    mode: CryptoJS.mode.CFB,
+    padding: CryptoJS.pad.NoPadding,
   });
   return dec.toString(CryptoJS.enc.Utf8);
 }
@@ -83,22 +87,27 @@ function decryptPayload(dataB64) {
 function encryptPayload(plainText) {
   var key = CryptoJS.enc.Utf8.parse(AES_KEY);
   var iv = CryptoJS.enc.Utf8.parse(AES_IV);
-  return CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(plainText), key, {
+  var enc = CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(plainText), key, {
     iv: iv,
-    mode: CryptoJS.mode.CBC,
-    padding: CryptoJS.pad.Pkcs7,
-  }).toString();
+    mode: CryptoJS.mode.CFB,
+    padding: CryptoJS.pad.NoPadding,
+  });
+  return enc.ciphertext.toString().toUpperCase();
 }
 
 function isAdItem(item) {
   if (!item || typeof item !== "object") return false;
   if (item.advertise_code || item.advertise_location_code) return true;
   if (item.ad_slot_name && AD_SLOT_RE.test(String(item.ad_slot_name))) return true;
+  if (item.index_ads_thumb || item.index_ads_url) return true;
   var title = String(item.title || item.name || item.sub_title || "");
   if (title && AD_TITLE_RE.test(title)) return true;
   if (item.ad_type !== undefined && item.ad_type !== 0) return true;
-  var u = String(item.img_url || item.url || item.link_url || item.image || item.url_str || "");
-  return AD_ITEM_RE.test(u) && (item.advertise_code || item.ad_slot_name);
+  var u = String(
+    item.img_url || item.url || item.link_url || item.image || item.url_str || item.icon || item.icon_new || ""
+  );
+  if (AD_ITEM_RE.test(u) && (item.advertise_code || item.ad_slot_name || item.link_url || item.url)) return true;
+  return false;
 }
 
 function stripAds(node) {
@@ -115,9 +124,7 @@ function stripAds(node) {
     var k = keys[j];
     var v = node[k];
     if (AD_KEY_RE.test(k)) {
-      if (k === "ads" && v && typeof v === "object" && !Array.isArray(v)) {
-        node[k] = null;
-      } else if (k === "notice" && v && typeof v === "object") {
+      if (k === "notice" && v && typeof v === "object") {
         node[k] = {};
       } else if (k === "config" && v && typeof v === "object") {
         if (Array.isArray(v.buoy)) v.buoy = [];
@@ -145,18 +152,13 @@ function processBody(body) {
   try {
     wrapper = JSON.parse(body);
   } catch (e) {
-    console.log("BNXIDVDQW: JSON解析失败");
     return null;
   }
   if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return null;
-  // 跳过已加密的十六进制数据
-  if (/^FF07BB[0-9A-F]/i.test(wrapper.data)) return null;
+  if (!/^[0-9A-F]+$/i.test(wrapper.data)) return null;
   try {
     var plain = decryptPayload(wrapper.data);
-    if (!plain) {
-      console.log("BNXIDVDQW: 解密失败");
-      return null;
-    }
+    if (!plain) return null;
     var payload = JSON.parse(plain);
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
@@ -166,10 +168,8 @@ function processBody(body) {
     }
     wrapper.sign = calcSign(wrapper);
     if (wrapper.errcode !== undefined) wrapper.errcode = 0;
-    console.log("BNXIDVDQW: 广告净化成功");
     return JSON.stringify(wrapper);
   } catch (e) {
-    console.log("BNXIDVDQW: 处理错误 - " + e.message);
     return null;
   }
 }
