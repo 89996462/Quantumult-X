@@ -1,16 +1,16 @@
 /******************************
 
-# 脚本功能：含羞草———解锁———金币视频———VIP视频-付费帖子
-# 特别说明：必须开启HTTP抓包,并且关闭其他的脚本
-# 特别说明：捕获成功后，点击通知即可观看
+# 脚本功能：含羞草(h9mcq)——去广告 + 会员解锁 + 付费合集（合一）
+# 参考：Yu9191/Rewrite fi11.js
+# 目标站点：https://www.h9mcq.com/home
+# 抓包校验：2026-06-06-164219 / 2026-06-06-165921 / a74d.uwegu.com
 # 脚本作者：彭于晏💞
-# 更新时间：2026-6-7
-# TG反馈群：https://t.me/plus8889
-# TG频道群：https://t.me/py996
+# 更新时间：2026-6-6
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************/
 
+// h9mcq-unlock v2 — 响应改包 + v2/getUrl 请求拦截
 
 var CryptoJS;
 (function () {
@@ -93,22 +93,85 @@ function corsHeaders(req) {
   };
 }
 
-function fetchPreUrl(req, videoId) {
-  var origin = apiOrigin(req.url);
-  var headers = {
-    "Content-Type": "application/json;charset=UTF-8",
-    source: pickHeader(req.headers, "source") || "6",
-    did: pickHeader(req.headers, "did") || pickHeader(req.headers, "Did") || "1",
-    isshortchain: pickHeader(req.headers, "isshortchain") || "0",
-  };
-  var auth = pickHeader(req.headers, "Auth") || pickHeader(req.headers, "auth");
-  if (auth) headers.Auth = auth;
+function buildApiHeaders(req, extra) {
+  var headers = {};
+  var src = (req && req.headers) || {};
+  var keys = Object.keys(src);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var kl = String(k).toLowerCase();
+    if (kl === "content-length" || kl === "host") continue;
+    headers[k] = src[k];
+  }
+  if (!pickHeader(headers, "Content-Type")) {
+    headers["Content-Type"] = "application/json;charset=UTF-8";
+  }
+  if (!pickHeader(headers, "source")) headers.source = "6";
+  if (!pickHeader(headers, "did") && !pickHeader(headers, "Did")) headers.did = "1";
+  if (extra) {
+    var ek = Object.keys(extra);
+    for (var j = 0; j < ek.length; j++) headers[ek[j]] = extra[ek[j]];
+  }
+  return headers;
+}
+
+function fetchVideoApi(req, path, videoId, extraHeaders) {
   return $task.fetch({
-    url: origin + "/videos/getPreUrl",
+    url: apiOrigin(req.url) + path,
     method: "POST",
-    headers: headers,
+    headers: buildApiHeaders(req, extraHeaders),
     body: buildEndataBody({ videoId: videoId }),
   });
+}
+
+function parseApiBody(body) {
+  try {
+    return JSON.parse(body || "{}");
+  } catch (e) {
+    return null;
+  }
+}
+
+function extractPlayUrl(data) {
+  if (!data || data.code !== 0 || !data.data) return "";
+  var d = data.data;
+  return d.url || d.playUrl || d.downloadUrl || d.m3u8 || "";
+}
+
+var PLAY_API_CHAIN = [
+  { path: "/videos/getPreUrl", headers: null },
+  { path: "/videos/getPreUrl", headers: { isshortchain: "1" } },
+  { path: "/videos/getShortUrl", headers: null },
+  { path: "/videos/downBuy", headers: null },
+];
+
+function notifyPlayUrl(link, videoId) {
+  if (!link || typeof $notify === "undefined") return;
+  var key = "h9mcq_cap_" + link;
+  var last = $prefs.valueForKey(key);
+  var now = Date.now();
+  if (last && now - Number(last) < 120000) return;
+  $prefs.setValueForKey(String(now), key);
+  var title = videoId ? "视频#" + videoId + " 链接已获取" : "视频链接已获取";
+  $notify("彭于晏提示❗️" + title, ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
+}
+
+async function fetchPlayUrl(req, videoId) {
+  var lastCode = 0;
+  var lastMsg = "";
+  for (var i = 0; i < PLAY_API_CHAIN.length; i++) {
+    var item = PLAY_API_CHAIN[i];
+    try {
+      var resp = await fetchVideoApi(req, item.path, videoId, item.headers);
+      var data = parseApiBody(resp.body);
+      if (!data) continue;
+      lastCode = data.code;
+      lastMsg = data.msg || "";
+      var url = extractPlayUrl(data);
+      if (url) return { url: url, from: item.path };
+    } catch (e) {}
+  }
+  return { url: "", code: lastCode, msg: lastMsg };
 }
 
 const AD_TITLE_RE =
@@ -190,6 +253,7 @@ function stripAdsPayload(payload) {
   return changed;
 }
 
+// fi11: getInfo — canPlay=true, canPrePlay=false, 清除 VIP 门槛标记
 function unlockVideoInfo(data) {
   if (!data || typeof data !== "object") return false;
   var changed = false;
@@ -214,6 +278,57 @@ function unlockVideoInfo(data) {
     if (info.isNeedLogin !== 0) {
       info.isNeedLogin = 0;
       changed = true;
+    }
+    if (info.isDownload !== 1) {
+      info.isDownload = 1;
+      changed = true;
+    }
+  }
+  if (data.canDownload === false) {
+    data.canDownload = true;
+    changed = true;
+  }
+  return changed;
+}
+
+function unlockBuyResponse(data) {
+  if (!data || typeof data !== "object") return false;
+  var changed = false;
+  if (data.isBuy !== 1) {
+    data.isBuy = 1;
+    changed = true;
+  }
+  if (data.payStatus !== undefined && data.payStatus !== 1 && data.payStatus !== true) {
+    data.payStatus = 1;
+    changed = true;
+  }
+  if (data.status !== undefined && data.status !== 1) {
+    data.status = 1;
+    changed = true;
+  }
+  return changed;
+}
+
+function unlockUserVip(data) {
+  if (!data || typeof data !== "object") return false;
+  var changed = false;
+  var nodes = [data, data.info, data.user];
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    if (!node || typeof node !== "object") continue;
+    if (node.isVip !== undefined && node.isVip !== 1) {
+      node.isVip = 1;
+      changed = true;
+    }
+    if (node.vip && typeof node.vip === "object") {
+      if (node.vip.type !== 1) {
+        node.vip.type = 1;
+        changed = true;
+      }
+      if (Number(node.vip.endtime) < PROFILE_VIP_ENDTIME) {
+        node.vip.endtime = PROFILE_VIP_ENDTIME;
+        changed = true;
+      }
     }
   }
   return changed;
@@ -260,6 +375,7 @@ function unlockGatherVideo(item) {
   return changed;
 }
 
+// fi11: gather/getDetail — 付费合集详情解锁
 function unlockGatherDetail(data) {
   if (!data || typeof data !== "object") return false;
   var info = data.info;
@@ -277,6 +393,7 @@ function unlockGatherDetail(data) {
   return changed;
 }
 
+// fi11: gather/getListByVideoId / getList — 合集列表标记已购
 function unlockGatherList(data) {
   if (!data || typeof data !== "object" || !Array.isArray(data.list)) return false;
   var changed = false;
@@ -339,19 +456,41 @@ function patchByRoute(data) {
   }
   if (/\/base\/getConfigPub/i.test(REQ_URL)) {
     var cfgChanged = false;
-    if (data.visitorShortOn !== "1") {
-      data.visitorShortOn = "1";
-      cfgChanged = true;
+    var cfgOnKeys = [
+      "visitorShortOn",
+      "visitorLongOn",
+      "vipShortOn",
+      "previewShortOn",
+      "previewLongOn",
+      "visitorDownOn",
+    ];
+    for (var c = 0; c < cfgOnKeys.length; c++) {
+      if (data[cfgOnKeys[c]] !== undefined && String(data[cfgOnKeys[c]]) !== "1") {
+        data[cfgOnKeys[c]] = "1";
+        cfgChanged = true;
+      }
     }
-    if (data.visitorLongOn !== "1") {
-      data.visitorLongOn = "1";
-      cfgChanged = true;
-    }
-    if (String(data.visitorLongNum) !== "999") {
-      data.visitorLongNum = "999";
-      cfgChanged = true;
+    var cfgNumKeys = ["visitorShortNum", "visitorLongNum", "previewShortNum", "previewLongNum"];
+    for (var n = 0; n < cfgNumKeys.length; n++) {
+      if (data[cfgNumKeys[n]] !== undefined && String(data[cfgNumKeys[n]]) !== "999") {
+        data[cfgNumKeys[n]] = "999";
+        cfgChanged = true;
+      }
     }
     return cfgChanged;
+  }
+  if (/\/videos\/(?:buy|preBuy|downBuy|preDownBuy)/i.test(REQ_URL)) {
+    return unlockBuyResponse(data);
+  }
+  if (/\/user\/(?:getInfo|detail|info|login|register)/i.test(REQ_URL)) {
+    return unlockUserVip(data);
+  }
+  if (/\/videos\/(?:v2\/getUrl|getPreUrl|getShortUrl)/i.test(REQ_URL)) {
+    var playUrl = extractPlayUrl({ code: 0, data: data });
+    if (playUrl) {
+      var vid = data.id || (data.info && data.info.id) || "";
+      notifyPlayUrl(cleanPlayUrl(playUrl), vid);
+    }
   }
   if (
     /\/home\/getAds/i.test(REQ_URL) ||
@@ -413,27 +552,34 @@ async function handleGetUrlRequest() {
     return;
   }
   try {
-    var resp = await fetchPreUrl(req, videoId);
-    var data = JSON.parse(resp.body || "{}");
-    if (!data || data.code !== 0 || !data.data || !data.data.url) {
-      $done();
+    var result = await fetchPlayUrl(req, videoId);
+    if (result && result.url) {
+      var playUrl = cleanPlayUrl(result.url);
+      notifyPlayUrl(playUrl, videoId);
+      $done({
+        response: {
+          status: 200,
+          headers: corsHeaders(req),
+          body: JSON.stringify({
+            code: 0,
+            msg: "",
+            data: { id: videoId, url: playUrl },
+            traceId: "h9mcq",
+          }),
+        },
+      });
       return;
     }
-    var playUrl = cleanPlayUrl(data.data.url);
+    // 保留 Safari UA / Cookie，重定向到 getPreUrl（避免 QX 代请求指纹）
     $done({
-      response: {
-        status: 200,
-        headers: corsHeaders(req),
-        body: JSON.stringify({
-          code: 0,
-          msg: "",
-          data: { id: videoId, url: playUrl },
-          traceId: "h9mcq",
-        }),
-      },
+      url: apiOrigin(req.url) + "/videos/getPreUrl",
+      body: buildEndataBody({ videoId: videoId }),
     });
   } catch (e) {
-    $done();
+    $done({
+      url: apiOrigin(req.url) + "/videos/getPreUrl",
+      body: buildEndataBody({ videoId: videoId }),
+    });
   }
 }
 
