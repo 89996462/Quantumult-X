@@ -1,16 +1,37 @@
 /******************************
-
-# 脚本功能：小蓝视频 PWA——去广告—解锁金币/VIP视频(供888.js捕获完整版)
-# 目标站点：https://p4.bnxidvdqw.cc/?
+  
+# 脚本功能：汤头条——解锁—金币视频—VIP视频-净化广告
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
-# 更新时间：2026-6-6
-# 抓包校验：2026-06-06-134236 / Dndj7SUT.js / pwa.php
+# 更新时间：2026-5-25
+# TG反馈群：https://t.me/plus8889
+# TG频道群：https://t.me/py996
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
-*******************************/
+*******************************
 
-// hls-noad v1
+
+[rewrite_local]
+
+
+^https?:\/\/[^\/]+\/pwa\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js.js
+
+[filter-local]
+
+^https?:\/\/ap\.dc-report\.cc\/ - reject
+
+^https?:\/\/api-dc-prod-002\.cyou\/ - reject
+
+^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
+
+^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
+
+[mitm]
+
+hostname = p1.ceogberj.cc, *.ceogberj.cc, api3.caanrrim.cc, *.caanrrim.cc, new.iajckz.cn, *.iajckz.cn, tp5.iajckz.cn, tp6.iajckz.cn, tp7.iajckz.cn, 120play.*.cn, long.*.cn, *.wpyxbxt.cn, h5play.*.com, *.fipxor.cn
+
+
+*******************************/
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -21,7 +42,6 @@ var CryptoJS;
   }
 })();
 
-// 小蓝视频 PWA 去广告 v1 — 抓包 2026-06-06-134236 / Dndj7SUT.js 校验
 const AES_KEY = "cc88ddc9357ff461e08f047aedee692b";
 const AES_IV = "e89225cfbbimgkcu";
 const SIGN_SALT = "cc88ddc9357ff461e08f047aedee692b";
@@ -92,7 +112,8 @@ function isAdItem(item) {
 function buildFullPlayUrl(preview) {
   if (!preview) return "";
   var url = String(preview)
-    .replace(/wyyl-120play\.rnhqeo\.cn/i, "wyyl-long.rnhqeo.cn")
+    .replace(/:\/\/([^\/:@]+)-120play\./i, "://$1-long.")
+    .replace(/:\/\/120play\./i, "://long.")
     .replace(/[?&]seconds=\d+/gi, "")
     .replace(/[?&]via_m=[^&]*/gi, "")
     .replace(/\?&/, "?")
