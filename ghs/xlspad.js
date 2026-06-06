@@ -13,23 +13,24 @@
 
 [rewrite_local]
 
-^https?:\/\/[^\/]+\/pwa\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+^https?:\/\/api\.tsxtvams\.com\/pwa\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/xlspad.js
+
 [filter-local]
 
-^https?:\/\/ap\.dc-report\.cc\/ - reject
+^https?:\/\/[^\/]+\/upload.*\/ads\/ - reject
 
-^https?:\/\/api-dc-prod-002\.cyou\/ - reject
+^https?:\/\/tp[0-9]+\.wpzatg\.cn\/ - reject
 
-^https?:\/\/api-dc2-prod-02\.cyou\/ - reject
-
-^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
+^https?:\/\/10play\.ujnuvx\.cn\/ - reject
 
 [mitm]
 
-hostname = p4.bnxidvdqw.cc, *.bnxidvdqw.cc, api.tsxtvams.com, *.tsxtvams.com
+hostname = p4.bnxidvdqw.cc, *.bnxidvdqw.cc, api.tsxtvams.com, *.tsxtvams.com, tp*.wpzatg.cn, 10play.ujnuvx.cn
 
 
 *******************************/
+
+// hls-noad v1
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -144,13 +145,18 @@ function processBody(body) {
   try {
     wrapper = JSON.parse(body);
   } catch (e) {
+    console.log("BNXIDVDQW: JSON解析失败");
     return null;
   }
   if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return null;
+  // 跳过已加密的十六进制数据
   if (/^FF07BB[0-9A-F]/i.test(wrapper.data)) return null;
   try {
     var plain = decryptPayload(wrapper.data);
-    if (!plain) return null;
+    if (!plain) {
+      console.log("BNXIDVDQW: 解密失败");
+      return null;
+    }
     var payload = JSON.parse(plain);
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
@@ -160,8 +166,10 @@ function processBody(body) {
     }
     wrapper.sign = calcSign(wrapper);
     if (wrapper.errcode !== undefined) wrapper.errcode = 0;
+    console.log("BNXIDVDQW: 广告净化成功");
     return JSON.stringify(wrapper);
   } catch (e) {
+    console.log("BNXIDVDQW: 处理错误 - " + e.message);
     return null;
   }
 }
