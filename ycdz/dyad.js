@@ -1,16 +1,15 @@
 /*
+
  * 功能：移除直播间"在么？想跟你组个CP！"广告横幅
  * 版本：1.0
-
+ 
 [rewrite_local]
 
-^https:\/\/mconf\.douyucdn\.cn\/resource\/common\/config\/inter_com_m_cp_recommendV2\.json url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/dyad.js
-^https:\/\/apiv2\.douyucdn\.cn\/japi\/adgrowth\/report\/iosReport url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/dyad.js
-^https:\/\/rtbapi\.douyucdn\.cn\/japi\/dyadx\/gateway\/app\/getinfo url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/dyad.js
-^https:\/\/apiv3\.douyucdn\.cn\/mgapi\/live\/match\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/dyad.js
+^https:\/\/(mconf|apiv2|apiv3|rtbapi)\.douyucdn\.cn\/(resource\/common\/config\/inter_com_m_cp_recommendV2\.json|japi\/adgrowth\/report\/|japi\/dyadx\/gateway\/app\/getinfo|mgapi\/live\/match\/|mgapi\/activitync\/newusers\/popup|mgapi\/activitync\/popupWindow\/getConfig|japi\/operation\/activity\/app\/v2\/create\/panel\/bubble|japi\/sign\/app\/roomPushAd\/getinfo|resource\/common\/happy_game_m\.json|mgapi\/livencc\/appskin\/getActivityRecV3|japi\/carnivalApi\/nc\/appTask\/getRoomTask) url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/dyad.js
 
 [mitm]
-hostname = mconf.douyucdn.cn, apiv2.douyucdn.cn, rtbapi.douyucdn.cn, apiv3.douyucdn.cn
+hostname = mconf.douyucdn.cn, apiv2.douyucdn.cn, apiv3.douyucdn.cn, rtbapi.douyucdn.cn
+
  */
 
 let url = $request.url;
@@ -59,7 +58,7 @@ try {
         return;
     }
     
-    // 处理广告 SDK 接口
+
     if (url.includes('/dyadx/gateway/app/getinfo')) {
         console.log('[Douyu CP Ad Block] 拦截广告 SDK 接口');
         $done({ body: JSON.stringify({
@@ -73,14 +72,14 @@ try {
         return;
     }
     
-    // 处理匹配中心相关接口
+
     if (url.includes('/mgapi/live/match/')) {
         console.log('[Douyu CP Ad Block] 处理匹配中心接口');
         
         try {
             let obj = JSON.parse(body);
             
-            // 递归移除 CP 匹配相关内容
+
             function cleanCPData(data) {
                 if (!data || typeof data !== 'object') return data;
                 
@@ -124,13 +123,70 @@ try {
         return;
     }
     
-    // 处理直播间信息接口（尝试从响应中移除广告）
+
+    if (url.includes('/mgapi/activitync/newusers/popup')) {
+        console.log('[Douyu CP Ad Block] 拦截新用户弹窗广告');
+        $done({ body: JSON.stringify({
+            error: 0,
+            data: [],
+            msg: "ok"
+        })});
+        return;
+    }
+    
+
+    if (url.includes('/mgapi/activitync/popupWindow/getConfig')) {
+        console.log('[Douyu CP Ad Block] 拦截弹窗窗口配置');
+        $done({ body: JSON.stringify({
+            error: 0,
+            data: [],
+            msg: "ok"
+        })});
+        return;
+    }
+    
+
+    if (url.includes('/japi/sign/app/roomPushAd/getinfo')) {
+        console.log('[Douyu CP Ad Block] 拦截直播间推送广告');
+        $done({ body: JSON.stringify({
+            error: 0,
+            data: [],
+            msg: "ok"
+        })});
+        return;
+    }
+    
+
+    if (url.includes('/resource/common/happy_game_m.json')) {
+        console.log('[Douyu CP Ad Block] 拦截游戏广告配置');
+        $done({ body: JSON.stringify({
+            activity: {
+                anchorSwitch: 0,
+                startTime: 0,
+                anchorExpireTime: 0,
+                endTime: 0,
+                anchorIntro: ""
+            },
+            scfaHeartIntroductionText: [],
+            isLoginOpen: 0,
+            appBannerImg: "",
+            webBannerImg: "",
+            userPropertyIcon: "",
+            jumpUrlIsOpen: 0,
+            cateGuideVersion: 0,
+            act2: {},
+            giftConfig: {}
+        })});
+        return;
+    }
+    
+
     if (url.includes('douyucdn.cn') && body) {
         try {
             let obj = JSON.parse(body);
             let modified = false;
             
-            // 递归清理函数
+
             function removeAdFields(data) {
                 if (!data || typeof data !== 'object') return data;
                 
@@ -139,7 +195,7 @@ try {
                         .filter(item => {
                             if (typeof item === 'object' && item !== null) {
                                 let str = JSON.stringify(item);
-                                // 过滤包含广告相关关键词的对象
+
                                 return !/cp|匹配|心动|组个|ad.*growth|recommend/i.test(str);
                             }
                             return true;
@@ -152,7 +208,7 @@ try {
                     if (data.hasOwnProperty(key)) {
                         let value = data[key];
                         
-                        // 跳过广告相关字段
+
                         if (/cp|match|recommend|ad.*growth|心动|匹配|广告/i.test(key)) {
                             console.log(`[Douyu CP Ad Block] 移除字段: ${key}`);
                             modified = true;
@@ -178,13 +234,58 @@ try {
                 $done({ body: body });
             }
         } catch (e) {
-            // 不是 JSON 数据，直接返回
+
             $done({ body: body });
         }
         return;
     }
     
-    // 默认：不做任何修改
+
+    if (url.includes('/mgapi/livencc/appskin/getActivityRecV3')) {
+        console.log('[Douyu CP Ad Block] 拦截开屏活动推荐');
+        try {
+            let obj = JSON.parse(body);
+
+            if (obj.data && obj.data.data) {
+
+                let decoded = atob(obj.data.data);
+                let activityData = JSON.parse(decoded);
+
+                if (activityData.skin) {
+                    activityData.skin.status = 0;
+                    activityData.skin.id = 0;
+                    activityData.skin.cover = "";
+                    activityData.skin.banner = "";
+                }
+                if (activityData.ctrl) {
+                    activityData.ctrl.home = 0;
+                    activityData.ctrl.cate = 0;
+                    activityData.ctrl.mcenter = 0;
+                }
+                
+                obj.data.data = btoa(JSON.stringify(activityData));
+            }
+            $done({ body: JSON.stringify(obj) });
+        } catch (e) {
+            console.log(`[Douyu CP Ad Block] 开屏活动解析失败: ${e.message}`);
+            $done({ body: body });
+        }
+        return;
+    }
+    
+    if (url.includes('/japi/carnivalApi/nc/appTask/getRoomTask')) {
+        console.log('[Douyu CP Ad Block] 拦截房间任务');
+        $done({ body: JSON.stringify({
+            error: 0,
+            msg: "success",
+            data: {
+                taskList: []
+            },
+            redirectUrl: null
+        })});
+        return;
+    }
+    
     $done({ body: body });
     
 } catch (e) {
