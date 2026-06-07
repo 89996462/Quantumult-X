@@ -1,3 +1,5 @@
+
+
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -103,25 +105,69 @@ function stripAdsData(data) {
 function unlockUser(data) {
   if (!data || typeof data !== "object") return false;
   var changed = false;
-  var nodes = [data, data.user];
+  var nodes = [data];
+  if (data.user && typeof data.user === "object") nodes.push(data.user);
+  var vipFields = [
+    ["is_vip", "y"],
+    ["is_dark_vip", "y"],
+    ["balance", "99999"],
+    ["integral", "99999"],
+    ["new_user_end_time", "0"],
+    ["group_name", "至尊会员"],
+    ["group_style", "1"],
+    ["vip_buy_tips", ""],
+    ["is_new_user", "n"],
+  ];
   for (var i = 0; i < nodes.length; i++) {
     var u = nodes[i];
     if (!u || typeof u !== "object") continue;
-    if (u.is_vip !== undefined && String(u.is_vip) !== "y") {
-      u.is_vip = "y";
+    for (var j = 0; j < vipFields.length; j++) {
+      var key = vipFields[j][0];
+      var val = vipFields[j][1];
+      if (u[key] !== undefined && String(u[key]) !== val) {
+        u[key] = val;
+        changed = true;
+      }
+    }
+    if (u.vip_end_time !== undefined && String(u.vip_end_time) !== "9999999999") {
+      u.vip_end_time = "9999999999";
       changed = true;
     }
-    if (u.is_dark_vip !== undefined && String(u.is_dark_vip) !== "y") {
-      u.is_dark_vip = "y";
+    if (u.dark_vip_end_time !== undefined && String(u.dark_vip_end_time) !== "9999999999") {
+      u.dark_vip_end_time = "9999999999";
       changed = true;
     }
-    if (u.balance !== undefined && Number(u.balance) < 99999) {
-      u.balance = "99999";
+  }
+  return changed;
+}
+
+function unlockSystemInfo(data) {
+  if (!data || typeof data !== "object") return false;
+  var changed = stripAdsData(data);
+  if (data.token && typeof data.token === "object") {
+    if (data.token.is_valid !== undefined && String(data.token.is_valid) !== "y") {
+      data.token.is_valid = "y";
       changed = true;
     }
-    if (u.integral !== undefined && Number(u.integral) < 99999) {
-      u.integral = "99999";
-      changed = true;
+  }
+  return changed;
+}
+
+function unlockUserVipPage(data) {
+  if (!data || typeof data !== "object") return false;
+  var changed = unlockUser(data);
+  if (data.vip_buy_tips !== undefined && String(data.vip_buy_tips) !== "") {
+    data.vip_buy_tips = "";
+    changed = true;
+  }
+  if (Array.isArray(data.group)) {
+    for (var g = 0; g < data.group.length; g++) {
+      var grp = data.group[g];
+      if (!grp || typeof grp !== "object") continue;
+      if (String(grp.is_selected) !== "y") {
+        grp.is_selected = "y";
+        changed = true;
+      }
     }
   }
   return changed;
@@ -169,6 +215,14 @@ function unlockContentDetail(data) {
   if (data.user && typeof data.user === "object") {
     changed = unlockUser(data.user) || changed;
   }
+  if (data.is_new_user !== undefined && String(data.is_new_user) !== "n") {
+    data.is_new_user = "n";
+    changed = true;
+  }
+  if (data.new_user_end_time !== undefined && String(data.new_user_end_time) !== "0") {
+    data.new_user_end_time = "0";
+    changed = true;
+  }
   return changed;
 }
 
@@ -204,17 +258,15 @@ function unlockPlayLinks(data) {
       full = preview;
       changed = true;
     }
-    if (line.preview_m3u8_url) {
-      line.preview_m3u8_url = "";
-      changed = true;
-    }
     if (line.max_preview_time !== undefined && String(line.max_preview_time) !== "0") {
       line.max_preview_time = "0";
       changed = true;
     }
     if (!captured && full) captured = full;
+    if (!captured && preview) captured = preview;
   }
-  if (String(data.play_error_type || "") !== "none") {
+  var errType = data.play_error_type;
+  if (errType !== undefined && errType !== null && String(errType) !== "none") {
     data.play_error_type = "none";
     changed = true;
   }
@@ -222,8 +274,37 @@ function unlockPlayLinks(data) {
     data.play_error = "";
     changed = true;
   }
-  if (captured && /^https?:\/\//i.test(captured)) notifyPlayUrl(captured);
+  if (captured) {
+    var capUrl = captured;
+    if (!/^https?:\/\//i.test(capUrl)) {
+      var host = String(($request && $request.url) || "").replace(/^(https?:\/\/[^\/]+).*$/, "$1");
+      if (host) capUrl = host + (capUrl.indexOf("/") === 0 ? capUrl : "/" + capUrl);
+    }
+    notifyPlayUrl(capUrl);
+  }
   return changed;
+}
+
+function isM3u8LinkUrl(url) {
+  return /\/bkapi\/m3u8\/link\/[^/?]+\.m3u8/i.test(String(url || ""));
+}
+
+function stripChunkBody(body) {
+  var text = String(body || "");
+  var idx = text.indexOf("#EXTM3U");
+  return idx >= 0 ? text.slice(idx) : text;
+}
+
+function unlockM3u8Playlist(body) {
+  var text = stripChunkBody(body);
+  if (!text || text.indexOf("#EXTM3U") !== 0) return null;
+  var changed = false;
+  var out = text;
+  if (/#EXT-X-ENDLIST/i.test(out)) {
+    out = out.replace(/\r?\n#EXT-X-ENDLIST[^\r\n]*/gi, "");
+    changed = true;
+  }
+  return changed ? out : null;
 }
 
 function unlockBuyResponse(data) {
@@ -246,14 +327,16 @@ function patchData(data, reqUrl) {
   var path = reqUrl.split("/bkapi/")[1] || "";
 
   if (path.indexOf("system/info") === 0) {
-    changed = stripAdsData(data) || changed;
+    changed = unlockSystemInfo(data) || changed;
   } else if (/^(movie|cartoon|novel|post|dark|game)\/home/i.test(path) || /\/homeTags$/i.test(path)) {
     changed = stripAdsData(data) || changed;
   } else if (/^(movie|cartoon|novel|post|game)\/detail/i.test(path) || /chapterDetail/i.test(path)) {
     changed = unlockContentDetail(data) || changed;
     changed = unlockPlayLinks(data) || changed;
-  } else if (/^user\/(info|vip)/i.test(path)) {
+  } else if (/^user\/info/i.test(path)) {
     changed = unlockUser(data) || changed;
+  } else if (/^user\/vip/i.test(path)) {
+    changed = unlockUserVipPage(data) || changed;
   } else if (/\/doBuy$/i.test(path) || /\/buy/i.test(path)) {
     changed = unlockBuyResponse(data) || changed;
   } else {
@@ -280,7 +363,20 @@ function processBody(body) {
 }
 
 function handleResponse() {
-  var newBody = processBody($response.body);
+  var reqUrl = getReqUrl();
+  var rawBody = $response.body;
+
+  if (isM3u8LinkUrl(reqUrl)) {
+    var m3u8Body = unlockM3u8Playlist(rawBody);
+    if (m3u8Body) {
+      $done({ body: m3u8Body, headers: $response.headers });
+      return;
+    }
+    $done();
+    return;
+  }
+
+  var newBody = processBody(rawBody);
   if (newBody) {
     $done({ body: newBody, headers: $response.headers });
   } else {
