@@ -54,4 +54,4 @@ var playURL = normalizePlayUrl(String(url || ""));
 if (playURL && isPlayLink(playURL) && !isPreviewLink(playURL)) {
   notifyCapture(playURL);
 }
-$done({ response: { headers } });
+$done({});
