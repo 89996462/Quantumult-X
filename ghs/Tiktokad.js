@@ -14,8 +14,14 @@ const AES_KEY = "tJqkoiJXvD7UCU3i";
 const AES_IV = "h79lkicjeqwko5nd";
 const SIGN_SALT = "tJqkoiJXvD7UCU3i";
 const VIA_M = "tiktok";
+const PROFILE_NAME = "彭于晏Crack";
 const PROFILE_COIN = 99999;
 const PROFILE_VIP_END = 4102415999;
+
+const SKIP_PATH_RE =
+  /\/api\.php\/api\/(?:sdk\/event|mv\/list_barrage|community\/|product\/list|users\/invitation)/i;
+const LIGHT_PATH_RE =
+  /\/api\.php\/api\/(?:mv\/recommend|mv\/list|tabnew\/feature|mv\/list_rank)/i;
 
 const KEY = CryptoJS.enc.Utf8.parse(AES_KEY);
 const IV = CryptoJS.enc.Utf8.parse(AES_IV);
@@ -37,6 +43,10 @@ const AD_EMPTY_KEYS = {
   ads_media: 1,
   ad_list: 1,
   apps: 1,
+};
+
+const AD_ZERO_KEYS = {
+  floating_ai: 1,
 };
 
 function aesDecrypt(b64) {
@@ -118,8 +128,35 @@ function emptyAdKey(key, val) {
   return false;
 }
 
-function unlockVideoNode(node) {
+function zeroAdKey(key, val) {
+  if (!AD_ZERO_KEYS[key]) return false;
+  if (val === 0 || val === "0" || val === false || val === null) return false;
+  return true;
+}
+
+function isVideoNode(node) {
   if (!node || typeof node !== "object") return false;
+  return (
+    node.play_url !== undefined ||
+    node.preview_video !== undefined ||
+    node.is_pay !== undefined ||
+    node.is_free_str !== undefined ||
+    (node.mv_id !== undefined && node.coins !== undefined)
+  );
+}
+
+function isUserProfile(node) {
+  if (!node || typeof node !== "object") return false;
+  if (isVideoNode(node)) return false;
+  return (
+    node.username !== undefined ||
+    node.nickname !== undefined ||
+    (node.uid !== undefined && node.is_vip !== undefined)
+  );
+}
+
+function unlockVideoNode(node) {
+  if (!isVideoNode(node)) return false;
   var changed = false;
   if (node.play_url !== undefined) {
     var full = normalizePlayUrl(node.play_url);
@@ -148,6 +185,14 @@ function unlockVideoNode(node) {
     node.is_free = 1;
     changed = true;
   }
+  if (node.coins !== undefined && Number(node.coins) !== 0) {
+    node.coins = 0;
+    changed = true;
+  }
+  if (node.is_free_str !== undefined && node.is_free_str !== "") {
+    node.is_free_str = "";
+    changed = true;
+  }
   if (node.web_free !== undefined && Number(node.web_free) !== 1) {
     node.web_free = 1;
     changed = true;
@@ -164,8 +209,16 @@ function unlockVideoNode(node) {
 }
 
 function unlockUserNode(node) {
-  if (!node || typeof node !== "object") return false;
+  if (!isUserProfile(node)) return false;
   var changed = false;
+  if (node.username !== undefined && node.username !== PROFILE_NAME) {
+    node.username = PROFILE_NAME;
+    changed = true;
+  }
+  if (node.nickname !== undefined && node.nickname !== PROFILE_NAME) {
+    node.nickname = PROFILE_NAME;
+    changed = true;
+  }
   if (node.is_vip !== undefined && node.is_vip !== true && node.is_vip !== 1) {
     node.is_vip = 1;
     changed = true;
@@ -193,13 +246,17 @@ function unlockUserNode(node) {
   return changed;
 }
 
-function walkPatch(node, depth) {
+function walkPatch(node, depth, mode) {
   if (!node || typeof node !== "object") return false;
   depth = depth || 0;
+  mode = mode || "full";
+  if (mode === "light" && depth > 3) return false;
   var changed = false;
   if (Array.isArray(node)) {
-    changed = stripAdList(node) || changed;
-    for (var i = 0; i < node.length; i++) changed = walkPatch(node[i], depth + 1) || changed;
+    if (mode === "full" || depth < 2) changed = stripAdList(node) || changed;
+    for (var i = 0; i < node.length; i++) {
+      changed = walkPatch(node[i], depth + 1, mode) || changed;
+    }
     return changed;
   }
   changed = unlockVideoNode(node) || changed;
@@ -212,19 +269,28 @@ function walkPatch(node, depth) {
       changed = true;
       continue;
     }
+    if (zeroAdKey(key, val)) {
+      node[key] = 0;
+      changed = true;
+      continue;
+    }
     if (Array.isArray(val)) {
-      if (stripAdList(val)) changed = true;
-      for (var j = 0; j < val.length; j++) changed = walkPatch(val[j], depth + 1) || changed;
+      if (mode === "full" || depth < 2) {
+        if (stripAdList(val)) changed = true;
+      }
+      for (var j = 0; j < val.length; j++) {
+        changed = walkPatch(val[j], depth + 1, mode) || changed;
+      }
     } else if (val && typeof val === "object") {
-      changed = walkPatch(val, depth + 1) || changed;
+      changed = walkPatch(val, depth + 1, mode) || changed;
     }
   }
   return changed;
 }
 
-function patchPayload(payload) {
+function patchPayload(payload, mode) {
   if (!payload || typeof payload !== "object") return false;
-  return walkPatch(payload, 0);
+  return walkPatch(payload, 0, mode);
 }
 
 function processBody(body) {
@@ -250,8 +316,11 @@ function processBody(body) {
     return null;
   }
   if (!inner || typeof inner !== "object") return null;
+  var reqUrl = $request.url || "";
+  if (SKIP_PATH_RE.test(reqUrl)) return null;
+  var mode = LIGHT_PATH_RE.test(reqUrl) ? "light" : "full";
   var target = inner.data !== undefined ? inner.data : inner;
-  var changed = patchPayload(target);
+  var changed = patchPayload(target, mode);
   if (!changed) return null;
   outer.data = aesEncrypt(JSON.stringify(inner));
   outer.sign = calcSign(outer.data, outer.errcode, outer.timestamp);
