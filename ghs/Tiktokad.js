@@ -17,18 +17,21 @@ const VIA_M = "tiktok";
 const PROFILE_NAME = "彭于晏Crack";
 const PROFILE_COIN = 99999;
 const PROFILE_VIP_END = 4102415999;
+const PROFILE_VIP_END_STR = "2099-12-31 23:59:59";
+const PLAY_MAP_KEY = "tiktok_play_map_v1";
+const PLAY_MAP_MAX = 800;
 
 const SKIP_PATH_RE =
   /\/api\.php\/api\/(?:sdk\/event|mv\/list_barrage|community\/|product\/list|users\/invitation)/i;
 const LIGHT_PATH_RE =
-  /\/api\.php\/api\/(?:mv\/recommend|mv\/list|tabnew\/feature|mv\/list_rank)/i;
+  /\/api\.php\/api\/(?:mv\/recommend|mv\/list|tabnew\/feature|mv\/list_rank|recommend\/)/i;
 
 const KEY = CryptoJS.enc.Utf8.parse(AES_KEY);
 const IV = CryptoJS.enc.Utf8.parse(AES_IV);
 const AES_OPT = { iv: IV, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 };
 
 const AD_TITLE_RE =
-  /(博万体育|新葡京|博业体育|永利皇宫|开元棋牌|PG游戏|PG电子|PG棋牌|裸聊|抖阴|AI科技|AI脱衣|男性约炮|同圈速配|可乐视频|免费抖阴|91男漫|抖欲男漫|男男社区|爱威奶|全网片源|Pornhub|铁粉空间|英皇娱乐|棋牌|体育投注|皇冠体育|bw333|xsgdwf|by2258|2632357|01441001)/i;
+  /(博万体育|新葡京|博业体育|永利皇宫|开元棋牌|PG游戏|PG电子|PG棋牌|裸聊|抖阴|AI科技|AI脱衣|男性约炮|同圈速配|可乐视频|免费抖阴|91男漫|抖欲男漫|男男社区|爱威奶|全网片源|Pornhub|铁粉空间|英皇娱乐|棋牌|体育投注|皇冠体育|世界杯|猜冠军|竞猜|看球|博大奖|投注券|bw333|xsgdwf|by2258|2632357|01441001)/i;
 const AD_URL_RE = /\/upload_01\/ads\/|\/upload\/ads\/|\/hc237\/uploads\/|advertise_code|ad_slot_name/i;
 
 const AD_EMPTY_KEYS = {
@@ -47,6 +50,12 @@ const AD_EMPTY_KEYS = {
 
 const AD_ZERO_KEYS = {
   floating_ai: 1,
+  share_activity_open: 1,
+};
+
+const ACTIVITY_ENTRY_KEYS = {
+  worldcup_entry: 1,
+  blindbox_entry: 1,
 };
 
 function aesDecrypt(b64) {
@@ -82,6 +91,51 @@ function normalizePlayUrl(url) {
     link += (link.indexOf("?") >= 0 ? "&" : "?") + "via_m=" + VIA_M;
   }
   return link;
+}
+
+function loadPlayMap() {
+  try {
+    return JSON.parse($prefs.valueForKey(PLAY_MAP_KEY) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function savePlayUrl(id, url) {
+  if (!id || !url) return;
+  var map = loadPlayMap();
+  map[String(id)] = String(url);
+  var keys = Object.keys(map);
+  if (keys.length > PLAY_MAP_MAX) {
+    for (var i = 0; i < keys.length - PLAY_MAP_MAX; i++) delete map[keys[i]];
+  }
+  $prefs.setValueForKey(JSON.stringify(map), PLAY_MAP_KEY);
+}
+
+function rememberPlayUrl(node) {
+  if (!node || typeof node !== "object") return;
+  var id = node.id || node.mv_id;
+  if (id && node.play_url) savePlayUrl(id, normalizePlayUrl(node.play_url));
+}
+
+function injectPlayUrl(node) {
+  if (!node || typeof node !== "object") return false;
+  if (node.play_url) return false;
+  var id = node.id || node.mv_id;
+  if (!id) return false;
+  var cached = loadPlayMap()[String(id)];
+  if (!cached) return false;
+  node.play_url = normalizePlayUrl(cached);
+  return true;
+}
+
+function guessPlayUrl(node) {
+  if (!node || typeof node !== "object") return "";
+  var id = String(node.fan_id || node.media_id || node.lsj_id || "");
+  if (!/^[0-9a-f]{32}$/i.test(id)) return "";
+  return normalizePlayUrl(
+    "https://10play.chxgdn.cn/useruploadfiles/" + id + "/" + id + ".m3u8"
+  );
 }
 
 function isAdItem(item) {
@@ -134,6 +188,28 @@ function zeroAdKey(key, val) {
   return true;
 }
 
+function disableActivityEntry(entry) {
+  if (!entry || typeof entry !== "object") return false;
+  var changed = false;
+  if (entry.open) {
+    entry.open = 0;
+    changed = true;
+  }
+  if (entry.active) {
+    entry.active = 0;
+    changed = true;
+  }
+  var parts = ["popup", "short_video", "video_detail", "detail"];
+  for (var i = 0; i < parts.length; i++) {
+    var part = entry[parts[i]];
+    if (part && typeof part === "object" && part.open) {
+      part.open = 0;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 function isVideoNode(node) {
   if (!node || typeof node !== "object") return false;
   return (
@@ -158,6 +234,7 @@ function isUserProfile(node) {
 function unlockVideoNode(node) {
   if (!isVideoNode(node)) return false;
   var changed = false;
+  rememberPlayUrl(node);
   if (node.play_url !== undefined) {
     var full = normalizePlayUrl(node.play_url);
     if (full && full !== node.play_url) {
@@ -169,6 +246,14 @@ function unlockVideoNode(node) {
     if (!node.play_url) node.play_url = normalizePlayUrl(node.preview_video);
     node.preview_video = "";
     changed = true;
+  }
+  if (injectPlayUrl(node)) changed = true;
+  if (!node.play_url) {
+    var guessed = guessPlayUrl(node);
+    if (guessed) {
+      node.play_url = guessed;
+      changed = true;
+    }
   }
   if (node.m3u8_full !== undefined && node.m3u8_full) {
     var m3u8 = normalizePlayUrl(node.m3u8_full);
@@ -185,14 +270,6 @@ function unlockVideoNode(node) {
     node.is_free = 1;
     changed = true;
   }
-  if (node.coins !== undefined && Number(node.coins) !== 0) {
-    node.coins = 0;
-    changed = true;
-  }
-  if (node.is_free_str !== undefined && node.is_free_str !== "") {
-    node.is_free_str = "";
-    changed = true;
-  }
   if (node.web_free !== undefined && Number(node.web_free) !== 1) {
     node.web_free = 1;
     changed = true;
@@ -203,6 +280,14 @@ function unlockVideoNode(node) {
   }
   if (node.can_watch !== undefined && Number(node.can_watch) !== 1) {
     node.can_watch = 1;
+    changed = true;
+  }
+  if (node.has_buy !== undefined && Number(node.has_buy) !== 1) {
+    node.has_buy = 1;
+    changed = true;
+  }
+  if (node.is_buy !== undefined && Number(node.is_buy) !== 1) {
+    node.is_buy = 1;
     changed = true;
   }
   return changed;
@@ -239,6 +324,14 @@ function unlockUserNode(node) {
     node.expired_at = PROFILE_VIP_END;
     changed = true;
   }
+  if (
+    node.expired_str !== undefined &&
+    node.expired_str !== PROFILE_VIP_END_STR &&
+    (!node.expired_str || node.expired_str.indexOf("1970") >= 0 || node.expired_str.indexOf("2000") >= 0)
+  ) {
+    node.expired_str = PROFILE_VIP_END_STR;
+    changed = true;
+  }
   if (node.can_watch !== undefined && Number(node.can_watch) !== 1) {
     node.can_watch = 1;
     changed = true;
@@ -272,6 +365,10 @@ function walkPatch(node, depth, mode) {
     if (zeroAdKey(key, val)) {
       node[key] = 0;
       changed = true;
+      continue;
+    }
+    if (ACTIVITY_ENTRY_KEYS[key] && val && typeof val === "object") {
+      if (disableActivityEntry(val)) changed = true;
       continue;
     }
     if (Array.isArray(val)) {
