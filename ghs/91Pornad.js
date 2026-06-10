@@ -279,8 +279,12 @@ function capNotify(link, raw, priority) {
     $prefs.setValueForKey(String(Date.now()), "91porn_last_capture_ts");
     $prefs.setValueForKey("notify:" + link.slice(0, 120), "91porn_notify_debug");
   } catch (e) {}
-  if (isQX && typeof $notify === "function") {
-    $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
+  if (isQX) {
+    if (typeof $notify === "function") {
+      $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
+    } else if (typeof $notification !== "undefined" && typeof $notification.post === "function") {
+      $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
+    }
   } else if (isSurge) {
     $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { url: link });
   } else if (isLoon) {
@@ -565,12 +569,20 @@ function stripAds(node) {
 }
 
 function fastCaptureComVideo(body, reqUrl) {
+  try {
+    $prefs.setValueForKey(String(Date.now()), "91porn_cap_script_hit");
+  } catch (e) {}
   if (!body || body.indexOf('"data"') < 0) return;
   try {
     var wrapper = JSON.parse(body);
     if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return;
     var plain = decryptPayload(wrapper.data);
-    if (!plain) return;
+    if (!plain) {
+      try {
+        $prefs.setValueForKey("decrypt_fail", "91porn_notify_debug");
+      } catch (e2) {}
+      return;
+    }
     try {
       $prefs.setValueForKey(plain.slice(0, 160), "91porn_cv_plain_debug");
     } catch (e) {}
@@ -647,12 +659,17 @@ var respBody = $response && $response.body;
 var reqUrl = String(($request && $request.url) || "");
 
 if (respBody) {
-  fastCaptureApi(respBody, reqUrl, $request && $request.body);
-  var newBody = processBody(respBody);
-  if (newBody) {
-    $done({ body: newBody, headers: $response.headers });
-  } else {
+  if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
+    fastCaptureComVideo(respBody, reqUrl);
     $done();
+  } else {
+    fastCaptureApi(respBody, reqUrl, $request && $request.body);
+    var newBody = processBody(respBody);
+    if (newBody) {
+      $done({ body: newBody, headers: $response.headers });
+    } else {
+      $done();
+    }
   }
 } else if ($request && $request.body && /\/api\//i.test(reqUrl)) {
   cacheApiRequestBody($request.body);
