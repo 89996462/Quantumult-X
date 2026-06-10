@@ -72,7 +72,9 @@ var u = String(url);
 if (/seconds=\d+/i.test(u)) {
   $done({ response: { headers } });
 } else if (isFullHost(u)) {
-  notifyCapture(normalizePlayUrl(u), u, 2);
+  notifyCapture(normalizePlayUrl(u), u, 3);
+} else if (isPreviewHost(u)) {
+  notifyCapture(normalizePlayUrl(u), u, 1);
 }
 
 $done({ response: { headers } });
