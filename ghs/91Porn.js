@@ -1,6 +1,5 @@
 
 
-
 let { headers, url } = $request,
   isQX = typeof $task !== "undefined",
   isSurge = typeof $httpClient !== "undefined" && !isQX,
@@ -10,22 +9,8 @@ function isPreviewHost(raw) {
   return /10play|120play/i.test(String(raw));
 }
 
-function isFullHost(raw) {
-  var u = String(raw);
-  if (isPreviewHost(u)) return false;
-  return /:\/\/yd-long\.|:\/\/long\.kmcbyg\.cn|:\/\/[^\/]*-long\./i.test(u);
-}
-
-function toFullHost(raw) {
-  var u = String(raw);
-  if (!isPreviewHost(u) && !/^https?:\/\/long\.kmcbyg\.cn/i.test(u)) return u;
-  u = u.replace(/-10play/gi, "-long").replace(/-120play/gi, "-long");
-  u = u.replace(/^https?:\/\/long\.kmcbyg\.cn/i, "https://yd-long.kmcbyg.cn");
-  return u;
-}
-
 function normalizePlayUrl(raw) {
-  var u = toFullHost(String(raw));
+  var u = String(raw);
   u = u.replace(/([?&])seconds=\d+(&?)/gi, function (m, p1, p2) {
     return p2 ? p1 : "";
   });
@@ -58,23 +43,21 @@ function isDuplicate(link, raw, priority) {
 function notifyCapture(link, raw, priority) {
   if (isDuplicate(link, raw, priority)) return;
   if (isQX) {
-    $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
+    $notify("彭于晏提示❗️视频链接捕获成功", ">_ 需开启QX代理后点击观看 🔞", "", { "open-url": link });
   }
   if (isSurge) {
-    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { url: link });
+    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 需开启QX代理后点击观看 🔞", "", { url: link });
   }
   if (isLoon) {
-    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { openUrl: link });
+    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 需开启QX代理后点击观看 🔞", "", { openUrl: link });
   }
 }
 
 var u = String(url);
 if (/seconds=\d+/i.test(u)) {
   $done({ response: { headers } });
-} else if (isFullHost(u)) {
-  notifyCapture(normalizePlayUrl(u), u, 3);
 } else if (isPreviewHost(u)) {
-  notifyCapture(normalizePlayUrl(u), u, 1);
+  notifyCapture(normalizePlayUrl(u), u, 2);
 }
 
 $done({ response: { headers } });
