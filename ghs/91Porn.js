@@ -58,10 +58,14 @@ function isDuplicate(link, raw, priority) {
 function notifyCapture(link, raw, priority) {
   if (isDuplicate(link, raw, priority)) return;
   if (isQX) {
+    var title = "彭于晏提示❗️视频链接捕获成功";
+    var sub = ">_ 点击此通知可跳转观看 🔞";
+    var opts = { "open-url": link };
+    if (typeof $notification !== "undefined" && typeof $notification.post === "function") {
+      $notification.post(title, sub, link, opts);
+    }
     if (typeof $notify === "function") {
-      $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
-    } else if (typeof $notification !== "undefined" && typeof $notification.post === "function") {
-      $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
+      $notify(title, sub, link, opts);
     }
   }
   if (isSurge && typeof $notification !== "undefined") {
