@@ -647,17 +647,12 @@ var respBody = $response && $response.body;
 var reqUrl = String(($request && $request.url) || "");
 
 if (respBody) {
-  if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
-    fastCaptureComVideo(respBody, reqUrl);
-    $done();
+  fastCaptureApi(respBody, reqUrl, $request && $request.body);
+  var newBody = processBody(respBody);
+  if (newBody) {
+    $done({ body: newBody, headers: $response.headers });
   } else {
-    fastCaptureApi(respBody, reqUrl, $request && $request.body);
-    var newBody = processBody(respBody);
-    if (newBody) {
-      $done({ body: newBody, headers: $response.headers });
-    } else {
-      $done();
-    }
+    $done();
   }
 } else if ($request && $request.body && /\/api\//i.test(reqUrl)) {
   cacheApiRequestBody($request.body);
