@@ -165,6 +165,198 @@ function unlockVideo(node) {
   }
 }
 
+var isQX = typeof $task !== "undefined";
+var isSurge = typeof $httpClient !== "undefined" && !isQX;
+var isLoon = typeof $loon !== "undefined";
+
+function capToFullHost(raw) {
+  var u = String(raw);
+  if (!/10play|120play/i.test(u) && !/^https?:\/\/long\.kmcbyg\.cn/i.test(u)) return u;
+  u = u.replace(/-10play/gi, "-long").replace(/-120play/gi, "-long");
+  u = u.replace(/^https?:\/\/long\.kmcbyg\.cn/i, "https://yd-long.kmcbyg.cn");
+  return u;
+}
+
+function capNormalizeUrl(raw) {
+  var u = capToFullHost(String(raw));
+  u = u.replace(/([?&])seconds=\d+(&?)/gi, function (m, p1, p2) {
+    return p2 ? p1 : "";
+  });
+  u = u.replace(/\?&/g, "?").replace(/&&/g, "&").replace(/[?&]$/g, "");
+  if (!/via_m=/i.test(u)) {
+    u += (u.indexOf("?") >= 0 ? "&" : "?") + "via_m=91pornwebapp";
+  }
+  return u;
+}
+
+function capVideoHash(raw) {
+  var m = String(raw).match(/\/videos\d+\/([0-9a-fA-F]{32})\//i);
+  return m ? m[1] : String(raw);
+}
+
+function capIsDuplicate(link, raw, priority) {
+  var key = "91porn_cap_" + capVideoHash(raw);
+  var last = $prefs.valueForKey(key);
+  var now = Date.now();
+  if (last) {
+    var parts = String(last).split("|");
+    var ts = Number(parts[0]);
+    var prevPri = Number(parts[1] || 0);
+    if (now - ts < 120000 && priority <= prevPri) return true;
+  }
+  $prefs.setValueForKey(String(now) + "|" + priority + "|" + link, key);
+  return false;
+}
+
+function capNotify(link, raw, priority) {
+  if (capIsDuplicate(link, raw, priority)) return;
+  if (isQX) {
+    $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
+  }
+  if (isSurge) {
+    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { url: link });
+  }
+  if (isLoon) {
+    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { openUrl: link });
+  }
+}
+
+function extractM3u8Url(val) {
+  if (!val) return "";
+  if (typeof val === "string" && /^https?:\/\/.+\.m3u8/i.test(val)) return val;
+  if (typeof val === "object") {
+    var u = val.encrypt_url || val.url || "";
+    if (typeof u === "string" && /^https?:\/\/.+\.m3u8/i.test(u)) return u;
+  }
+  return "";
+}
+
+function extractPlayFromInner(inner) {
+  if (!inner) return "";
+  if (typeof inner === "string" && /\.m3u8/i.test(inner)) return inner;
+  if (typeof inner === "object") {
+    var u = inner.url || inner.play_url || inner.play_url_full || "";
+    if (typeof u === "object") u = u.encrypt_url || u.url || "";
+    if (typeof u === "string" && /\.m3u8/i.test(u)) return u;
+  }
+  return "";
+}
+
+function parseReqPlain(body) {
+  if (!body || body.indexOf("data=") < 0) return null;
+  try {
+    var pairs = body.split("&");
+    var data = "";
+    for (var i = 0; i < pairs.length; i++) {
+      if (pairs[i].indexOf("data=") === 0) {
+        data = decodeURIComponent(pairs[i].slice(5));
+        break;
+      }
+    }
+    if (!data) return null;
+    var plain = decryptPayload(data.replace(/ /g, "+"));
+    return plain ? JSON.parse(plain) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function calcReqSign(data, timestamp) {
+  var parts = ["_ver=v1", "client=pwa", "data=" + data, "timestamp=" + String(timestamp)];
+  var raw = parts.join("&") + SIGN_SALT;
+  return CryptoJS.MD5(CryptoJS.SHA256(raw).toString()).toString();
+}
+
+function buildReqBody(plainObj) {
+  var timestamp = Math.floor(Date.now() / 1000);
+  var data = encryptPayload(JSON.stringify(plainObj));
+  var sign = calcReqSign(data, timestamp);
+  return (
+    "client=pwa&timestamp=" +
+    timestamp +
+    "&data=" +
+    encodeURIComponent(data) +
+    "&sign=" +
+    sign +
+    "&_ver=v1"
+  );
+}
+
+function parseApiRespBody(body) {
+  if (!body || body.indexOf('"data"') < 0) return null;
+  try {
+    var wrapper = JSON.parse(body);
+    if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return null;
+    var plain = decryptPayload(wrapper.data);
+    if (!plain) return null;
+    var payload = JSON.parse(plain);
+    return payload.data !== undefined ? payload.data : payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+function fetchComVideoUrl(reqUrl, reqBody, verifyToken, rawHint) {
+  if (!verifyToken || !isQX || typeof $task.fetch !== "function") return;
+  var base = parseReqPlain(reqBody);
+  if (!base) return;
+  var apiBase = String(reqUrl).match(/^(https?:\/\/[^\/]+)/);
+  if (!apiBase) return;
+  var reqPlain = {};
+  var keys = Object.keys(base);
+  for (var i = 0; i < keys.length; i++) {
+    if (keys[i] !== "id") reqPlain[keys[i]] = base[keys[i]];
+  }
+  reqPlain.verify_token = verifyToken;
+  var postBody = buildReqBody(reqPlain);
+  $task
+    .fetch({
+      url: apiBase[1] + "/api/home/com_video_url",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+        Origin: "https://p5.wftohhhe.cc",
+        "User-Agent":
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 15_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Mobile/15E148 Safari/604.1",
+      },
+      body: postBody,
+    })
+    .then(function (resp) {
+      var inner = parseApiRespBody(resp.body);
+      var play = extractPlayFromInner(inner);
+      if (play && /\.m3u8/i.test(play)) {
+        capNotify(capNormalizeUrl(play), rawHint || play, 4);
+      }
+    })
+    .catch(function () {});
+}
+
+function tryCaptureApi(reqUrl, payload, reqBody) {
+  if (!reqUrl || !payload) return;
+  var inner = payload.data !== undefined ? payload.data : payload;
+  if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
+    var play = extractPlayFromInner(inner);
+    if (play && /\.m3u8/i.test(play)) {
+      capNotify(capNormalizeUrl(play), play, 3);
+    }
+    return;
+  }
+  if (/\/api\/mv\/detail/i.test(reqUrl) && inner && typeof inner === "object") {
+    var row = inner.row || inner.detail || inner;
+    var urlObj = row.pay_url_full || row.play_url;
+    var token = urlObj && typeof urlObj === "object" ? urlObj.verify_token || "" : "";
+    var hint = extractM3u8Url(row.play_url) || extractM3u8Url(row.pay_url_full) || "";
+    if (token) {
+      fetchComVideoUrl(reqUrl, reqBody, token, hint);
+      return;
+    }
+    var play = hint;
+    if (play && /\.m3u8/i.test(play) && !/10play|120play/i.test(play)) {
+      capNotify(capNormalizeUrl(play), play, 2);
+    }
+  }
+}
+
 function stripAds(node) {
   if (Array.isArray(node)) {
     for (var i = node.length - 1; i >= 0; i--) {
@@ -232,6 +424,7 @@ function processBody(body) {
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
     unlockVideo(payload);
+    tryCaptureApi($request.url, payload, $request.body);
     wrapper.data = encryptPayload(JSON.stringify(payload));
     if (wrapper.timestamp === undefined) {
       wrapper.timestamp = Math.floor(Date.now() / 1000);
