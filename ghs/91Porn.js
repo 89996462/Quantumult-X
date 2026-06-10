@@ -1,5 +1,6 @@
 
 
+
 let { headers, url } = $request,
   isQX = typeof $task !== "undefined",
   isSurge = typeof $httpClient !== "undefined" && !isQX,
@@ -12,20 +13,15 @@ function isPreviewHost(raw) {
 function isFullHost(raw) {
   var u = String(raw);
   if (isPreviewHost(u)) return false;
-  return /:\/\/([^\/]+\.)?long\.|:\/\/[^\/]*-long\./i.test(u);
+  return /:\/\/yd-long\.|:\/\/long\.kmcbyg\.cn|:\/\/[^\/]*-long\./i.test(u);
 }
 
 function toFullHost(raw) {
   var u = String(raw);
-  if (!isPreviewHost(u)) return u;
-  var m = u.match(/^https?:\/\/([^\/]+)(\/videos(\d+)\/.+)$/i);
-  if (!m) return u.replace(/-10play/gi, "-long").replace(/-120play/gi, "-long");
-  var path = m[2];
-  var vidNum = m[3];
-  if (vidNum === "2") {
-    return u.replace(/^https?:\/\/[^\/]+/, "https://long.kmcbyg.cn");
-  }
-  return u.replace(/-10play/gi, "-long").replace(/-120play/gi, "-long");
+  if (!isPreviewHost(u) && !/^https?:\/\/long\.kmcbyg\.cn/i.test(u)) return u;
+  u = u.replace(/-10play/gi, "-long").replace(/-120play/gi, "-long");
+  u = u.replace(/^https?:\/\/long\.kmcbyg\.cn/i, "https://yd-long.kmcbyg.cn");
+  return u;
 }
 
 function normalizePlayUrl(raw) {
@@ -45,17 +41,22 @@ function videoHash(raw) {
   return m ? m[1] : String(raw);
 }
 
-function isDuplicate(link, raw) {
+function isDuplicate(link, raw, priority) {
   var key = "91porn_cap_" + videoHash(raw);
   var last = $prefs.valueForKey(key);
   var now = Date.now();
-  if (last && now - Number(last) < 120000) return true;
-  $prefs.setValueForKey(String(now) + "|" + link, key);
+  if (last) {
+    var parts = String(last).split("|");
+    var ts = Number(parts[0]);
+    var prevPri = Number(parts[1] || 0);
+    if (now - ts < 120000 && priority <= prevPri) return true;
+  }
+  $prefs.setValueForKey(String(now) + "|" + priority + "|" + link, key);
   return false;
 }
 
-function notifyCapture(link, raw) {
-  if (isDuplicate(link, raw)) return;
+function notifyCapture(link, raw, priority) {
+  if (isDuplicate(link, raw, priority)) return;
   if (isQX) {
     $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
   }
@@ -70,9 +71,8 @@ function notifyCapture(link, raw) {
 var u = String(url);
 if (/seconds=\d+/i.test(u)) {
   $done({ response: { headers } });
-} else if (isFullHost(u) || isPreviewHost(u)) {
-  var playURL = normalizePlayUrl(u);
-  notifyCapture(playURL, u);
+} else if (isFullHost(u)) {
+  notifyCapture(normalizePlayUrl(u), u, 2);
 }
 
 $done({ response: { headers } });
