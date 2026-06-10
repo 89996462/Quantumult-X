@@ -169,25 +169,16 @@ var isQX = typeof $task !== "undefined";
 var isSurge = typeof $httpClient !== "undefined" && !isQX;
 var isLoon = typeof $loon !== "undefined";
 
-function capIsLongHost(raw) {
-  return /:\/\/yd-long\.|:\/\/long\.kmcbyg\.cn|:\/\/[^\/]*-long\./i.test(String(raw));
+function capIsDirectPlayHost(raw) {
+  return /chxgdn\.cn|oviluf\.cn/i.test(String(raw));
 }
 
-function capIsPlayableHost(raw) {
-  return /10play|120play/i.test(String(raw));
-}
-
-function capToPlayHost(raw) {
-  var u = String(raw);
-  if (!capIsLongHost(u)) return u;
-  return u
-    .replace(/:\/\/yd-long\.kmcbyg\.cn/i, "://yd-10play.kmcbyg.cn")
-    .replace(/:\/\/long\.kmcbyg\.cn/i, "://yd-10play.kmcbyg.cn")
-    .replace(/:\/\/([^\/]+)-long\./i, "://$1-10play.");
+function capIsEncryptCdn(raw) {
+  return /kmcbyg\.cn/i.test(String(raw));
 }
 
 function capNormalizeUrl(raw) {
-  var u = capToPlayHost(String(raw));
+  var u = String(raw);
   u = u.replace(/([?&])seconds=\d+(&?)/gi, function (m, p1, p2) {
     return p2 ? p1 : "";
   });
@@ -220,16 +211,17 @@ function capIsDuplicate(link, raw, priority) {
 function capNotify(link, raw, priority) {
   link = capNormalizeUrl(link);
   raw = capNormalizeUrl(raw);
-  if (/\.m3u8/i.test(link) && !capIsPlayableHost(link)) return;
+  if (!/\.m3u8/i.test(link) || capIsEncryptCdn(link)) return;
+  if (!capIsDirectPlayHost(link)) return;
   if (capIsDuplicate(link, raw, priority)) return;
   if (isQX) {
-    $notify("彭于晏提示❗️视频链接捕获成功", ">_ 需开启QX代理后点击观看 🔞", "", { "open-url": link });
+    $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
   }
   if (isSurge) {
-    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 需开启QX代理后点击观看 🔞", "", { url: link });
+    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { url: link });
   }
   if (isLoon) {
-    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 需开启QX代理后点击观看 🔞", "", { openUrl: link });
+    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { openUrl: link });
   }
 }
 
@@ -364,7 +356,7 @@ function doFetchComVideoUrl(apiUrl, postBody, rawHint) {
     var inner = parseApiRespBody(respBody);
     var play = extractPlayFromInner(inner);
     if (play && /\.m3u8/i.test(play)) {
-      capNotify(capNormalizeUrl(play), rawHint || play, 4);
+      capNotify(play, rawHint || play, 5);
     }
   }
   if (isQX && typeof $task !== "undefined" && typeof $task.fetch === "function") {
@@ -410,7 +402,7 @@ function tryCaptureApi(reqUrl, payload, reqBody) {
   if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
     var play = extractPlayFromInner(inner);
     if (play && /\.m3u8/i.test(play)) {
-      capNotify(capNormalizeUrl(play), play, 3);
+      capNotify(play, play, 5);
     }
     return;
   }
@@ -419,9 +411,6 @@ function tryCaptureApi(reqUrl, payload, reqBody) {
     var playObj = row.play_url || row.pay_url_full;
     var token = playObj && typeof playObj === "object" ? playObj.verify_token || "" : "";
     var hint = extractM3u8Url(row.play_url) || extractM3u8Url(row.pay_url_full) || "";
-    if (hint && /\.m3u8/i.test(hint)) {
-      capNotify(capNormalizeUrl(hint), hint, token ? 1 : 2);
-    }
     if (token) {
       fetchComVideoUrl(reqUrl, reqBody, token, hint);
     }
