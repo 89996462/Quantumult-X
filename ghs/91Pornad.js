@@ -267,15 +267,23 @@ function capIsDuplicate(link, raw, priority) {
 function capNotify(link, raw, priority) {
   link = capMapPlayUrl(capNormalizeUrl(link));
   raw = capMapPlayUrl(capNormalizeUrl(raw));
-  if (!/\.m3u8/i.test(link) || !capIsPlayableUrl(link)) return;
+  if (!/\.m3u8/i.test(link) || !capIsPlayableUrl(link)) {
+    try {
+      $prefs.setValueForKey("skip:" + String(link).slice(0, 120), "91porn_notify_debug");
+    } catch (e) {}
+    return;
+  }
   if (capIsDuplicate(link, raw, priority)) return;
-  if (isQX) {
+  try {
+    $prefs.setValueForKey(link, "91porn_last_capture");
+    $prefs.setValueForKey(String(Date.now()), "91porn_last_capture_ts");
+    $prefs.setValueForKey("notify:" + link.slice(0, 120), "91porn_notify_debug");
+  } catch (e) {}
+  if (isQX && typeof $notify === "function") {
     $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
-  }
-  if (isSurge) {
+  } else if (isSurge) {
     $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { url: link });
-  }
-  if (isLoon) {
+  } else if (isLoon) {
     $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { openUrl: link });
   }
 }
@@ -415,7 +423,7 @@ function parseApiRespBody(body) {
     var plain = decryptPayload(wrapper.data);
     if (!plain) return null;
     var payload = JSON.parse(plain);
-    if (payload.status === 0) return null;
+    if (payload.status == 0) return null;
     var inner = payload.data !== undefined ? payload.data : payload;
     if (typeof inner === "string" && inner) return inner;
     if (inner && typeof inner === "object" && inner.data && typeof inner.data === "string") return inner.data;
@@ -479,15 +487,15 @@ function tryCaptureApi(reqUrl, payload, reqBody) {
     cachePlayerCfg(inner && typeof inner === "object" ? inner : null);
     return;
   }
-  if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
-    if (payload.status === 1) {
+  if (/\/api\/home\/com_video_url\/?/i.test(reqUrl)) {
+    if (payload.status == 1) {
       var okPlay = extractPlayFromInner(inner);
       if (okPlay && /\.m3u8/i.test(okPlay)) {
         capNotify(okPlay, okPlay, 5);
         return;
       }
     }
-    if (payload.status === 0 && reqBody) {
+    if (payload.status == 0 && reqBody) {
       var cvReq = parseReqPlain(reqBody);
       if (cvReq && cvReq.verify_token) {
         fetchComVideoUrl(reqUrl, reqBody, cvReq.verify_token, "");
@@ -556,8 +564,44 @@ function stripAds(node) {
   }
 }
 
+function fastCaptureComVideo(body, reqUrl) {
+  if (!body || body.indexOf('"data"') < 0) return;
+  try {
+    var wrapper = JSON.parse(body);
+    if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return;
+    var plain = decryptPayload(wrapper.data);
+    if (!plain) return;
+    try {
+      $prefs.setValueForKey(plain.slice(0, 160), "91porn_cv_plain_debug");
+    } catch (e) {}
+    var play = "";
+    try {
+      var payload = JSON.parse(plain);
+      if (payload && payload.status == 1) {
+        play = extractPlayFromInner(payload.data !== undefined ? payload.data : payload);
+      }
+    } catch (e2) {}
+    if (!play) {
+      var flat = plain.replace(/\\\//g, "/");
+      var m = flat.match(/https?:\/\/10play\.chxgdn\.cn\/[^"'\s]+\.m3u8[^"'\s]*/i);
+      if (m) play = m[0];
+    }
+    if (play && /\.m3u8/i.test(play)) {
+      capNotify(play, play, 5);
+    }
+  } catch (e) {
+    try {
+      $prefs.setValueForKey("err:" + String(e), "91porn_notify_debug");
+    } catch (e2) {}
+  }
+}
+
 function fastCaptureApi(body, reqUrl, reqBody) {
   if (!body || body.indexOf('"data"') < 0) return;
+  if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
+    fastCaptureComVideo(body, reqUrl);
+    return;
+  }
   try {
     var wrapper = JSON.parse(body);
     if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return;
@@ -603,12 +647,17 @@ var respBody = $response && $response.body;
 var reqUrl = String(($request && $request.url) || "");
 
 if (respBody) {
-  fastCaptureApi(respBody, reqUrl, $request.body);
-  var newBody = processBody(respBody);
-  if (newBody) {
-    $done({ body: newBody, headers: $response.headers });
-  } else {
+  if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
+    fastCaptureComVideo(respBody, reqUrl);
     $done();
+  } else {
+    fastCaptureApi(respBody, reqUrl, $request && $request.body);
+    var newBody = processBody(respBody);
+    if (newBody) {
+      $done({ body: newBody, headers: $response.headers });
+    } else {
+      $done();
+    }
   }
 } else if ($request && $request.body && /\/api\//i.test(reqUrl)) {
   cacheApiRequestBody($request.body);
