@@ -169,16 +169,25 @@ var isQX = typeof $task !== "undefined";
 var isSurge = typeof $httpClient !== "undefined" && !isQX;
 var isLoon = typeof $loon !== "undefined";
 
-function capToFullHost(raw) {
+function capIsLongHost(raw) {
+  return /:\/\/yd-long\.|:\/\/long\.kmcbyg\.cn|:\/\/[^\/]*-long\./i.test(String(raw));
+}
+
+function capIsPlayableHost(raw) {
+  return /10play|120play/i.test(String(raw));
+}
+
+function capToPlayHost(raw) {
   var u = String(raw);
-  if (!/10play|120play/i.test(u) && !/^https?:\/\/long\.kmcbyg\.cn/i.test(u)) return u;
-  u = u.replace(/-10play/gi, "-long").replace(/-120play/gi, "-long");
-  u = u.replace(/^https?:\/\/long\.kmcbyg\.cn/i, "https://yd-long.kmcbyg.cn");
-  return u;
+  if (!capIsLongHost(u)) return u;
+  return u
+    .replace(/:\/\/yd-long\.kmcbyg\.cn/i, "://yd-10play.kmcbyg.cn")
+    .replace(/:\/\/long\.kmcbyg\.cn/i, "://yd-10play.kmcbyg.cn")
+    .replace(/:\/\/([^\/]+)-long\./i, "://$1-10play.");
 }
 
 function capNormalizeUrl(raw) {
-  var u = capToFullHost(String(raw));
+  var u = capToPlayHost(String(raw));
   u = u.replace(/([?&])seconds=\d+(&?)/gi, function (m, p1, p2) {
     return p2 ? p1 : "";
   });
@@ -190,7 +199,7 @@ function capNormalizeUrl(raw) {
 }
 
 function capVideoHash(raw) {
-  var m = String(raw).match(/\/videos\d+\/([0-9a-fA-F]{32})\//i);
+  var m = String(raw).match(/\/(?:videos\d+|static|watch)\/([0-9a-fA-F]{32})\//i);
   return m ? m[1] : String(raw);
 }
 
@@ -209,15 +218,18 @@ function capIsDuplicate(link, raw, priority) {
 }
 
 function capNotify(link, raw, priority) {
+  link = capNormalizeUrl(link);
+  raw = capNormalizeUrl(raw);
+  if (/\.m3u8/i.test(link) && !capIsPlayableHost(link)) return;
   if (capIsDuplicate(link, raw, priority)) return;
   if (isQX) {
-    $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
+    $notify("彭于晏提示❗️视频链接捕获成功", ">_ 需开启QX代理后点击观看 🔞", "", { "open-url": link });
   }
   if (isSurge) {
-    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { url: link });
+    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 需开启QX代理后点击观看 🔞", "", { url: link });
   }
   if (isLoon) {
-    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { openUrl: link });
+    $notification.post("彭于晏提示❗️视频链接捕获成功", ">_ 需开启QX代理后点击观看 🔞", "", { openUrl: link });
   }
 }
 
