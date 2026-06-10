@@ -242,6 +242,44 @@ function extractPlayFromInner(inner) {
   return "";
 }
 
+function cacheApiBase(plain) {
+  if (!plain || typeof plain !== "object") return;
+  var keep = [
+    "oauth_id",
+    "bundle_id",
+    "oauth_type",
+    "version",
+    "language",
+    "via",
+    "trace_id",
+    "sid",
+    "device",
+    "device_id",
+    "user_agent",
+    "device_fingerprint",
+    "fp_version",
+    "sdk_version",
+    "app_version",
+    "client",
+  ];
+  var cached = {};
+  for (var i = 0; i < keep.length; i++) {
+    if (plain[keep[i]] !== undefined) cached[keep[i]] = plain[keep[i]];
+  }
+  if (Object.keys(cached).length) {
+    $prefs.setValueForKey(JSON.stringify(cached), "91porn_api_base");
+  }
+}
+
+function loadApiBase() {
+  try {
+    var s = $prefs.valueForKey("91porn_api_base");
+    return s ? JSON.parse(s) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function parseReqPlain(body) {
   if (!body || body.indexOf("data=") < 0) return null;
   try {
@@ -255,7 +293,10 @@ function parseReqPlain(body) {
     }
     if (!data) return null;
     var plain = decryptPayload(data.replace(/ /g, "+"));
-    return plain ? JSON.parse(plain) : null;
+    if (!plain) return null;
+    var obj = JSON.parse(plain);
+    cacheApiBase(obj);
+    return obj;
   } catch (e) {
     return null;
   }
@@ -290,16 +331,56 @@ function parseApiRespBody(body) {
     var plain = decryptPayload(wrapper.data);
     if (!plain) return null;
     var payload = JSON.parse(plain);
-    return payload.data !== undefined ? payload.data : payload;
+    if (payload.status === 0) return null;
+    var inner = payload.data !== undefined ? payload.data : payload;
+    if (typeof inner === "string" && inner) return inner;
+    if (inner && typeof inner === "object" && inner.data && typeof inner.data === "string") return inner.data;
+    return inner;
   } catch (e) {
     return null;
   }
 }
 
+function doFetchComVideoUrl(apiUrl, postBody, rawHint) {
+  var headers = {
+    "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+    Origin: "https://p5.wftohhhe.cc",
+    "User-Agent":
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 15_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Mobile/15E148 Safari/604.1",
+  };
+  function onResp(respBody) {
+    var inner = parseApiRespBody(respBody);
+    var play = extractPlayFromInner(inner);
+    if (play && /\.m3u8/i.test(play)) {
+      capNotify(capNormalizeUrl(play), rawHint || play, 4);
+    }
+  }
+  if (isQX && typeof $task !== "undefined" && typeof $task.fetch === "function") {
+    $task
+      .fetch({ url: apiUrl, method: "POST", headers: headers, body: postBody })
+      .then(function (resp) {
+        onResp(resp.body);
+      })
+      .catch(function () {});
+    return;
+  }
+  if (isSurge && typeof $httpClient !== "undefined") {
+    $httpClient.post({ url: apiUrl, headers: headers, body: postBody }, function (err, resp, data) {
+      if (!err && data) onResp(data);
+    });
+    return;
+  }
+  if (isLoon && typeof $httpClient !== "undefined") {
+    $httpClient.post(apiUrl, function (err, resp, data) {
+      if (!err && data) onResp(data);
+    }, { headers: headers, body: postBody });
+  }
+}
+
 function fetchComVideoUrl(reqUrl, reqBody, verifyToken, rawHint) {
-  if (!verifyToken || !isQX || typeof $task.fetch !== "function") return;
-  var base = parseReqPlain(reqBody);
-  if (!base) return;
+  if (!verifyToken) return;
+  var base = parseReqPlain(reqBody) || loadApiBase();
+  if (!base) base = {};
   var apiBase = String(reqUrl).match(/^(https?:\/\/[^\/]+)/);
   if (!apiBase) return;
   var reqPlain = {};
@@ -308,27 +389,7 @@ function fetchComVideoUrl(reqUrl, reqBody, verifyToken, rawHint) {
     if (keys[i] !== "id") reqPlain[keys[i]] = base[keys[i]];
   }
   reqPlain.verify_token = verifyToken;
-  var postBody = buildReqBody(reqPlain);
-  $task
-    .fetch({
-      url: apiBase[1] + "/api/home/com_video_url",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
-        Origin: "https://p5.wftohhhe.cc",
-        "User-Agent":
-          "Mozilla/5.0 (iPhone; CPU iPhone OS 15_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Mobile/15E148 Safari/604.1",
-      },
-      body: postBody,
-    })
-    .then(function (resp) {
-      var inner = parseApiRespBody(resp.body);
-      var play = extractPlayFromInner(inner);
-      if (play && /\.m3u8/i.test(play)) {
-        capNotify(capNormalizeUrl(play), rawHint || play, 4);
-      }
-    })
-    .catch(function () {});
+  doFetchComVideoUrl(apiBase[1] + "/api/home/com_video_url", buildReqBody(reqPlain), rawHint);
 }
 
 function tryCaptureApi(reqUrl, payload, reqBody) {
@@ -343,16 +404,14 @@ function tryCaptureApi(reqUrl, payload, reqBody) {
   }
   if (/\/api\/mv\/detail/i.test(reqUrl) && inner && typeof inner === "object") {
     var row = inner.row || inner.detail || inner;
-    var urlObj = row.pay_url_full || row.play_url;
-    var token = urlObj && typeof urlObj === "object" ? urlObj.verify_token || "" : "";
+    var playObj = row.play_url || row.pay_url_full;
+    var token = playObj && typeof playObj === "object" ? playObj.verify_token || "" : "";
     var hint = extractM3u8Url(row.play_url) || extractM3u8Url(row.pay_url_full) || "";
+    if (hint && /\.m3u8/i.test(hint)) {
+      capNotify(capNormalizeUrl(hint), hint, token ? 1 : 2);
+    }
     if (token) {
       fetchComVideoUrl(reqUrl, reqBody, token, hint);
-      return;
-    }
-    var play = hint;
-    if (play && /\.m3u8/i.test(play) && !/10play|120play/i.test(play)) {
-      capNotify(capNormalizeUrl(play), play, 2);
     }
   }
 }
