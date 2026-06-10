@@ -181,12 +181,14 @@ var isQX = typeof $task !== "undefined";
 var isSurge = typeof $httpClient !== "undefined" && !isQX;
 var isLoon = typeof $loon !== "undefined";
 
-function capIsDirectPlayHost(raw) {
-  return /chxgdn\.cn|oviluf\.cn/i.test(String(raw));
+function capMapPlayUrl(raw) {
+  return String(raw).replace(/:\/\/10play\.chxgdn\.cn/i, "://long.chxgdn.cn");
 }
 
-function capIsEncryptCdn(raw) {
-  return /kmcbyg\.cn/i.test(String(raw));
+function capIsPlayableUrl(raw) {
+  var u = capMapPlayUrl(raw);
+  if (/kmcbyg\.cn/i.test(u)) return false;
+  return /long\.chxgdn\.cn|oviluf\.cn/i.test(u);
 }
 
 function capNormalizeUrl(raw) {
@@ -263,10 +265,9 @@ function capIsDuplicate(link, raw, priority) {
 }
 
 function capNotify(link, raw, priority) {
-  link = capNormalizeUrl(link);
-  raw = capNormalizeUrl(raw);
-  if (!/\.m3u8/i.test(link) || capIsEncryptCdn(link)) return;
-  if (!capIsDirectPlayHost(link)) return;
+  link = capMapPlayUrl(capNormalizeUrl(link));
+  raw = capMapPlayUrl(capNormalizeUrl(raw));
+  if (!/\.m3u8/i.test(link) || !capIsPlayableUrl(link)) return;
   if (capIsDuplicate(link, raw, priority)) return;
   if (isQX) {
     $notify("彭于晏提示❗️视频链接捕获成功", ">_ 点击此通知可跳转观看 🔞", "", { "open-url": link });
@@ -293,8 +294,15 @@ function extractPlayFromInner(inner) {
   if (!inner) return "";
   if (typeof inner === "string" && /\.m3u8/i.test(inner)) return inner;
   if (typeof inner === "object") {
-    var u = inner.url || inner.play_url || inner.play_url_full || "";
-    if (typeof u === "object") u = u.encrypt_url || u.url || "";
+    if (Array.isArray(inner)) {
+      for (var i = 0; i < inner.length; i++) {
+        var hit = extractPlayFromInner(inner[i]);
+        if (hit) return hit;
+      }
+      return "";
+    }
+    var u = inner.url || inner.play_url || inner.play_url_full || inner.encrypt_url || "";
+    if (typeof u === "object") u = u.encrypt_url || u.url || u.play_url || "";
     if (typeof u === "string" && /\.m3u8/i.test(u)) return u;
   }
   return "";
@@ -455,12 +463,9 @@ function doFetchComVideoUrl(apiUrl, postBody, rawHint) {
 
 function fetchComVideoUrl(reqUrl, reqBody, verifyToken, rawHint) {
   if (!verifyToken) return;
-  var retryKey = "91porn_cv_retry_" + capVideoHash(verifyToken);
-  if ($prefs.valueForKey(retryKey)) return;
   cacheApiRequestBody(reqBody);
   var reqPlain = buildComVideoReqPlain(verifyToken);
   if (!reqPlain) return;
-  $prefs.setValueForKey(String(Date.now()), retryKey);
   var apiBase = String(reqUrl).match(/^(https?:\/\/[^\/]+)/);
   if (!apiBase) return;
   doFetchComVideoUrl(apiBase[1] + "/api/home/com_video_url", buildReqBody(reqPlain), rawHint);
@@ -475,10 +480,12 @@ function tryCaptureApi(reqUrl, payload, reqBody) {
     return;
   }
   if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
-    var play = extractPlayFromInner(inner);
-    if (play && /\.m3u8/i.test(play)) {
-      capNotify(play, play, 5);
-      return;
+    if (payload.status === 1) {
+      var okPlay = extractPlayFromInner(inner);
+      if (okPlay && /\.m3u8/i.test(okPlay)) {
+        capNotify(okPlay, okPlay, 5);
+        return;
+      }
     }
     if (payload.status === 0 && reqBody) {
       var cvReq = parseReqPlain(reqBody);
@@ -549,6 +556,19 @@ function stripAds(node) {
   }
 }
 
+function fastCaptureApi(body, reqUrl, reqBody) {
+  if (!body || body.indexOf('"data"') < 0) return;
+  try {
+    var wrapper = JSON.parse(body);
+    if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return;
+    if (!/^[A-Za-z0-9+/=_\-]+$/.test(wrapper.data)) return;
+    var plain = decryptPayload(wrapper.data);
+    if (!plain) return;
+    var payload = JSON.parse(plain);
+    tryCaptureApi(reqUrl, payload, reqBody);
+  } catch (e) {}
+}
+
 function processBody(body) {
   if (!body || body.indexOf('"data"') < 0) return null;
   var wrapper;
@@ -566,7 +586,6 @@ function processBody(body) {
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
     unlockVideo(payload);
-    tryCaptureApi($request.url, payload, $request.body);
     wrapper.data = encryptPayload(JSON.stringify(payload));
     if (wrapper.timestamp === undefined) {
       wrapper.timestamp = Math.floor(Date.now() / 1000);
@@ -584,6 +603,7 @@ var respBody = $response && $response.body;
 var reqUrl = String(($request && $request.url) || "");
 
 if (respBody) {
+  fastCaptureApi(respBody, reqUrl, $request.body);
   var newBody = processBody(respBody);
   if (newBody) {
     $done({ body: newBody, headers: $response.headers });
