@@ -1,4 +1,16 @@
+/******************************
 
+# 脚本功能：91Porn——去广告—解锁VIP/付费视频(供捕获完整版)
+# 目标站点：https://p5.wftohhhe.cc/?
+# 特别说明：捕获成功后，点击通知即可观看
+# 脚本作者：彭于晏💞
+# 更新时间：2026-6-10
+# 抓包校验：long.chxgdn.cn 明文 m3u8 / com_video_url 换链
+# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+
+*******************************/
+
+// hls-noad v1
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -213,9 +225,10 @@ function cachePlayerCfg(inner) {
 
 function buildComVideoReqPlain(verifyToken) {
   if (!verifyToken) return null;
-  var base = loadApiBase() || {};
   var cfg = loadPlayerCfg();
   if (!cfg || !cfg.dekey) return null;
+  var base = ensureApiBase();
+  if (!base.sid && !base.oauth_id) return null;
   var reqPlain = {};
   var keys = Object.keys(base);
   for (var i = 0; i < keys.length; i++) {
@@ -325,6 +338,24 @@ function loadApiBase() {
   }
 }
 
+function cacheApiRequestBody(body) {
+  if (!body || body.indexOf("data=") < 0) return;
+  var plain = parseReqPlain(body);
+  if (plain && (plain.sid || plain.oauth_id)) {
+    $prefs.setValueForKey(body, "91porn_last_api_body");
+  }
+}
+
+function ensureApiBase() {
+  var base = loadApiBase();
+  if (base && (base.sid || base.oauth_id)) return base;
+  try {
+    var raw = $prefs.valueForKey("91porn_last_api_body");
+    if (raw) parseReqPlain(raw);
+  } catch (e) {}
+  return loadApiBase() || {};
+}
+
 function parseReqPlain(body) {
   if (!body || body.indexOf("data=") < 0) return null;
   try {
@@ -424,9 +455,12 @@ function doFetchComVideoUrl(apiUrl, postBody, rawHint) {
 
 function fetchComVideoUrl(reqUrl, reqBody, verifyToken, rawHint) {
   if (!verifyToken) return;
-  parseReqPlain(reqBody);
+  var retryKey = "91porn_cv_retry_" + capVideoHash(verifyToken);
+  if ($prefs.valueForKey(retryKey)) return;
+  cacheApiRequestBody(reqBody);
   var reqPlain = buildComVideoReqPlain(verifyToken);
   if (!reqPlain) return;
+  $prefs.setValueForKey(String(Date.now()), retryKey);
   var apiBase = String(reqUrl).match(/^(https?:\/\/[^\/]+)/);
   if (!apiBase) return;
   doFetchComVideoUrl(apiBase[1] + "/api/home/com_video_url", buildReqBody(reqPlain), rawHint);
@@ -436,7 +470,7 @@ function tryCaptureApi(reqUrl, payload, reqBody) {
   if (!reqUrl || !payload) return;
   var inner = payload.data !== undefined ? payload.data : payload;
   if (/\/api\/home\/getconfig/i.test(reqUrl)) {
-    parseReqPlain(reqBody);
+    cacheApiRequestBody(reqBody);
     cachePlayerCfg(inner && typeof inner === "object" ? inner : null);
     return;
   }
@@ -444,6 +478,13 @@ function tryCaptureApi(reqUrl, payload, reqBody) {
     var play = extractPlayFromInner(inner);
     if (play && /\.m3u8/i.test(play)) {
       capNotify(play, play, 5);
+      return;
+    }
+    if (payload.status === 0 && reqBody) {
+      var cvReq = parseReqPlain(reqBody);
+      if (cvReq && cvReq.verify_token) {
+        fetchComVideoUrl(reqUrl, reqBody, cvReq.verify_token, "");
+      }
     }
     return;
   }
@@ -549,10 +590,15 @@ if (respBody) {
   } else {
     $done();
   }
-} else if (/\/api\/home\/com_video_url/i.test(reqUrl) && $request && $request.body) {
-  var patched = injectComVideoCacheKey($request.body);
-  if (patched && patched !== $request.body) {
-    $done({ body: patched });
+} else if ($request && $request.body && /\/api\//i.test(reqUrl)) {
+  cacheApiRequestBody($request.body);
+  if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
+    var patched = injectComVideoCacheKey($request.body);
+    if (patched && patched !== $request.body) {
+      $done({ body: patched });
+    } else {
+      $done({});
+    }
   } else {
     $done({});
   }
