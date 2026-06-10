@@ -190,8 +190,49 @@ function capNormalizeUrl(raw) {
 }
 
 function capVideoHash(raw) {
-  var m = String(raw).match(/\/(?:videos\d+|static|watch)\/([0-9a-fA-F]{32})\//i);
+  var m = String(raw).match(/\/(?:videos\d+|static|watch\d*)\/([0-9a-fA-F]{32})\//i);
   return m ? m[1] : String(raw);
+}
+
+function loadPlayerCfg() {
+  try {
+    var s = $prefs.valueForKey("91porn_player_cfg");
+    return s ? JSON.parse(s) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function cachePlayerCfg(inner) {
+  if (!inner || typeof inner !== "object") return;
+  var cfg = inner.player_cfg;
+  if (cfg && cfg.dekey) {
+    $prefs.setValueForKey(JSON.stringify(cfg), "91porn_player_cfg");
+  }
+}
+
+function buildComVideoReqPlain(verifyToken) {
+  if (!verifyToken) return null;
+  var base = loadApiBase() || {};
+  var cfg = loadPlayerCfg();
+  if (!cfg || !cfg.dekey) return null;
+  var reqPlain = {};
+  var keys = Object.keys(base);
+  for (var i = 0; i < keys.length; i++) {
+    if (keys[i] !== "id") reqPlain[keys[i]] = base[keys[i]];
+  }
+  reqPlain.verify_token = verifyToken;
+  reqPlain.cache_key = cfg.dekey;
+  if (cfg.x_auth) reqPlain.x_auth = cfg.x_auth;
+  return reqPlain;
+}
+
+function injectComVideoCacheKey(body) {
+  var plain = parseReqPlain(body);
+  if (!plain || !plain.verify_token) return body;
+  var reqPlain = buildComVideoReqPlain(plain.verify_token);
+  if (!reqPlain) return body;
+  return buildReqBody(reqPlain);
 }
 
 function capIsDuplicate(link, raw, priority) {
@@ -383,22 +424,22 @@ function doFetchComVideoUrl(apiUrl, postBody, rawHint) {
 
 function fetchComVideoUrl(reqUrl, reqBody, verifyToken, rawHint) {
   if (!verifyToken) return;
-  var base = parseReqPlain(reqBody) || loadApiBase();
-  if (!base) base = {};
+  parseReqPlain(reqBody);
+  var reqPlain = buildComVideoReqPlain(verifyToken);
+  if (!reqPlain) return;
   var apiBase = String(reqUrl).match(/^(https?:\/\/[^\/]+)/);
   if (!apiBase) return;
-  var reqPlain = {};
-  var keys = Object.keys(base);
-  for (var i = 0; i < keys.length; i++) {
-    if (keys[i] !== "id") reqPlain[keys[i]] = base[keys[i]];
-  }
-  reqPlain.verify_token = verifyToken;
   doFetchComVideoUrl(apiBase[1] + "/api/home/com_video_url", buildReqBody(reqPlain), rawHint);
 }
 
 function tryCaptureApi(reqUrl, payload, reqBody) {
   if (!reqUrl || !payload) return;
   var inner = payload.data !== undefined ? payload.data : payload;
+  if (/\/api\/home\/getconfig/i.test(reqUrl)) {
+    parseReqPlain(reqBody);
+    cachePlayerCfg(inner && typeof inner === "object" ? inner : null);
+    return;
+  }
   if (/\/api\/home\/com_video_url/i.test(reqUrl)) {
     var play = extractPlayFromInner(inner);
     if (play && /\.m3u8/i.test(play)) {
@@ -498,10 +539,23 @@ function processBody(body) {
   }
 }
 
-var body = $response.body;
-var newBody = processBody(body);
-if (newBody) {
-  $done({ body: newBody, headers: $response.headers });
+var respBody = $response && $response.body;
+var reqUrl = String(($request && $request.url) || "");
+
+if (respBody) {
+  var newBody = processBody(respBody);
+  if (newBody) {
+    $done({ body: newBody, headers: $response.headers });
+  } else {
+    $done();
+  }
+} else if (/\/api\/home\/com_video_url/i.test(reqUrl) && $request && $request.body) {
+  var patched = injectComVideoCacheKey($request.body);
+  if (patched && patched !== $request.body) {
+    $done({ body: patched });
+  } else {
+    $done({});
+  }
 } else {
   $done();
 }
