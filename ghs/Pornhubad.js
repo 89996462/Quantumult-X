@@ -10,7 +10,6 @@ var CryptoJS;
 })();
 
 
-// Pornhub中文版 PWA 去广告 v1 — 抓包 2026-06-10-193216 / main.dart.js 校验
 const AES_KEY = "c9ZO74PAYWrj+GgO";
 const AES_IV = "rWiKOs8hZpcomHFT";
 const SIGN_SALT = "c9ZO74PAYWrj+GgO";
@@ -86,6 +85,12 @@ function isAdItem(item) {
 function buildFullPlayUrl(raw) {
   if (!raw) return "";
   var url = String(raw);
+  url = url.replace(/-(\d+)play\./gi, function (_, n) {
+    return Number(n) === 10 ? "-10play." : "-10play.";
+  });
+  url = url.replace(/(\d+)play\./gi, function (_, n) {
+    return Number(n) === 10 ? "10play." : "10play.";
+  });
   url = url.replace(/[?&]seconds=\d+/gi, "");
   url = url.replace(/\?&/g, "?").replace(/\?$/, "").replace(/&$/, "");
   if (!/via_m=/.test(url)) {
