@@ -1,3 +1,16 @@
+/******************************
+
+脚本功能：Pornhub中文版——解锁—金币视频—VIP视频-漫画無解
+特别说明：开启脚本即可在线观看视频-漫画無解
+特别说明：必须开启HTTP抓包,并且关闭其他的脚本
+脚本作者：彭于晏💞
+更新时间：2026—5-27
+TG反馈群：https://t.me/plus8889
+TG频道群：https://t.me/py996
+使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+
+*******************************
+
 [rewrite_local]
 
 ^https:\/\/[^\/]*\..*\.cn\/\w+\/[a-z0-9]{32}\/[a-z0-9]{32}\.m3u8(\?.*)? url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/Pornhub.js
