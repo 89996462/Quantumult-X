@@ -7,12 +7,24 @@ const VIA_M = "pzhan";
 
 function normalizePlayUrl(raw) {
   var u = String(raw);
+  u = u.replace(/-(\d+)play\./gi, function (_, n) {
+    return Number(n) === 10 ? "-10play." : "-10play.";
+  });
+  u = u.replace(/(\d+)play\./gi, function (_, n) {
+    return Number(n) === 10 ? "10play." : "10play.";
+  });
   u = u.replace(/[?&]seconds=\d+/gi, "");
   u = u.replace(/\?&/g, "?").replace(/\?$/, "").replace(/&$/, "");
   if (!/via_m=/.test(u)) {
     u += (u.indexOf("?") >= 0 ? "&" : "?") + "via_m=" + VIA_M;
   }
   return u;
+}
+
+function isPreviewLink(link) {
+  if (/[?&]seconds=\d/i.test(link)) return true;
+  var m = String(link).match(/(\d+)play\./i);
+  return !!(m && Number(m[1]) !== 10);
 }
 
 function isDuplicate(link) {
@@ -39,7 +51,7 @@ function notifyCapture(link) {
 
 var playURL = normalizePlayUrl(url);
 
-if (!/[?&]seconds=\d/i.test(playURL)) {
+if (!isPreviewLink(playURL)) {
   notifyCapture(playURL);
 }
 
