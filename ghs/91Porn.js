@@ -1,23 +1,28 @@
-
 let { headers, url } = $request,
   isQX = typeof $task !== "undefined",
   isSurge = typeof $httpClient !== "undefined" && !isQX,
   isLoon = typeof $loon !== "undefined";
 
+function isPreviewUrl(raw) {
+  return /10play|120play|seconds=\d+/i.test(String(raw));
+}
+
+function isFullPlayUrl(raw) {
+  var u = String(raw);
+  if (isPreviewUrl(u)) return false;
+  return /:\/\/([^\/]+\.)?long\.|:\/\/[^\/]*-long\./i.test(u);
+}
+
 function normalizePlayUrl(raw) {
-  var url = String(raw);
-  url = url.replace(/-10play\./gi, "-long.");
-  url = url.replace(/-120play\./gi, "-long.");
-  url = url.replace(/([\w-]+)-10play/gi, "$1-long");
-  url = url.replace(/([\w-]+)-120play/gi, "$1-long");
-  url = url.replace(/([?&])seconds=\d+(&?)/gi, function (m, p1, p2) {
+  var u = String(raw);
+  u = u.replace(/([?&])seconds=\d+(&?)/gi, function (m, p1, p2) {
     return p2 ? p1 : "";
   });
-  url = url.replace(/\?&/g, "?").replace(/&&/g, "&").replace(/[?&]$/g, "");
-  if (!/via_m=/i.test(url)) {
-    url += (url.indexOf("?") >= 0 ? "&" : "?") + "via_m=91pornwebapp";
+  u = u.replace(/\?&/g, "?").replace(/&&/g, "&").replace(/[?&]$/g, "");
+  if (!/via_m=/i.test(u)) {
+    u += (u.indexOf("?") >= 0 ? "&" : "?") + "via_m=91pornwebapp";
   }
-  return url;
+  return u;
 }
 
 function isDuplicate(link) {
@@ -42,9 +47,8 @@ function notifyCapture(link) {
   }
 }
 
-var playURL = normalizePlayUrl(url);
-
-if (!/seconds=/i.test(playURL)) {
+if (isFullPlayUrl(url)) {
+  var playURL = normalizePlayUrl(url);
   notifyCapture(playURL);
 }
 
