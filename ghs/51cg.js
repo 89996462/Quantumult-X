@@ -1,20 +1,18 @@
 /******************************
 
-# 脚本功能：GMJI——去广告—模拟VIP会员
-# 目标站点：https://p11.gmjiphps.cc/?
-# 抓包校验：2026-06-11-094428 / main.dart.js / bpi4.gldnbphxc.cc
-# 脚本作者：彭于晏💞
-# 更新时间：2026-6-11 v3.4（去开屏 ads + 首页 banner 轮播）
-# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
-#
-# 【QX 配置】将下方 [rewrite_local] 至 [mitm] 整段复制到 QX 配置文件并引用
-# 主配置里如有 51cg.js 或通用 api.php/api/ 规则请注释掉
+脚本功能：51吃瓜——解锁—金币视频—VIP视频-净化广告
+特别说明：开启脚本即可在线观看视频-不需要跳转观看
+脚本作者：彭于晏💞
+更新时间：2026—6-11
+TG反馈群：https://t.me/plus8889
+TG频道群：https://t.me/py996
+使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 [rewrite_local]
 
-^https?:\/\/bpi4\.gldnbphxc\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gmji-noad.js
+^https?:\/\/bpi4\.gldnbphxc\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
 
-^https?:\/\/bpi5\.glrxdaso\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gmji-noad.js
+^https?:\/\/bpi5\.glrxdaso\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
 
 [filter-local]
 
@@ -41,8 +39,7 @@ var CryptoJS;
 })();
 
 
-// GMJI Flutter PWA 去广告 v1 — 抓包 2026-06-11-094428 / main.dart.js 校验
-// 前端: p11.gmjiphps.cc  API: /api.php/api/  AES-CBC + PKCS7 + Base64
+
 const AES_KEY = "3b336263eb07b078";
 const AES_IV = "1e9cbb042bf35efb";
 const SIGN_SALT = "a9271230cb71e02f469e25479dc08607";
