@@ -90,6 +90,12 @@ function isAdItem(item) {
   return AD_ITEM_RE.test(u);
 }
 
+function clearAdValue(v) {
+  if (Array.isArray(v)) return [];
+  if (v && typeof v === "object") return null;
+  return v;
+}
+
 function stripAds(node) {
   if (Array.isArray(node)) {
     for (var i = node.length - 1; i >= 0; i--) {
@@ -104,19 +110,10 @@ function stripAds(node) {
     var k = keys[j];
     var v = node[k];
     if (AD_KEY_RE.test(k)) {
-      if (
-        (k === "ads" || k === "play_ad" || k === "ad_pops" || k === "ads_media") &&
-        v &&
-        typeof v === "object" &&
-        !Array.isArray(v)
-      ) {
-        node[k] = null;
-      } else if (k === "notice" && v && typeof v === "object") {
-        node[k] = {};
-      } else if (k === "floating_ai") {
+      if (k === "floating_ai") {
         node[k] = "0";
       } else {
-        node[k] = Array.isArray(v) ? [] : v && typeof v === "object" ? null : v;
+        node[k] = clearAdValue(v);
       }
       continue;
     }
@@ -130,14 +127,31 @@ function stripAds(node) {
       continue;
     }
     if (/^ads_/i.test(k) && (Array.isArray(v) || (v && typeof v === "object"))) {
-      node[k] = Array.isArray(v) ? [] : {};
+      node[k] = clearAdValue(v);
       continue;
     }
     if (/banner|floating|_ads$/i.test(k) && (Array.isArray(v) || (v && typeof v === "object"))) {
-      node[k] = Array.isArray(v) ? [] : {};
+      node[k] = clearAdValue(v);
       continue;
     }
     stripAds(v);
+  }
+}
+
+function forceClearHomeConfig(payload) {
+  var d = payload && payload.data ? payload.data : payload;
+  if (!d || typeof d !== "object") return;
+  d.start_screen_ads = [];
+  d.pop_ads = [];
+  d.notice_app = [];
+  d.ads = null;
+  d.notice = null;
+  if (d.config && typeof d.config === "object") {
+    d.config.person_ads = [];
+    d.config.post_detail_ads = [];
+    d.config.buoy = [];
+    d.config.nav_prepend = [];
+    if (d.config.show_app !== undefined) d.config.show_app = 0;
   }
 }
 
@@ -166,6 +180,17 @@ function cleanHeaders(headers) {
   return h;
 }
 
+var CACHE_INJECT =
+  "try{localStorage.removeItem('flutter.startScreenAdsKey');localStorage.removeItem('flutter.ads');}catch(e){}\n";
+
+function clearSplashCache(body) {
+  body = normalizeBody(body);
+  if (!body) return null;
+  if (body.indexOf("flutter.startScreenAdsKey") >= 0 || body.indexOf(CACHE_INJECT) === 0)
+    return body;
+  return CACHE_INJECT + body;
+}
+
 function processBody(body) {
   body = normalizeBody(body);
   if (!body || body.indexOf('"data"') < 0) return null;
@@ -182,6 +207,8 @@ function processBody(body) {
     var payload = JSON.parse(plain);
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
+    var reqUrl = ($request && $request.url) || "";
+    if (/home\/config/i.test(reqUrl)) forceClearHomeConfig(payload);
     wrapper.data = encryptPayload(JSON.stringify(payload));
     wrapper.sign = calcSign(wrapper);
     if (wrapper.errcode !== undefined) wrapper.errcode = 0;
@@ -191,10 +218,15 @@ function processBody(body) {
   }
 }
 
+var reqUrl = ($request && $request.url) || "";
 var body = normalizeBody($response.body);
-var newBody = processBody(body);
-if (newBody) {
-  $done({ body: newBody, headers: cleanHeaders($response.headers) });
+
+if (/flutter_bootstrap\.js/i.test(reqUrl)) {
+  var cached = clearSplashCache(body);
+  if (cached) $done({ body: cached });
+  else $done();
 } else {
-  $done();
+  var newBody = processBody(body);
+  if (newBody) $done({ body: newBody, headers: cleanHeaders($response.headers) });
+  else $done();
 }
