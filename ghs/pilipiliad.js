@@ -5,7 +5,7 @@
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
 # 更新时间：2026-6-11
-# 抓包校验：2026-06-11-151505 / apiv1.kogwzxje.top/api/
+# 抓包校验：2026-06-11-152052 / apiv1.kogwzxje.top/api/
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************/
@@ -21,11 +21,13 @@ var CryptoJS;
   }
 })();
 
-// 皮皮PWA 去广告+解锁 v2 — 抓包 2026-06-11-150223 / apiv3 /api/
+// 皮皮PWA 去广告+解锁 v3 — 抓包 2026-06-11-152052 / apiv1 /api/
 const AES_KEY = "tpPmmU6PGq7HXeRI";
 const AES_IV = "kScjUo8FzUTIxeCy";
 const SIGN_SALT = "AKmg68AZLnOKxvU0GGFbD65KBKzwm5Gr";
 const VIA_M = "ct";
+const BOOK_CACHE_KEY = "pilipwa_book_cache_v1";
+const DEFAULT_EPISODES = 30;
 
 const AD_KEY_RE =
   /^(ads|pop_ads|popAds|pop_app_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|buoy|nav_prepend|showApp)$/i;
@@ -165,11 +167,179 @@ function patchMemberFields(member) {
   member.expired_at = vipExpireAt();
   if (member.vip_level !== undefined) member.vip_level = 99;
   if (member.coins !== undefined) member.coins = 99999;
-  if (member.temp_vip !== undefined) member.temp_vip = 1;
+  if (member.temp_vip !== undefined) member.temp_vip = 0;
   if (member.is_login !== undefined) member.is_login = 1;
   if (member.role_id !== undefined) member.role_id = 2;
   if (member.old_vip !== undefined) member.old_vip = 1;
   if (member.is_vip !== undefined) member.is_vip = 1;
+  if (member.invited_by !== undefined) member.invited_by = null;
+}
+
+function loadBookCache() {
+  try {
+    var raw = $prefs.valueForKey(BOOK_CACHE_KEY);
+    if (!raw) return {};
+    var obj = JSON.parse(raw);
+    return obj && typeof obj === "object" ? obj : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveBookCache(cache) {
+  try {
+    $prefs.setValueForKey(JSON.stringify(cache), BOOK_CACHE_KEY);
+  } catch (e) {}
+}
+
+function cacheBookStub(item) {
+  if (!item || typeof item !== "object") return;
+  var bookId = item.related_id || item.bookId || item.book_id;
+  if (!bookId) return;
+  var key = String(bookId);
+  var cache = loadBookCache();
+  var prev = cache[key] || {};
+  cache[key] = {
+    id: bookId,
+    title: item.title || prev.title || "",
+    description: item.description || item.desc || prev.description || "",
+    thumb: item.thumb || item.bg_thumb || prev.thumb || "",
+    tags: item.tags || prev.tags || "",
+    is_free: item.is_free !== undefined ? item.is_free : prev.is_free !== undefined ? prev.is_free : 1,
+    from: item.from !== undefined ? item.from : prev.from !== undefined ? prev.from : 1,
+    newest_series:
+      item.newest_series || item.episodes || item.images_count || prev.newest_series || DEFAULT_EPISODES,
+    author: item.author || prev.author || "",
+    finished: item.finished !== undefined ? item.finished : prev.finished !== undefined ? prev.finished : 0,
+  };
+  saveBookCache(cache);
+}
+
+function collectBookStubs(node) {
+  if (!node || typeof node !== "object") return;
+  if (node.related_id && (node.title || node.thumb)) cacheBookStub(node);
+  if (node.bookId || node.book_id) cacheBookStub(node);
+  if (Array.isArray(node.elements)) {
+    for (var i = 0; i < node.elements.length; i++) collectBookStubs(node.elements[i]);
+  }
+  if (Array.isArray(node.value)) {
+    for (var j = 0; j < node.value.length; j++) collectBookStubs(node.value[j]);
+  }
+  if (Array.isArray(node.list)) {
+    for (var k = 0; k < node.list.length; k++) collectBookStubs(node.list[k]);
+  }
+  if (Array.isArray(node.data)) {
+    for (var m = 0; m < node.data.length; m++) collectBookStubs(node.data[m]);
+  }
+}
+
+function getBookStub(bookId) {
+  if (!bookId) return {};
+  var cache = loadBookCache();
+  return cache[String(bookId)] || {};
+}
+
+function isComicDenied(payload) {
+  if (!payload || payload.data !== null) return false;
+  if (payload.status !== 0 && payload.status !== "0") return false;
+  return /权限|permission/i.test(String(payload.msg || ""));
+}
+
+function buildBookDetail(bookId, stub) {
+  stub = stub || {};
+  var id = bookId || stub.id || 0;
+  var eps = stub.newest_series || DEFAULT_EPISODES;
+  if (eps < 1) eps = DEFAULT_EPISODES;
+  return {
+    id: id,
+    _id: id,
+    title: stub.title || "漫画#" + id,
+    description: stub.description || "",
+    author: stub.author || "未知",
+    categories: [],
+    bg_thumb: stub.thumb || "",
+    thumb: stub.thumb || "",
+    re_thumb: stub.thumb || "",
+    tags: stub.tags || "",
+    is_free: 1,
+    adult: 1,
+    finished: stub.finished || 0,
+    images_count: eps,
+    views_count: 0,
+    likes_count: 0,
+    favorites: 0,
+    cj_finished: 0,
+    view_money: 0,
+    download_money: 0,
+    status: 1,
+    update_time: "2026-06-11",
+    free_time: 0,
+    recommend: 0,
+    index_recommend: 0,
+    obtained: 1,
+    good_look: 0,
+    must_awesome: 0,
+    what_awesome: 0,
+    no_awesome: 0,
+    from: stub.from || 1,
+    refresh_at: "2026-06-11",
+    created_at: "2020-01-01",
+    updated_at: "2026-06-11",
+    newest_series: eps,
+    watchLog: 0,
+    userFavorites: 0,
+    userLike: 0,
+  };
+}
+
+function buildBookReadData(stub, episode) {
+  var img = stub.thumb || "";
+  if (!img) return [];
+  return [
+    {
+      short: episode || 1,
+      img_url: img,
+      img_width: 720,
+      img_height: 1280,
+    },
+  ];
+}
+
+function fixComicDenied(payload, ctx) {
+  if (!isComicDenied(payload)) return;
+  ctx = ctx || {};
+  var req = ctx.req || {};
+  var url = String(ctx.url || "");
+  var isRead = /book\/read/i.test(url) || (req.bookId !== undefined && req.episode !== undefined);
+  var isDetail = /book\/getDetail/i.test(url) || (req.bookId !== undefined && req.episode === undefined);
+  if (isRead) {
+    var readId = req.bookId || req.id;
+    payload.data = buildBookReadData(getBookStub(readId), req.episode);
+    payload.status = 1;
+    payload.msg = "";
+    return;
+  }
+  if (isDetail) {
+    var bookId = req.bookId || req.id;
+    payload.data = buildBookDetail(bookId, getBookStub(bookId));
+    payload.status = 1;
+    payload.msg = "";
+    unlockComic(payload.data);
+  }
+}
+
+function parseApiRequest() {
+  try {
+    var body = $request.body;
+    if (!body) return {};
+    var m = String(body).match(/data=([^&]+)/);
+    if (!m || !m[1]) return {};
+    var plain = decryptPayload(m[1]);
+    if (!plain) return {};
+    return JSON.parse(plain);
+  } catch (e) {
+    return {};
+  }
 }
 
 function isPrivilegeMap(node) {
@@ -289,19 +459,22 @@ function filterAdArrays(node) {
   for (var k = 0; k < keys.length; k++) filterAdArrays(node[keys[k]]);
 }
 
-function patchPayload(payload) {
+function patchPayload(payload, ctx) {
   stripAds(payload);
   filterAdArrays(payload);
   unlockMember(payload);
   unlockComic(payload);
   unlockVideo(payload);
+  collectBookStubs(payload);
   if (payload.data) {
     stripAds(payload.data);
     filterAdArrays(payload.data);
     unlockMember(payload.data);
     unlockComic(payload.data);
     unlockVideo(payload.data);
+    collectBookStubs(payload.data);
   }
+  fixComicDenied(payload, ctx);
 }
 
 function fixHeaders(headers, bodyStr) {
@@ -323,7 +496,7 @@ function fixHeaders(headers, bodyStr) {
   return h;
 }
 
-function processBody(body) {
+function processBody(body, ctx) {
   if (!body || body.indexOf('"data"') < 0) return null;
   var wrapper;
   try {
@@ -337,9 +510,10 @@ function processBody(body) {
     var plain = decryptPayload(wrapper.data);
     if (!plain) return null;
     var payload = JSON.parse(plain);
-    patchPayload(payload);
+    patchPayload(payload, ctx);
     if (payload.isVip !== undefined) payload.isVip = true;
     if (payload.is_vip !== undefined) payload.is_vip = 1;
+    if (payload.crypt !== undefined) payload.crypt = true;
     wrapper.data = encryptPayload(JSON.stringify(payload));
     if (wrapper.isVip !== undefined) wrapper.isVip = true;
     if (wrapper.is_vip !== undefined) wrapper.is_vip = 1;
@@ -356,7 +530,11 @@ function processBody(body) {
 }
 
 var body = $response.body;
-var newBody = processBody(body);
+var reqCtx = {
+  url: ($request && $request.url) || "",
+  req: parseApiRequest(),
+};
+var newBody = processBody(body, reqCtx);
 if (newBody) {
   $done({ body: newBody, headers: fixHeaders($response.headers, newBody) });
 } else {
