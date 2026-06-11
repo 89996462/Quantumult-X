@@ -4,7 +4,7 @@
 # 目标站点：https://p11.gmjiphps.cc/?
 # 抓包校验：2026-06-11-094428 / main.dart.js / bpi4.gldnbphxc.cc
 # 脚本作者：彭于晏💞
-# 更新时间：2026-6-11 v2（fixHeaders + home/config 轻量改写）
+# 更新时间：2026-6-11 v3（home/config 安全去悬浮/弹窗 + 列表导流帖过滤）
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 #
 # 【QX 配置】将下方 [rewrite_local] 至 [mitm] 整段复制到 QX 配置文件并引用
@@ -120,8 +120,17 @@ function encryptPayload(plainText) {
   return CryptoJS.enc.Base64.stringify(enc.ciphertext);
 }
 
+function isPromoFeedItem(item) {
+  if (!item || typeof item !== "object") return false;
+  if (item.type === "post") return false;
+  if (typeof item.status === "number" || item.status === "publish") return false;
+  if (item.type == null && item.status === undefined && item.commentsNum === undefined) return true;
+  return false;
+}
+
 function isAdItem(item) {
   if (!item || typeof item !== "object") return false;
+  if (isPromoFeedItem(item)) return true;
   if (item.ads_code || item.advertise_code || item.advertise_location_code) return true;
   if (item.ad_slot_name && AD_SLOT_RE.test(String(item.ad_slot_name))) return true;
   if (item.ad_name && AD_SLOT_RE.test(String(item.ad_name))) return true;
@@ -218,6 +227,23 @@ function unlockVideo(node) {
   }
 }
 
+function stripHomeConfigAds(payload) {
+  if (!payload || typeof payload !== "object") return;
+  var data = payload.data;
+  if (!data || typeof data !== "object") return;
+  ["floating_ads", "pop_ads", "lottery_ads", "apps", "ads"].forEach(function (k) {
+    if (data[k] !== undefined) data[k] = [];
+  });
+  if (data.config && typeof data.config === "object") {
+    var cfg = data.config;
+    ["buoy", "person_ads", "post_detail_ads", "nav_prepend"].forEach(function (k) {
+      if (Array.isArray(cfg[k])) cfg[k] = [];
+    });
+    if (cfg.show_app !== undefined) cfg.show_app = 0;
+  }
+  if (data.ad_play && typeof data.ad_play === "object") data.ad_play = {};
+}
+
 function stripAds(node) {
   if (Array.isArray(node)) {
     for (var i = node.length - 1; i >= 0; i--) {
@@ -287,7 +313,9 @@ function processBody(body) {
     if (!plain) return null;
     var payload = JSON.parse(plain);
     var path = getApiPath();
-    if (path !== "home/config") {
+    if (path === "home/config") {
+      stripHomeConfigAds(payload);
+    } else {
       stripAds(payload);
       if (payload.data) stripAds(payload.data);
       unlockVideo(payload);
