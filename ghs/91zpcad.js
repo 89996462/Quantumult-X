@@ -9,12 +9,15 @@ var CryptoJS;
   }
 })();
 
-// 91制片厂 Flutter PWA 去广告 — 抓包 2026-06-11-164900 校验
+// 91制片厂 Flutter PWA 去广告+VIP — 抓包 2026-06-11-170738 校验
 // home/config: start_screen_ads / pop_ads / notice_app / ads / notice
-// list_construct: banner | getDetail: banner / ad_pops | config: person_ads / post_detail_ads
+// list_construct: banner | mv/getDetail: banner / ad_pops / detail | user/userInfo
+// 开屏缓存键：startScreenAdsKey（config 返回空数组后会写入 []）
 const AES_KEY = "89f75470c081a421";
 const AES_IV = "4cfcab9f43a9cbb2";
 const SIGN_SALT = "86f1d6ca1cdd3a9e7813919c6dee0f44";
+const VIA_M = "zpcpj";
+const VIP_EXPIRE = "2099-12-31 23:59:59";
 
 const AD_KEY_RE =
   /^(ads|ads_media|pop_ads|ad_pops|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|floating_ai|banner|banners|top_banner|bot_banner|home_banner|home_ads|notice|notice_app|start_screen_ads|start_screen|person_ads|post_detail_ads|agent_ads|buoy|nav_prepend|list_ads|prepend_ads|insert_ads|video_ads|player_ads)$/i;
@@ -22,8 +25,9 @@ const AD_KEY_RE =
 const AD_SLOT_RE =
   /(启动页|活动弹窗|悬浮|banner|播放|播放器|黄游|弹框|浮框|导流|插入|个人中心|null)/i;
 const AD_TITLE_RE =
-  /(同城约炮|同城聊骚|约炮|裸聊|抖阴|AI科技|棋牌|ttav|TikTok|Pornhub|PornHub|潘多拉|萝莉岛|禁漫|真人验证|搭讪|汤头条|51动漫|91视频|50度灰|海角|色花堂|真人在线|线下偶遇|高端约炮|51高端|制片厂)/i;
-const AD_ITEM_RE = /\/ads\/|\/upload_01\/ads\/|\/upload\/ads\/|advertise_code|advertise_location_code|ad_slot_name|ad_type/i;
+  /(同城约炮|同城聊骚|约炮|裸聊|抖阴|AI科技|棋牌|ttav|TikTok|Pornhub|PornHub|潘多拉|萝莉岛|禁漫|真人验证|搭讪|汤头条|51动漫|91视频|50度灰|海角|色花堂|真人在线|线下偶遇|高端约炮|51高端|高端外围|外围美女|免费直播|永利皇宫|澳门娱乐|妖妖直播|金蝉直播|制片厂)/i;
+const AD_ITEM_RE =
+  /\/ads\/|\/upload_01\/ads\/|\/upload\/ads\/|\/hc237\/uploads\/|advertise_code|advertise_location_code|ad_slot_name|ad_type/i;
 
 function calcSign(wrapper) {
   var keys = Object.keys(wrapper).sort();
@@ -88,6 +92,92 @@ function isAdItem(item) {
     item.img_url || item.url || item.link_url || item.image || item.url_str || ""
   );
   return AD_ITEM_RE.test(u);
+}
+
+function normalizePlayUrl(url) {
+  if (!url) return url;
+  var u = String(url);
+  u = u.replace(/https?:\/\/[^/]*-120play\./i, function (m) {
+    return m.replace(/-120play\./i, "-long.");
+  });
+  u = u.replace(/https?:\/\/120play\./i, function (m) {
+    return m.replace(/120play\./i, "long.");
+  });
+  u = u.replace(/https?:\/\/h5play\./i, function (m) {
+    return m.replace(/h5play\./i, "long.");
+  });
+  u = u.replace(/([?&])seconds=\d+/gi, "$1").replace(/[?&]$/, "");
+  if (u.indexOf("via_m=") < 0) {
+    u += (u.indexOf("?") >= 0 ? "&" : "?") + "via_m=" + VIA_M;
+  }
+  return u;
+}
+
+function patchUserInfo(node) {
+  if (!node || typeof node !== "object" || node.uid === undefined) return;
+  node.vip_level = 3;
+  node.vip_str = "永久VIP";
+  node.expired_at = VIP_EXPIRE;
+  node.temp_vip = 1;
+  node.old_vip = 1;
+  node.level = 3;
+  node.coins = 99999;
+  node.new_user = false;
+  node.longMvFreeTime = 9999;
+  node.shortMvFreeTime = 9999;
+  node.free_view_cnt = 9999;
+  node.is_login = 1;
+}
+
+function unlockVideo(node) {
+  if (!node || typeof node !== "object") return;
+  if (
+    node.preview_url === undefined &&
+    node.source_origin_str === undefined &&
+    node.source_720 === undefined &&
+    node.isfree === undefined
+  )
+    return;
+  var src =
+    node.source_720 ||
+    node.source_480 ||
+    node.source_origin_str ||
+    node.preview_url ||
+    "";
+  src = normalizePlayUrl(src);
+  if (src) {
+    node.source_720 = src;
+    node.source_480 = src;
+    node.source_origin_str = src;
+    node.preview_url = src;
+  }
+  node.isfree = 0;
+  node.is_pay = 1;
+  node.coins = 0;
+  node.discount_coins = 0;
+}
+
+function patchPayload(payload) {
+  if (!payload || typeof payload !== "object") return;
+  payload.isVip = true;
+  if (payload.data && typeof payload.data === "object") {
+    patchUserInfo(payload.data);
+    if (payload.data.detail) unlockVideo(payload.data.detail);
+  }
+}
+
+function patchDeep(node) {
+  if (!node) return;
+  if (Array.isArray(node)) {
+    for (var i = 0; i < node.length; i++) patchDeep(node[i]);
+    return;
+  }
+  if (typeof node !== "object") return;
+  patchUserInfo(node);
+  unlockVideo(node);
+  if (node.detail) unlockVideo(node.detail);
+  var keys = Object.keys(node);
+  for (var j = 0; j < keys.length; j++) patchDeep(node[keys[j]]);
 }
 
 function stripAds(node) {
@@ -177,6 +267,8 @@ function processBody(body) {
     var payload = JSON.parse(plain);
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
+    patchPayload(payload);
+    patchDeep(payload.data);
     wrapper.data = encryptPayload(JSON.stringify(payload));
     wrapper.sign = calcSign(wrapper);
     if (wrapper.errcode !== undefined) wrapper.errcode = 0;
