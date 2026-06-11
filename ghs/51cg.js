@@ -16,12 +16,6 @@
 
 [filter-local]
 
-^https?:\/\/api-dc-prod-008\.cyou\/ - reject
-
-^https?:\/\/api-dc2-prod-08\.cyou\/ - reject
-
-^https?:\/\/api1\.cghhqca\.cc\/ - reject
-
 ^https?:\/\/[^\/]+\/hc237\/uploads\/default\/other\/ - reject
 
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
@@ -94,7 +88,7 @@ function encryptPayload(plainText) {
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7,
   });
-  return enc.toString();
+  return CryptoJS.enc.Base64.stringify(enc.ciphertext);
 }
 
 function isAdItem(item) {
@@ -170,6 +164,13 @@ function unlockUserItem(user) {
   if (user.expired_at !== undefined) user.expired_at = fmtExpire();
   if (user.vip_str !== undefined) user.vip_str = "VIP";
   if (user.role_type !== undefined) user.role_type = "vip";
+}
+
+function unlockPayloadRoot(node) {
+  if (!node || typeof node !== "object") return;
+  if (node.isVip !== undefined) node.isVip = true;
+  if (node.is_vip !== undefined) node.is_vip = 1;
+  if (node.status !== undefined && node.status === 0) node.status = 1;
 }
 
 function unlockVideo(node) {
@@ -250,6 +251,7 @@ function processBody(body) {
     return null;
   }
   if (!wrapper || typeof wrapper.data !== "string" || !wrapper.data) return null;
+  if (wrapper.errcode !== undefined && wrapper.errcode !== 0) return null;
   if (!/^[A-Za-z0-9+/=_\-]+$/.test(wrapper.data)) return null;
   try {
     var plain = decryptPayload(wrapper.data);
@@ -257,6 +259,7 @@ function processBody(body) {
     var payload = JSON.parse(plain);
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
+    unlockPayloadRoot(payload);
     unlockVideo(payload);
     wrapper.data = encryptPayload(JSON.stringify(payload));
     if (wrapper.timestamp === undefined) {
@@ -270,10 +273,22 @@ function processBody(body) {
   }
 }
 
+function fixHeaders(headers, body) {
+  var h = {};
+  var keys = Object.keys(headers || {});
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    if (/^content-encoding$/i.test(k)) continue;
+    h[k] = headers[k];
+  }
+  h["Content-Length"] = String(body.length);
+  return h;
+}
+
 var body = $response.body;
 var newBody = processBody(body);
 if (newBody) {
-  $done({ body: newBody, headers: $response.headers });
+  $done({ body: newBody, headers: fixHeaders($response.headers, newBody) });
 } else {
   $done();
 }
