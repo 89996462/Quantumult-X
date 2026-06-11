@@ -5,7 +5,7 @@
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
 # 更新时间：2026-6-11
-# 抓包校验：2026-06-11-152052 / apiv1.kogwzxje.top/api/
+# 抓包校验：2026-06-11-153402 / apiv1.kogwzxje.top/api/
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************/
@@ -21,13 +21,27 @@ var CryptoJS;
   }
 })();
 
-// 皮皮PWA 去广告+解锁 v3 — 抓包 2026-06-11-152052 / apiv1 /api/
+// 皮皮PWA 去广告+解锁 v5 — 抓包 2026-06-11-153402 / apiv1 /api/
 const AES_KEY = "tpPmmU6PGq7HXeRI";
 const AES_IV = "kScjUo8FzUTIxeCy";
 const SIGN_SALT = "AKmg68AZLnOKxvU0GGFbD65KBKzwm5Gr";
 const VIA_M = "ct";
 const BOOK_CACHE_KEY = "pilipwa_book_cache_v1";
+const BOOK_READ_CACHE_KEY = "pilipwa_book_read_cache_v1";
+const LAST_BOOK_ID_KEY = "pilipwa_last_bookId";
+const RAW_REQ_KEYS = {
+  getDetail: "pilipwa_raw_book_getDetail",
+  read: "pilipwa_raw_book_read",
+  recommend: "pilipwa_raw_book_recommend",
+};
+const CTX_KEYS = {
+  bookId: "pilipwa_ctx_bookId",
+  episode: "pilipwa_ctx_episode",
+  category: "pilipwa_ctx_category",
+};
 const DEFAULT_EPISODES = 30;
+const DEFAULT_PAGE_COUNT = 24;
+const COMIC18_RE = /^(https?:\/\/[^\/]+)(\/new\/cartoon\/mh\/comic\d+\/\d+)\//i;
 
 const AD_KEY_RE =
   /^(ads|pop_ads|popAds|pop_app_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|buoy|nav_prepend|showApp)$/i;
@@ -192,6 +206,15 @@ function saveBookCache(cache) {
   } catch (e) {}
 }
 
+function parseComicThumb(thumb) {
+  var m = String(thumb || "").match(COMIC18_RE);
+  if (!m) return null;
+  return {
+    base: m[1] + m[2],
+    cid: m[2].replace(/\/$/, "").split("/").pop(),
+  };
+}
+
 function cacheBookStub(item) {
   if (!item || typeof item !== "object") return;
   var bookId = item.related_id || item.bookId || item.book_id;
@@ -199,18 +222,23 @@ function cacheBookStub(item) {
   var key = String(bookId);
   var cache = loadBookCache();
   var prev = cache[key] || {};
+  var thumb = item.thumb || item.bg_thumb || prev.thumb || "";
+  var comic = parseComicThumb(thumb) || (prev.comic_base ? { base: prev.comic_base, cid: prev.comic_cid } : null);
   cache[key] = {
     id: bookId,
     title: item.title || prev.title || "",
     description: item.description || item.desc || prev.description || "",
-    thumb: item.thumb || item.bg_thumb || prev.thumb || "",
+    thumb: thumb,
     tags: item.tags || prev.tags || "",
     is_free: item.is_free !== undefined ? item.is_free : prev.is_free !== undefined ? prev.is_free : 1,
     from: item.from !== undefined ? item.from : prev.from !== undefined ? prev.from : 1,
     newest_series:
       item.newest_series || item.episodes || item.images_count || prev.newest_series || DEFAULT_EPISODES,
+    page_count: item.images_count || item.page_count || prev.page_count || DEFAULT_PAGE_COUNT,
     author: item.author || prev.author || "",
     finished: item.finished !== undefined ? item.finished : prev.finished !== undefined ? prev.finished : 0,
+    comic_base: comic ? comic.base : prev.comic_base || "",
+    comic_cid: comic ? comic.cid : prev.comic_cid || "",
   };
   saveBookCache(cache);
 }
@@ -250,6 +278,7 @@ function buildBookDetail(bookId, stub) {
   var id = bookId || stub.id || 0;
   var eps = stub.newest_series || DEFAULT_EPISODES;
   if (eps < 1) eps = DEFAULT_EPISODES;
+  var pageCount = stub.page_count || DEFAULT_PAGE_COUNT;
   return {
     id: id,
     _id: id,
@@ -264,7 +293,7 @@ function buildBookDetail(bookId, stub) {
     is_free: 1,
     adult: 1,
     finished: stub.finished || 0,
-    images_count: eps,
+    images_count: pageCount,
     views_count: 0,
     likes_count: 0,
     favorites: 0,
@@ -292,12 +321,89 @@ function buildBookDetail(bookId, stub) {
   };
 }
 
-function buildBookReadData(stub, episode) {
-  var img = stub.thumb || "";
+function normalizeComicImg(url) {
+  if (!url) return "";
+  var u = String(url);
+  if (u.indexOf("!720x0") >= 0) return u;
+  return u.replace(/\.(jpe?g|png|webp)(\?.*)?$/i, "!720x0.$1");
+}
+
+function loadReadCache() {
+  try {
+    var raw = $prefs.valueForKey(BOOK_READ_CACHE_KEY);
+    if (!raw) return {};
+    var obj = JSON.parse(raw);
+    return obj && typeof obj === "object" ? obj : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveReadCache(cache) {
+  try {
+    $prefs.setValueForKey(JSON.stringify(cache), BOOK_READ_CACHE_KEY);
+  } catch (e) {}
+}
+
+function readCacheKey(bookId, episode) {
+  return String(bookId) + ":" + String(episode || 1);
+}
+
+function cacheBookReadPages(bookId, episode, pages) {
+  if (!bookId || !episode || !Array.isArray(pages) || !pages.length) return;
+  var cache = loadReadCache();
+  cache[readCacheKey(bookId, episode)] = pages;
+  saveReadCache(cache);
+}
+
+function getCachedReadPages(bookId, episode) {
+  if (!bookId) return null;
+  var cache = loadReadCache();
+  return cache[readCacheKey(bookId, episode)] || null;
+}
+
+function padPageNum(n) {
+  if (n < 10) return "00" + n;
+  if (n < 100) return "0" + n;
+  return String(n);
+}
+
+function buildComicPageUrl(base, episode, pageNum) {
+  return base + "/" + episode + "/" + padPageNum(pageNum) + "!720x0.jpeg";
+}
+
+function buildComicPagesFromStub(stub, episode) {
+  stub = stub || {};
+  episode = episode || 1;
+  var comic = stub.comic_base ? { base: stub.comic_base } : parseComicThumb(stub.thumb);
+  if (!comic || !comic.base) return null;
+  var maxPages = stub.page_count || DEFAULT_PAGE_COUNT;
+  if (maxPages < 1) maxPages = DEFAULT_PAGE_COUNT;
+  if (maxPages > 80) maxPages = 80;
+  var pages = [];
+  for (var i = 1; i <= maxPages; i++) {
+    pages.push({
+      short: episode,
+      img_url: buildComicPageUrl(comic.base, episode, i),
+      img_width: 720,
+      img_height: 1280,
+    });
+  }
+  return pages.length ? pages : null;
+}
+
+function buildBookReadData(stub, episode, bookId) {
+  stub = stub || {};
+  episode = episode || 1;
+  var cached = getCachedReadPages(bookId, episode);
+  if (cached && cached.length) return cached;
+  var pages = buildComicPagesFromStub(stub, episode);
+  if (pages && pages.length) return pages;
+  var img = normalizeComicImg(stub.thumb || "");
   if (!img) return [];
   return [
     {
-      short: episode || 1,
+      short: episode,
       img_url: img,
       img_width: 720,
       img_height: 1280,
@@ -305,22 +411,105 @@ function buildBookReadData(stub, episode) {
   ];
 }
 
+function getCachedRequestBody(url) {
+  url = String(url || "");
+  if (/book\/getDetail/i.test(url)) return $prefs.valueForKey(RAW_REQ_KEYS.getDetail) || "";
+  if (/book\/read/i.test(url)) return $prefs.valueForKey(RAW_REQ_KEYS.read) || "";
+  if (/book\/getDetailRecommendList/i.test(url)) return $prefs.valueForKey(RAW_REQ_KEYS.recommend) || "";
+  return "";
+}
+
+function rememberBookId(bookId) {
+  if (bookId === undefined || bookId === null || bookId === "" || bookId === 0) return;
+  try {
+    $prefs.setValueForKey(String(bookId), LAST_BOOK_ID_KEY);
+    $prefs.setValueForKey(String(bookId), CTX_KEYS.bookId);
+  } catch (e) {}
+}
+
+function rememberEpisode(episode) {
+  if (episode === undefined || episode === null || episode === "") return;
+  try {
+    $prefs.setValueForKey(String(episode), CTX_KEYS.episode);
+  } catch (e) {}
+}
+
+function readCtxNum(key) {
+  try {
+    var raw = $prefs.valueForKey(key);
+    if (raw === undefined || raw === null || raw === "") return undefined;
+    var n = parseInt(raw, 10);
+    return isNaN(n) ? raw : n;
+  } catch (e) {
+    return undefined;
+  }
+}
+
+function resolveBookId(req) {
+  req = req || {};
+  var bookId = req.bookId || req.id;
+  if (bookId === undefined || bookId === null || bookId === "" || bookId === 0) {
+    bookId = readCtxNum(CTX_KEYS.bookId);
+  }
+  if (bookId === undefined || bookId === null || bookId === "" || bookId === 0) {
+    bookId = readCtxNum(LAST_BOOK_ID_KEY);
+  }
+  return bookId;
+}
+
+function resolveEpisode(req) {
+  req = req || {};
+  var episode = req.episode;
+  if (episode === undefined || episode === null || episode === "") {
+    episode = readCtxNum(CTX_KEYS.episode);
+  }
+  return episode || 1;
+}
+
+function needsBookReadFix(payload, ctx) {
+  if (!ctx || !/book\/read/i.test(String(ctx.url || ""))) return false;
+  if (isComicDenied(payload)) return true;
+  return payload.status === 1 && Array.isArray(payload.data) && payload.data.length === 0;
+}
+
+function fixBookRecommend(payload, ctx) {
+  if (!ctx || !/book\/getDetailRecommendList/i.test(String(ctx.url || ""))) return;
+  if (payload.status !== 0 || payload.data !== null) return;
+  payload.data = [];
+  payload.status = 1;
+  payload.msg = "";
+}
+
 function fixComicDenied(payload, ctx) {
-  if (!isComicDenied(payload)) return;
   ctx = ctx || {};
   var req = ctx.req || {};
   var url = String(ctx.url || "");
-  var isRead = /book\/read/i.test(url) || (req.bookId !== undefined && req.episode !== undefined);
-  var isDetail = /book\/getDetail/i.test(url) || (req.bookId !== undefined && req.episode === undefined);
-  if (isRead) {
-    var readId = req.bookId || req.id;
-    payload.data = buildBookReadData(getBookStub(readId), req.episode);
+  var bookId = resolveBookId(req);
+  var episode = resolveEpisode(req);
+  if (bookId) rememberBookId(bookId);
+  if (req.episode !== undefined) rememberEpisode(req.episode);
+
+  if (/book\/getDetailRecommendList/i.test(url)) {
+    fixBookRecommend(payload, ctx);
+    return;
+  }
+
+  if (/book\/read/i.test(url) || (req.bookId !== undefined && req.episode !== undefined)) {
+    if (!needsBookReadFix(payload, ctx)) {
+      if (Array.isArray(payload.data) && payload.data.length) {
+        cacheBookReadPages(bookId, episode, payload.data);
+      }
+      return;
+    }
+    payload.data = buildBookReadData(getBookStub(bookId), episode, bookId);
     payload.status = 1;
     payload.msg = "";
     return;
   }
-  if (isDetail) {
-    var bookId = req.bookId || req.id;
+
+  if (!isComicDenied(payload)) return;
+
+  if (/book\/getDetail/i.test(url) || (req.bookId !== undefined && req.episode === undefined)) {
     payload.data = buildBookDetail(bookId, getBookStub(bookId));
     payload.status = 1;
     payload.msg = "";
@@ -328,18 +517,65 @@ function fixComicDenied(payload, ctx) {
   }
 }
 
+function parsePlainRequest(body) {
+  if (!body) return {};
+  var m = String(body).match(/data=([^&]+)/);
+  if (!m || !m[1]) return {};
+  var plain = decryptPayload(m[1]);
+  if (!plain) return {};
+  return JSON.parse(plain);
+}
+
+function cacheApiRequest(url, body) {
+  if (!body) return;
+  url = String(url || "");
+  if (/book\/getDetail/i.test(url)) {
+    $prefs.setValueForKey(body, RAW_REQ_KEYS.getDetail);
+  } else if (/book\/read/i.test(url)) {
+    $prefs.setValueForKey(body, RAW_REQ_KEYS.read);
+  } else if (/book\/getDetailRecommendList/i.test(url)) {
+    $prefs.setValueForKey(body, RAW_REQ_KEYS.recommend);
+  }
+  try {
+    var req = parsePlainRequest(body);
+    if (req.bookId !== undefined) rememberBookId(req.bookId);
+    if (req.id !== undefined && req.bookId === undefined) rememberBookId(req.id);
+    if (req.episode !== undefined) rememberEpisode(req.episode);
+    if (req.category !== undefined) {
+      $prefs.setValueForKey(String(req.category), CTX_KEYS.category);
+    }
+  } catch (e) {}
+}
+
 function parseApiRequest() {
   try {
-    var body = $request.body;
-    if (!body) return {};
-    var m = String(body).match(/data=([^&]+)/);
-    if (!m || !m[1]) return {};
-    var plain = decryptPayload(m[1]);
-    if (!plain) return {};
-    return JSON.parse(plain);
+    var url = ($request && $request.url) || "";
+    var body = ($request && $request.body) || "";
+    if (!body) body = getCachedRequestBody(url) || "";
+    if (!body) {
+      return {
+        bookId: resolveBookId({}),
+        episode: resolveEpisode({}),
+      };
+    }
+    var req = parsePlainRequest(body);
+    if (req.bookId !== undefined) rememberBookId(req.bookId);
+    if (req.id !== undefined && req.bookId === undefined) rememberBookId(req.id);
+    if (req.episode !== undefined) rememberEpisode(req.episode);
+    return req;
   } catch (e) {
-    return {};
+    return {
+      bookId: resolveBookId({}),
+      episode: resolveEpisode({}),
+    };
   }
+}
+
+function handleApiRequest() {
+  var url = ($request && $request.url) || "";
+  var body = ($request && $request.body) || "";
+  if (body) cacheApiRequest(url, body);
+  $done({});
 }
 
 function isPrivilegeMap(node) {
@@ -529,14 +765,18 @@ function processBody(body, ctx) {
   }
 }
 
-var body = $response.body;
-var reqCtx = {
-  url: ($request && $request.url) || "",
-  req: parseApiRequest(),
-};
-var newBody = processBody(body, reqCtx);
-if (newBody) {
-  $done({ body: newBody, headers: fixHeaders($response.headers, newBody) });
+if (typeof $response === "undefined" || !$response || !$response.body) {
+  handleApiRequest();
 } else {
-  $done();
+  var body = $response.body;
+  var reqCtx = {
+    url: ($request && $request.url) || "",
+    req: parseApiRequest(),
+  };
+  var newBody = processBody(body, reqCtx);
+  if (newBody) {
+    $done({ body: newBody, headers: fixHeaders($response.headers, newBody) });
+  } else {
+    $done();
+  }
 }
