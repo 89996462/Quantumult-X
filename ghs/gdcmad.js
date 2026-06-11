@@ -180,15 +180,45 @@ function cleanHeaders(headers) {
   return h;
 }
 
+var CACHE_MARK = "gdcm_noad_cache_v2";
 var CACHE_INJECT =
-  "try{localStorage.removeItem('flutter.startScreenAdsKey');localStorage.removeItem('flutter.ads');}catch(e){}\n";
+  "(function(){try{var s=localStorage,k,i;for(i=s.length-1;i>=0;i--){k=s.key(i);if(k&&(k==='flutter.startScreenAdsKey'||k==='flutter.ads'||/^flutter\\.(startScreen|ads)/i.test(k)))s.removeItem(k);}}catch(e){}})();\n";
+var CACHE_SCRIPT =
+  '<script>(function(){try{var s=localStorage,k,i;for(i=s.length-1;i>=0;i--){k=s.key(i);if(k&&(k==="flutter.startScreenAdsKey"||k==="flutter.ads"||/^flutter\\.(startScreen|ads)/i.test(k)))s.removeItem(k);}}catch(e){}})();</script>';
+
+function hasCacheMark(body) {
+  return body && body.indexOf(CACHE_MARK) >= 0;
+}
 
 function clearSplashCache(body) {
   body = normalizeBody(body);
-  if (!body) return null;
-  if (body.indexOf("flutter.startScreenAdsKey") >= 0 || body.indexOf(CACHE_INJECT) === 0)
-    return body;
-  return CACHE_INJECT + body;
+  if (!body || hasCacheMark(body)) return body;
+  return "/*" + CACHE_MARK + "*/\n" + CACHE_INJECT + body;
+}
+
+function injectHtmlCache(body) {
+  body = normalizeBody(body);
+  if (!body || hasCacheMark(body)) return body;
+  if (/<html/i.test(body)) {
+    if (body.indexOf("</head>") >= 0)
+      return body.replace("</head>", "<!--" + CACHE_MARK + "-->" + CACHE_SCRIPT + "</head>");
+    if (/<body[^>]*>/i.test(body))
+      return body.replace(/<body([^>]*)>/i, "<body$1><!--" + CACHE_MARK + "-->" + CACHE_SCRIPT);
+  }
+  return "<!--" + CACHE_MARK + "-->" + CACHE_SCRIPT + body;
+}
+
+function isJsEntry(url) {
+  return /flutter_bootstrap\.js|main\.dart\.js|flutter\.js|flutter_service_worker\.js|no_sleep\.js/i.test(
+    url
+  );
+}
+
+function isHtmlEntry(url) {
+  return (
+    /\/index\.html(\?.*)?$/i.test(url) ||
+    /^https?:\/\/[^\/]+\.wabdcev\.cc\/?(\?[^\/]*)?$/i.test(url)
+  );
 }
 
 function processBody(body) {
@@ -221,10 +251,10 @@ function processBody(body) {
 var reqUrl = ($request && $request.url) || "";
 var body = normalizeBody($response.body);
 
-if (/flutter_bootstrap\.js/i.test(reqUrl)) {
-  var cached = clearSplashCache(body);
-  if (cached) $done({ body: cached });
-  else $done();
+if (isJsEntry(reqUrl)) {
+  $done({ body: clearSplashCache(body) || body });
+} else if (isHtmlEntry(reqUrl)) {
+  $done({ body: injectHtmlCache(body) || body });
 } else {
   var newBody = processBody(body);
   if (newBody) $done({ body: newBody, headers: cleanHeaders($response.headers) });
