@@ -1,16 +1,4 @@
-/******************************
 
-# 脚本功能：115小师妹 PWA——去开屏—去弹窗—去宫格导流—去Banner—去悬浮
-# 目标站点：https://p5.qgdziagen.cc/?
-# 特别说明：捕获成功后，点击通知即可观看
-# 脚本作者：彭于晏💞
-# 更新时间：2026-6-11
-# 抓包校验：2026-06-11-161734 / api1+api2.xiaosm1.com / api.php
-# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
-
-*******************************/
-
-// hls-noad v1
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
