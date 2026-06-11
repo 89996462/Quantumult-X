@@ -4,7 +4,7 @@
 # 目标站点：https://p11.gmjiphps.cc/?
 # 抓包校验：2026-06-11-094428 / main.dart.js / bpi4.gldnbphxc.cc
 # 脚本作者：彭于晏💞
-# 更新时间：2026-6-11 v3（home/config 安全去悬浮/弹窗 + 列表导流帖过滤）
+# 更新时间：2026-6-11 v3.1（home/config 仅清数组广告位 + 列表导流帖过滤）
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 #
 # 【QX 配置】将下方 [rewrite_local] 至 [mitm] 整段复制到 QX 配置文件并引用
@@ -21,6 +21,10 @@
 ^https?:\/\/[^\/]+\/hc237\/uploads\/default\/other\/ - reject
 
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
+
+^https?:\/\/[^\/]*jqgjyipzs\.com\/ - reject
+
+^https?:\/\/[^\/]+\/lottery\/worldcup\/ - reject
 
 [mitm]
 
@@ -231,17 +235,10 @@ function stripHomeConfigAds(payload) {
   if (!payload || typeof payload !== "object") return;
   var data = payload.data;
   if (!data || typeof data !== "object") return;
-  ["floating_ads", "pop_ads", "lottery_ads", "apps", "ads"].forEach(function (k) {
-    if (data[k] !== undefined) data[k] = [];
+  // 只清空数组型广告位；ads 为对象(bPK 解析)，绝不能设为 []
+  ["floating_ads", "pop_ads", "lottery_ads", "apps"].forEach(function (k) {
+    if (Array.isArray(data[k])) data[k] = [];
   });
-  if (data.config && typeof data.config === "object") {
-    var cfg = data.config;
-    ["buoy", "person_ads", "post_detail_ads", "nav_prepend"].forEach(function (k) {
-      if (Array.isArray(cfg[k])) cfg[k] = [];
-    });
-    if (cfg.show_app !== undefined) cfg.show_app = 0;
-  }
-  if (data.ad_play && typeof data.ad_play === "object") data.ad_play = {};
 }
 
 function stripAds(node) {
