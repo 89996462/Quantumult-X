@@ -1,4 +1,16 @@
+/******************************
 
+# 脚本功能：115小师妹 PWA——去开屏—去弹窗—去宫格导流—去Banner—去悬浮
+# 目标站点：https://p5.qgdziagen.cc/?
+# 特别说明：捕获成功后，点击通知即可观看
+# 脚本作者：彭于晏💞
+# 更新时间：2026-6-11
+# 抓包校验：2026-06-11-161734 / api1+api2.xiaosm1.com / api.php
+# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+
+*******************************/
+
+// hls-noad v1
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -17,13 +29,13 @@ const AES_IV = "E793pFvUJvo6zj6H";
 const SIGN_SALT = "9XVdgKvwv479NKUG";
 
 const AD_KEY_RE =
-  /^(ads|ads_media|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|floating_ai|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|agent_ads|buoy|nav_prepend)$/i;
+  /^(ads|ads_media|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|floating_ai|banner|banners|top_banner|bot_banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|agent_ads|buoy|nav_prepend|list_ads|prepend_ads|insert_ads|video_ads|player_ads)$/i;
 
 const AD_SLOT_RE =
-  /^(启动页广告|活动弹窗|悬浮广告|视频banner|长视频播放页|长视频播放器广告|黄游列表广告|启动页|弹框|浮框|新版图标|黑料插入|长视频夹杂|-1_null|个人中心)$/i;
+  /(启动页|活动弹窗|悬浮|banner|播放|播放器|黄游|弹框|浮框|导流|插入|个人中心|null)/i;
 const AD_TITLE_RE =
-  /(同城约炮|约炮|裸聊|抖阴|AI科技|棋牌|ttav|TikTok|Pornhub|PornHub|潘多拉|萝莉岛|禁漫|真人验证|搭讪|汤头条|51动漫|91视频|50度灰|海角|色花堂)/i;
-const AD_ITEM_RE = /\/ads\/|\/upload_01\/ads\/|advertise_code|advertise_location_code|ad_slot_name/i;
+  /(同城约炮|同城聊骚|约炮|裸聊|抖阴|AI科技|棋牌|ttav|TikTok|Pornhub|PornHub|潘多拉|萝莉岛|禁漫|真人验证|搭讪|汤头条|51动漫|91视频|50度灰|海角|色花堂|真人在线|线下偶遇)/i;
+const AD_ITEM_RE = /\/ads\/|\/upload_01\/ads\/|\/upload\/ads\/|advertise_code|advertise_location_code|ad_slot_name|ad_type/i;
 
 function calcSign(wrapper) {
   var keys = Object.keys(wrapper).sort();
@@ -44,7 +56,11 @@ function calcSign(wrapper) {
 function decryptPayload(dataB64) {
   var key = CryptoJS.enc.Utf8.parse(AES_KEY);
   var iv = CryptoJS.enc.Utf8.parse(AES_IV);
-  var dec = CryptoJS.AES.decrypt(dataB64, key, {
+  var src =
+    typeof dataB64 === "string"
+      ? { ciphertext: CryptoJS.enc.Base64.parse(dataB64) }
+      : dataB64;
+  var dec = CryptoJS.AES.decrypt(src, key, {
     iv: iv,
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7,
@@ -55,23 +71,35 @@ function decryptPayload(dataB64) {
 function encryptPayload(plainText) {
   var key = CryptoJS.enc.Utf8.parse(AES_KEY);
   var iv = CryptoJS.enc.Utf8.parse(AES_IV);
-  return CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(plainText), key, {
+  var enc = CryptoJS.AES.encrypt(CryptoJS.enc.Utf8.parse(plainText), key, {
     iv: iv,
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7,
-  }).toString();
+  });
+  return enc.ciphertext.toString(CryptoJS.enc.Base64);
 }
 
 function isAdItem(item) {
-  if (!item || typeof item !== "object") return false;
-  if (item.advertise_code || item.advertise_location_code) return true;
-  if (item.ad_slot_name && AD_SLOT_RE.test(String(item.ad_slot_name))) return true;
+  if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+  if (item.advertise_code || item.advertise_location_code || item.ad_slot_name)
+    return true;
+  if (item.ad_type !== undefined && item.ad_type !== 0 && item.ad_type !== "0")
+    return true;
   var title = String(item.title || item.name || item.sub_title || "");
   if (title && AD_TITLE_RE.test(title)) return true;
-  if (item.ad_type !== undefined && item.ad_type !== 0) return true;
-  if (item.type === 1 && item.url && /^https?:\/\//i.test(String(item.url))) return true;
-  var u = String(item.img_url || item.url || item.link_url || item.image || item.url_str || "");
-  return AD_ITEM_RE.test(u) && (item.advertise_code || item.ad_slot_name);
+  if (
+    item.type === 1 &&
+    item.url &&
+    /^https?:\/\//i.test(String(item.url)) &&
+    (item.img_url || item.img_url_full || item.advertise_code || item.ad_slot_name)
+  )
+    return true;
+  var slot = String(item.ad_slot_name || "");
+  if (slot && AD_SLOT_RE.test(slot)) return true;
+  var u = String(
+    item.img_url || item.url || item.link_url || item.image || item.url_str || ""
+  );
+  return AD_ITEM_RE.test(u);
 }
 
 function stripAds(node) {
@@ -94,19 +122,25 @@ function stripAds(node) {
         node[k] = {};
       } else if (k === "floating_ai") {
         node[k] = "0";
-      } else if (k === "config" && v && typeof v === "object") {
-        if (Array.isArray(v.buoy)) v.buoy = [];
-        if (Array.isArray(v.person_ads)) v.person_ads = [];
-        if (Array.isArray(v.post_detail_ads)) v.post_detail_ads = [];
-        if (Array.isArray(v.nav_prepend)) v.nav_prepend = [];
-        if (v.show_app !== undefined) v.show_app = 0;
-        stripAds(v);
       } else {
         node[k] = Array.isArray(v) ? [] : v && typeof v === "object" ? {} : v;
       }
       continue;
     }
+    if (k === "config" && v && typeof v === "object") {
+      if (Array.isArray(v.buoy)) v.buoy = [];
+      if (Array.isArray(v.person_ads)) v.person_ads = [];
+      if (Array.isArray(v.post_detail_ads)) v.post_detail_ads = [];
+      if (Array.isArray(v.nav_prepend)) v.nav_prepend = [];
+      if (v.show_app !== undefined) v.show_app = 0;
+      stripAds(v);
+      continue;
+    }
     if (/^ads_/i.test(k) && (Array.isArray(v) || (v && typeof v === "object"))) {
+      node[k] = Array.isArray(v) ? [] : {};
+      continue;
+    }
+    if (/banner|floating|_ads$/i.test(k) && (Array.isArray(v) || (v && typeof v === "object"))) {
       node[k] = Array.isArray(v) ? [] : {};
       continue;
     }
@@ -114,7 +148,33 @@ function stripAds(node) {
   }
 }
 
+function normalizeBody(raw) {
+  if (raw == null) return "";
+  if (typeof raw === "string") return raw;
+  if (typeof raw === "object" && raw.length != null) {
+    try {
+      return CryptoJS.enc.Latin1.stringify(CryptoJS.lib.WordArray.create(raw));
+    } catch (e) {
+      return String.fromCharCode.apply(null, raw);
+    }
+  }
+  return String(raw);
+}
+
+function cleanHeaders(headers) {
+  var h = headers || {};
+  delete h["Content-Encoding"];
+  delete h["content-encoding"];
+  delete h["Content-Length"];
+  delete h["content-length"];
+  delete h["Transfer-Encoding"];
+  delete h["transfer-encoding"];
+  h["Content-Type"] = "application/json; charset=utf-8";
+  return h;
+}
+
 function processBody(body) {
+  body = normalizeBody(body);
   if (!body || body.indexOf('"data"') < 0) return null;
   var wrapper;
   try {
@@ -130,9 +190,6 @@ function processBody(body) {
     stripAds(payload);
     if (payload.data) stripAds(payload.data);
     wrapper.data = encryptPayload(JSON.stringify(payload));
-    if (wrapper.timestamp === undefined) {
-      wrapper.timestamp = Math.floor(Date.now() / 1000);
-    }
     wrapper.sign = calcSign(wrapper);
     if (wrapper.errcode !== undefined) wrapper.errcode = 0;
     return JSON.stringify(wrapper);
@@ -141,10 +198,10 @@ function processBody(body) {
   }
 }
 
-var body = $response.body;
+var body = normalizeBody($response.body);
 var newBody = processBody(body);
 if (newBody) {
-  $done({ body: newBody, headers: $response.headers });
+  $done({ body: newBody, headers: cleanHeaders($response.headers) });
 } else {
   $done();
 }
