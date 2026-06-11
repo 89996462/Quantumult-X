@@ -4,7 +4,7 @@
 # 目标站点：https://p11.gmjiphps.cc/?
 # 抓包校验：2026-06-11-094428 / main.dart.js / bpi4.gldnbphxc.cc
 # 脚本作者：彭于晏💞
-# 更新时间：2026-6-11
+# 更新时间：2026-6-11 v2（fixHeaders + home/config 轻量改写）
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 #
 # 【QX 配置】将下方 [rewrite_local] 至 [mitm] 整段复制到 QX 配置文件并引用
@@ -55,6 +55,32 @@ const AD_TITLE_RE =
   /(裸聊|抖阴|AI科技|AI脱衣|AI悬浮|男性约炮|巨乳约炮|同城约炮|发情增粗|开元棋牌|新葡京|永利皇宫|英皇娱乐|PG游戏|PG电子|PG娱乐|同圈速配|性界大战|约炮|棋牌|娱乐城|澳门|火鱼)/i;
 
 const AD_ITEM_RE = /\/ads\/|\/upload_01\/ads\/|\/hc237\/uploads\/default\/other\/|ads_code|ad_slot_name|url_config|ad_type|ad_name/i;
+
+function fixHeaders(headers, body) {
+  var hdrs = {};
+  var keys = Object.keys(headers || {});
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var kl = k.toLowerCase();
+    if (kl === "content-length" || kl === "content-encoding") continue;
+    hdrs[k] = headers[k];
+  }
+  if (body && body.length) {
+    hdrs["Content-Length"] = String(body.length);
+  }
+  hdrs["Content-Type"] = hdrs["Content-Type"] || hdrs["content-type"] || "application/json";
+  return hdrs;
+}
+
+function getApiPath() {
+  try {
+    var url = ($request && $request.url) || "";
+    var m = url.match(/\/api\.php\/api\/([^?]+)/i);
+    return m ? m[1].toLowerCase() : "";
+  } catch (e) {
+    return "";
+  }
+}
 
 function calcSign(wrapper) {
   var keys = Object.keys(wrapper).sort();
@@ -157,7 +183,7 @@ function unlockMvItem(item) {
 function unlockUserItem(user) {
   if (!user || typeof user !== "object") return;
   if (user.uid === undefined && user.vip_level === undefined && user.coins === undefined) return;
-  if (user.is_vip !== undefined) user.is_vip = 1;
+  if (user.uid !== undefined || user.vip_level !== undefined) user.is_vip = 1;
   if (user.vip_level !== undefined) user.vip_level = 1;
   if (user.temp_vip !== undefined) user.temp_vip = 1;
   if (user.coins !== undefined) user.coins = 99999;
@@ -260,10 +286,13 @@ function processBody(body) {
     var plain = decryptPayload(wrapper.data);
     if (!plain) return null;
     var payload = JSON.parse(plain);
-    stripAds(payload);
-    if (payload.data) stripAds(payload.data);
+    var path = getApiPath();
+    if (path !== "home/config") {
+      stripAds(payload);
+      if (payload.data) stripAds(payload.data);
+      unlockVideo(payload);
+    }
     unlockPayloadRoot(payload);
-    unlockVideo(payload);
     wrapper.data = encryptPayload(JSON.stringify(payload));
     if (wrapper.timestamp === undefined) {
       wrapper.timestamp = Math.floor(Date.now() / 1000);
@@ -279,7 +308,7 @@ function processBody(body) {
 var body = $response.body;
 var newBody = processBody(body);
 if (newBody && newBody.length) {
-  $done({ body: newBody, headers: $response.headers });
+  $done({ body: newBody, headers: fixHeaders($response.headers, newBody) });
 } else {
   $done();
 }
