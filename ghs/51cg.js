@@ -1,26 +1,66 @@
 /******************************
 
+
+
 # 脚本功能：GMJI——去广告—模拟VIP会员
+
 # 目标站点：https://p11.gmjiphps.cc/?
+
 # 脚本作者：彭于晏💞
+
 # 更新时间：2026-6-11
+
 # 抓包校验：2026-06-11-094428 / main.dart.js / bpi4.gldnbphxc.cc
+
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+
+#
+
+# 【重要】QX 日志若出现下面这条，说明 GMJI 未生效，站点会进不去：
+
+#   Matched rewrite ... script-response-body .../51cg.js
+
+# 处理：在主配置 [rewrite_local] 里注释/删除 51cg.js 那条通用规则，
+
+#       并把下面两条 GMJI 规则放在所有 api.php/api/ 规则的最前面。
+
+# 脚本文件 GMJI去广告.js 请与 GMJI.conf 放在同一目录（QX 配置目录）。
+
+
 
 *******************************
 
 
+
+
+
 [rewrite_local]
 
-^https?:\/\/[^\/]+\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
+
+
+# GMJI 专用（必须排在主配置里 51cg.js 等通用规则之前）
+
+^https?:\/\/bpi4\.gldnbphxc\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
+
+^https?:\/\/bpi5\.glrxdaso\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
+
+
 
 [filter-local]
 
+
+
 ^https?:\/\/[^\/]+\/hc237\/uploads\/default\/other\/ - reject
+
+
 
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
+
+
 [mitm]
+
+
 
 hostname = p11.gmjiphps.cc, *.gmjiphps.cc, bpi4.gldnbphxc.cc, bpi5.glrxdaso.cc, *.gldnbphxc.cc, *.glrxdaso.cc, pic.myedua.cn, *.myedua.cn
 
@@ -170,7 +210,6 @@ function unlockPayloadRoot(node) {
   if (!node || typeof node !== "object") return;
   if (node.isVip !== undefined) node.isVip = true;
   if (node.is_vip !== undefined) node.is_vip = 1;
-  if (node.status !== undefined && node.status === 0) node.status = 1;
 }
 
 function unlockVideo(node) {
