@@ -9,7 +9,9 @@ var CryptoJS;
   }
 })();
 
-// 115小师妹 Flutter PWA 去广告 — 抓包 2026-06-11-160116 / main.dart.js 校验
+// 115小师妹 Flutter PWA 去广告 — 抓包 2026-06-11-161734 校验
+// getconfig: ads_screen / ads_pop / floating_ads / floating_ai
+// list_construct: banner | mv/detail: ads / ads_media | porngame/construct: ads
 const AES_KEY = "9XVdgKvwv479NKUG";
 const AES_IV = "E793pFvUJvo6zj6H";
 const SIGN_SALT = "9XVdgKvwv479NKUG";
@@ -17,8 +19,10 @@ const SIGN_SALT = "9XVdgKvwv479NKUG";
 const AD_KEY_RE =
   /^(ads|ads_media|pop_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|floating_ai|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|agent_ads|buoy|nav_prepend)$/i;
 
-const AD_SLOT_RE = /^(启动页|弹框|浮框|新版图标|黑料插入|长视频夹杂|-1_null|个人中心)$/i;
-const AD_TITLE_RE = /(同城约炮|约炮|裸聊|抖阴|AI科技|棋牌)/i;
+const AD_SLOT_RE =
+  /^(启动页广告|活动弹窗|悬浮广告|视频banner|长视频播放页|长视频播放器广告|黄游列表广告|启动页|弹框|浮框|新版图标|黑料插入|长视频夹杂|-1_null|个人中心)$/i;
+const AD_TITLE_RE =
+  /(同城约炮|约炮|裸聊|抖阴|AI科技|棋牌|ttav|TikTok|Pornhub|PornHub|潘多拉|萝莉岛|禁漫|真人验证|搭讪|汤头条|51动漫|91视频|50度灰|海角|色花堂)/i;
 const AD_ITEM_RE = /\/ads\/|\/upload_01\/ads\/|advertise_code|advertise_location_code|ad_slot_name/i;
 
 function calcSign(wrapper) {
@@ -89,7 +93,7 @@ function stripAds(node) {
       } else if (k === "notice" && v && typeof v === "object") {
         node[k] = {};
       } else if (k === "floating_ai") {
-        node[k] = "";
+        node[k] = "0";
       } else if (k === "config" && v && typeof v === "object") {
         if (Array.isArray(v.buoy)) v.buoy = [];
         if (Array.isArray(v.person_ads)) v.person_ads = [];
