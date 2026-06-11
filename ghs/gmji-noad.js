@@ -4,7 +4,7 @@
 # 目标站点：https://p11.gmjiphps.cc/?
 # 抓包校验：2026-06-11-094428 / main.dart.js / bpi4.gldnbphxc.cc
 # 脚本作者：彭于晏💞
-# 更新时间：2026-6-11 v3.3（列表 API 轻量处理 + 无改动透传 + 图片 CDN mitm）
+# 更新时间：2026-6-11 v3.4（去开屏 ads + 首页 banner 轮播）
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 #
 # 【QX 配置】将下方 [rewrite_local] 至 [mitm] 整段复制到 QX 配置文件并引用
@@ -54,7 +54,7 @@ const AD_SLOT_RE =
   /(启动页|启屏页|弹窗|活动弹窗|悬浮|浮框|九宫格|应用推荐|公告|notice)/i;
 
 const AD_TITLE_RE =
-  /(裸聊|抖阴|AI科技|AI脱衣|AI悬浮|男性约炮|巨乳约炮|同城约炮|发情增粗|开元棋牌|新葡京|永利皇宫|英皇娱乐|PG游戏|PG电子|PG娱乐|同圈速配|性界大战|约炮|棋牌|娱乐城|澳门|火鱼)/i;
+  /(裸聊|抖阴|AI科技|AI脱衣|AI悬浮|男性约炮|巨乳约炮|同城约炮|发情增粗|开元棋牌|新葡京|永利皇宫|英皇娱乐|PG游戏|PG电子|PG娱乐|同圈速配|性界大战|约炮|棋牌|娱乐城|澳门|火鱼|春药|激情迷药|迷药|商城)/i;
 
 const AD_ITEM_RE = /\/ads\/|\/upload_01\/ads\/|ads_code|ad_slot_name|url_config|ad_type|ad_name/i;
 
@@ -259,6 +259,8 @@ function stripListContentPayload(payload) {
   var data = payload.data;
   if (!data || typeof data !== "object") return;
   stripPromoFromList(data.list);
+  // 仅清根级 banner（首页轮播），勿递归 list[].fields 里的封面 banner
+  if (Array.isArray(data.banner)) data.banner = [];
   if (Array.isArray(data.list)) {
     for (var i = 0; i < data.list.length; i++) {
       var item = data.list[i];
@@ -272,7 +274,8 @@ function stripHomeConfigAds(payload) {
   if (!payload || typeof payload !== "object") return;
   var data = payload.data;
   if (!data || typeof data !== "object") return;
-  // 只清空数组型广告位；ads 为对象(bPK 解析)，绝不能设为 []
+  // ads 为单个对象(bPK)；null 跳过开屏，[] 会崩溃
+  if (data.ads != null) data.ads = null;
   ["floating_ads", "pop_ads", "lottery_ads", "apps"].forEach(function (k) {
     if (Array.isArray(data[k])) data[k] = [];
   });
