@@ -4,7 +4,7 @@
 # 目标站点：https://p11.gmjiphps.cc/?
 # 抓包校验：2026-06-11-094428 / main.dart.js / bpi4.gldnbphxc.cc
 # 脚本作者：彭于晏💞
-# 更新时间：2026-6-11 v3.1（home/config 仅清数组广告位 + 列表导流帖过滤）
+# 更新时间：2026-6-11 v3.2（修复首页封面被误删 + 缩略图过滤误拦）
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 #
 # 【QX 配置】将下方 [rewrite_local] 至 [mitm] 整段复制到 QX 配置文件并引用
@@ -17,8 +17,6 @@
 ^https?:\/\/bpi5\.glrxdaso\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/gmji-noad.js
 
 [filter-local]
-
-^https?:\/\/[^\/]+\/hc237\/uploads\/default\/other\/ - reject
 
 ^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
 
@@ -50,15 +48,26 @@ const AES_IV = "1e9cbb042bf35efb";
 const SIGN_SALT = "a9271230cb71e02f469e25479dc08607";
 
 const AD_KEY_RE =
-  /^(ads|pop_ads|floating_ads|lottery_ads|apps|app_list|notice|banner|versionMsg|event_info|ad_list|advertise_list|popup_ads|screen_ads|ads_screen|ads_pop|floating|home_ads|list_ads|ad_play|ad_pops)$/i;
+  /^(ads|pop_ads|floating_ads|lottery_ads|apps|app_list|notice|versionMsg|event_info|ad_list|advertise_list|popup_ads|screen_ads|ads_screen|ads_pop|floating|home_ads|list_ads|ad_play|ad_pops|top_banner|qun_ad|redbag_ad)$/i;
 
 const AD_SLOT_RE =
-  /(启动页|启屏页|弹窗|活动弹窗|悬浮|浮框|九宫格|banner|应用推荐|公告|notice)/i;
+  /(启动页|启屏页|弹窗|活动弹窗|悬浮|浮框|九宫格|应用推荐|公告|notice)/i;
 
 const AD_TITLE_RE =
   /(裸聊|抖阴|AI科技|AI脱衣|AI悬浮|男性约炮|巨乳约炮|同城约炮|发情增粗|开元棋牌|新葡京|永利皇宫|英皇娱乐|PG游戏|PG电子|PG娱乐|同圈速配|性界大战|约炮|棋牌|娱乐城|澳门|火鱼)/i;
 
-const AD_ITEM_RE = /\/ads\/|\/upload_01\/ads\/|\/hc237\/uploads\/default\/other\/|ads_code|ad_slot_name|url_config|ad_type|ad_name/i;
+const AD_ITEM_RE = /\/ads\/|\/upload_01\/ads\/|ads_code|ad_slot_name|url_config|ad_type|ad_name/i;
+
+function isFeedFieldMeta(item) {
+  return (
+    item &&
+    typeof item === "object" &&
+    item.name !== undefined &&
+    item.str_value !== undefined &&
+    item.title === undefined &&
+    item.cid === undefined
+  );
+}
 
 function fixHeaders(headers, body) {
   var hdrs = {};
@@ -126,6 +135,7 @@ function encryptPayload(plainText) {
 
 function isPromoFeedItem(item) {
   if (!item || typeof item !== "object") return false;
+  if (isFeedFieldMeta(item)) return false;
   if (item.type === "post") return false;
   if (typeof item.status === "number" || item.status === "publish") return false;
   if (item.type == null && item.status === undefined && item.commentsNum === undefined) return true;
@@ -134,12 +144,13 @@ function isPromoFeedItem(item) {
 
 function isAdItem(item) {
   if (!item || typeof item !== "object") return false;
+  if (isFeedFieldMeta(item)) return false;
   if (isPromoFeedItem(item)) return true;
   if (item.ads_code || item.advertise_code || item.advertise_location_code) return true;
   if (item.ad_slot_name && AD_SLOT_RE.test(String(item.ad_slot_name))) return true;
   if (item.ad_name && AD_SLOT_RE.test(String(item.ad_name))) return true;
   if (item.index_ads_thumb || item.index_ads_url) return true;
-  var title = String(item.title || item.name || item.sub_title || item.description || "");
+  var title = String(item.title || item.sub_title || item.description || "");
   if (title && AD_TITLE_RE.test(title)) return true;
   if (item.ad_type !== undefined && item.ad_type !== 0) return true;
   if (item.type === 1 && (item.url || item.url_config || item.link_url)) {
