@@ -5,7 +5,7 @@
 # 特别说明：捕获成功后，点击通知即可观看
 # 脚本作者：彭于晏💞
 # 更新时间：2026-6-11
-# 抓包校验：2026-06-11-150223 / apiv3.kogwzxje.top/api/
+# 抓包校验：2026-06-11-151505 / apiv1.kogwzxje.top/api/
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 *******************************/
@@ -172,12 +172,30 @@ function patchMemberFields(member) {
   if (member.is_vip !== undefined) member.is_vip = 1;
 }
 
-function unlockPrivilege(node) {
-  if (!node || typeof node !== "object") return;
-  if (node.value !== undefined) node.value = 9999;
-  if (node.status !== undefined) node.status = 1;
+function isPrivilegeMap(node) {
+  if (!node || typeof node !== "object" || Array.isArray(node)) return false;
   var keys = Object.keys(node);
-  for (var i = 0; i < keys.length; i++) unlockPrivilege(node[keys[i]]);
+  if (!keys.length) return false;
+  for (var i = 0; i < keys.length; i++) {
+    if (!/^\d+$/.test(keys[i])) return false;
+  }
+  return true;
+}
+
+function unlockPrivilege(node) {
+  if (!isPrivilegeMap(node)) return;
+  var keys = Object.keys(node);
+  for (var i = 0; i < keys.length; i++) {
+    var group = node[keys[i]];
+    if (!group || typeof group !== "object") continue;
+    var subkeys = Object.keys(group);
+    for (var j = 0; j < subkeys.length; j++) {
+      var item = group[subkeys[j]];
+      if (!item || typeof item !== "object") continue;
+      if (item.value !== undefined) item.value = 9999;
+      if (item.status !== undefined) item.status = 1;
+    }
+  }
 }
 
 function unlockMember(node) {
@@ -194,10 +212,10 @@ function unlockMember(node) {
     if (u.free_view_cnt !== undefined) u.free_view_cnt = 99999;
     if (u.shortMvFreeTime !== undefined) u.shortMvFreeTime = 99999;
     if (u.longMvFreeTime !== undefined) u.longMvFreeTime = 99999;
+    if (isPrivilegeMap(u)) unlockPrivilege(u);
+    if (u.member) patchMemberFields(u.member);
   }
   if (node.member && typeof node.member === "object") patchMemberFields(node.member);
-  if (node.data && typeof node.data === "object" && node.data.member) patchMemberFields(node.data.member);
-  unlockPrivilege(node.data);
 }
 
 function unlockComic(node) {
@@ -265,12 +283,6 @@ function filterAdArrays(node) {
   if (Array.isArray(node.value)) {
     for (var m = node.value.length - 1; m >= 0; m--) {
       if (isAdItem(node.value[m])) node.value.splice(m, 1);
-    }
-  }
-  if (Array.isArray(node.elements)) {
-    for (var n = node.elements.length - 1; n >= 0; n--) {
-      var el = node.elements[n];
-      if (el && /banner/i.test(String(el.title || el.name || ""))) node.elements.splice(n, 1);
     }
   }
   var keys = Object.keys(node);
