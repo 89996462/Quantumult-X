@@ -1,3 +1,16 @@
+/******************************
+
+# 脚本功能：皮皮PWA——去广告—模拟会员—解锁漫画/视频
+# 目标站点：https://pilipwa4.hmufnno.cc
+# 特别说明：捕获成功后，点击通知即可观看
+# 脚本作者：彭于晏💞
+# 更新时间：2026-6-11
+# 抓包校验：2026-06-11-150223 / apiv3.kogwzxje.top/api/
+# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+
+*******************************/
+
+// hls-noad v1
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
@@ -8,7 +21,7 @@ var CryptoJS;
   }
 })();
 
-
+// 皮皮PWA 去广告+解锁 v2 — 抓包 2026-06-11-150223 / apiv3 /api/
 const AES_KEY = "tpPmmU6PGq7HXeRI";
 const AES_IV = "kScjUo8FzUTIxeCy";
 const SIGN_SALT = "AKmg68AZLnOKxvU0GGFbD65KBKzwm5Gr";
@@ -17,9 +30,12 @@ const VIA_M = "ct";
 const AD_KEY_RE =
   /^(ads|pop_ads|popAds|pop_app_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|buoy|nav_prepend|showApp)$/i;
 
-const AD_SLOT_RE = /^(启屏页|启动页|弹窗广告|弹框|浮框|悬浮广告|动漫广告Banner|视频广告Banner|新版图标|长视频夹杂|-1_null|个人中心)$/i;
-const AD_TITLE_RE = /(裸聊|抖阴|AI科技|约炮|世界杯投注|上门约炮|高端约炮)/i;
-const AD_ITEM_RE = /\/ads\/|advertise_code|advertise_location_code|ad_slot_name/i;
+const AD_SLOT_RE =
+  /^(启屏页|启动页|弹窗广告|弹框|浮框|悬浮广告|弹出底部广告|社区banner广告|动漫广告Banner|漫画广告Banner|视频广告Banner|购买金币列表广告|播放详情页广告|新版图标|长视频夹杂|-1_null|个人中心)$/i;
+const AD_TITLE_RE =
+  /(裸聊|抖阴|AI科技|约炮|世界杯|投注|上门约炮|高端约炮|星狐直播|开元棋牌|开元电子|新葡京|暗网视频|8688|赔率异常)/i;
+const AD_URL_RE = /\/upload_01\/ads\/|\/new\/ads\/|\/ads\/|\/hc237\/uploads\//i;
+const AD_ITEM_RE = /\/ads\/|\/hc237\/uploads\/|advertise_code|advertise_location_code|ad_slot_name/i;
 
 function calcSign(wrapper) {
   var keys = Object.keys(wrapper).sort();
@@ -65,18 +81,19 @@ function isAdItem(item) {
   var title = String(item.title || item.name || item.sub_title || "");
   if (title && AD_TITLE_RE.test(title)) return true;
   if (item.ad_type !== undefined && item.ad_type !== 0 && item.ad_type !== null) return true;
+  if (item.position !== undefined && item.url && /^https?:\/\//i.test(String(item.url))) return true;
   if (item.redirect_type === 2 || item.redirect_type === "2") {
-    var link = String(item.link_url || "");
+    var link = String(item.link_url || item.url || "");
     if (/^https?:\/\//i.test(link)) return true;
-    var ru = String(item.resource_url || item.link_url || item.img_url || "");
-    if (/\/upload_01\/ads\/|\/new\/ads\/|\/ads\//i.test(ru)) return true;
+    var ru = String(item.resource_url || item.link_url || item.img_url || item.url || "");
+    if (AD_URL_RE.test(ru)) return true;
   }
   var u = String(
     item.img_url || item.url || item.link_url || item.image || item.url_str || item.resource_url || ""
   );
-  if (/\/upload_01\/ads\/|\/new\/ads\//i.test(u)) {
-    var link = String(item.link_url || "");
-    if (!/^tag:/i.test(link)) return true;
+  if (AD_URL_RE.test(u)) {
+    var extLink = String(item.link_url || item.url || "");
+    if (!/^tag:/i.test(extLink)) return true;
   }
   return AD_ITEM_RE.test(u) && (item.advertise_code || item.ad_slot_name || item.redirect_type === 2);
 }
@@ -146,17 +163,18 @@ function vipExpireAt() {
 function patchMemberFields(member) {
   if (!member || typeof member !== "object") return;
   member.expired_at = vipExpireAt();
-  if (member.vip_level !== undefined) member.vip_level = 1;
+  if (member.vip_level !== undefined) member.vip_level = 99;
   if (member.coins !== undefined) member.coins = 99999;
   if (member.temp_vip !== undefined) member.temp_vip = 1;
   if (member.is_login !== undefined) member.is_login = 1;
   if (member.role_id !== undefined) member.role_id = 2;
   if (member.old_vip !== undefined) member.old_vip = 1;
+  if (member.is_vip !== undefined) member.is_vip = 1;
 }
 
 function unlockPrivilege(node) {
   if (!node || typeof node !== "object") return;
-  if (node.value !== undefined) node.value = 1;
+  if (node.value !== undefined) node.value = 9999;
   if (node.status !== undefined) node.status = 1;
   var keys = Object.keys(node);
   for (var i = 0; i < keys.length; i++) unlockPrivilege(node[keys[i]]);
@@ -237,6 +255,8 @@ function filterAdArrays(node) {
     return;
   }
   if (!node || typeof node !== "object") return;
+  var selfTitle = String(node.title || node.name || "");
+  if (/banner/i.test(selfTitle) && Array.isArray(node.value)) node.value = [];
   if (Array.isArray(node.data)) {
     for (var j = node.data.length - 1; j >= 0; j--) {
       if (isAdItem(node.data[j])) node.data.splice(j, 1);
@@ -245,6 +265,12 @@ function filterAdArrays(node) {
   if (Array.isArray(node.value)) {
     for (var m = node.value.length - 1; m >= 0; m--) {
       if (isAdItem(node.value[m])) node.value.splice(m, 1);
+    }
+  }
+  if (Array.isArray(node.elements)) {
+    for (var n = node.elements.length - 1; n >= 0; n--) {
+      var el = node.elements[n];
+      if (el && /banner/i.test(String(el.title || el.name || ""))) node.elements.splice(n, 1);
     }
   }
   var keys = Object.keys(node);
@@ -300,12 +326,17 @@ function processBody(body) {
     if (!plain) return null;
     var payload = JSON.parse(plain);
     patchPayload(payload);
+    if (payload.isVip !== undefined) payload.isVip = true;
+    if (payload.is_vip !== undefined) payload.is_vip = 1;
     wrapper.data = encryptPayload(JSON.stringify(payload));
+    if (wrapper.isVip !== undefined) wrapper.isVip = true;
+    if (wrapper.is_vip !== undefined) wrapper.is_vip = 1;
     if (wrapper.timestamp === undefined) {
       wrapper.timestamp = Math.floor(Date.now() / 1000);
     }
     wrapper.sign = calcSign(wrapper);
     if (wrapper.errcode !== undefined) wrapper.errcode = 0;
+    if (wrapper.status !== undefined) wrapper.status = 1;
     return JSON.stringify(wrapper);
   } catch (e) {
     return null;
