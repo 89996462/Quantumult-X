@@ -4,7 +4,7 @@
 # 目标站点：https://p11.gmjiphps.cc/?
 # 抓包校验：2026-06-11-094428 / main.dart.js / bpi4.gldnbphxc.cc
 # 脚本作者：彭于晏💞
-# 更新时间：2026-6-11 v3.2（修复首页封面被误删 + 缩略图过滤误拦）
+# 更新时间：2026-6-11 v3.3（列表 API 轻量处理 + 无改动透传 + 图片 CDN mitm）
 # 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 #
 # 【QX 配置】将下方 [rewrite_local] 至 [mitm] 整段复制到 QX 配置文件并引用
@@ -26,7 +26,7 @@
 
 [mitm]
 
-hostname = p11.gmjiphps.cc, *.gmjiphps.cc, bpi4.gldnbphxc.cc, bpi5.glrxdaso.cc, *.gldnbphxc.cc, *.glrxdaso.cc, pic.myedua.cn, *.myedua.cn, raw.githubusercontent.com
+hostname = p11.gmjiphps.cc, *.gmjiphps.cc, bpi4.gldnbphxc.cc, bpi5.glrxdaso.cc, *.gldnbphxc.cc, *.glrxdaso.cc, pic.myedua.cn, *.myedua.cn, pic.fkqwky.cn, pic.sfbjdu.cn, hlsapp.fkqwky.cn, hlsapp.sfbjdu.cn, raw.githubusercontent.com
 
 *******************************/
 
@@ -242,6 +242,32 @@ function unlockVideo(node) {
   }
 }
 
+var LIST_CONTENT_PATHS = {
+  "contents/list_contents": 1,
+  "community/list_construct": 1,
+};
+
+function stripPromoFromList(list) {
+  if (!Array.isArray(list)) return;
+  for (var i = list.length - 1; i >= 0; i--) {
+    if (isAdItem(list[i])) list.splice(i, 1);
+  }
+}
+
+function stripListContentPayload(payload) {
+  if (!payload || typeof payload !== "object") return;
+  var data = payload.data;
+  if (!data || typeof data !== "object") return;
+  stripPromoFromList(data.list);
+  if (Array.isArray(data.list)) {
+    for (var i = 0; i < data.list.length; i++) {
+      var item = data.list[i];
+      if (item && item.author) unlockUserItem(item.author);
+    }
+  }
+  unlockPayloadRoot(payload);
+}
+
 function stripHomeConfigAds(payload) {
   if (!payload || typeof payload !== "object") return;
   var data = payload.data;
@@ -320,15 +346,21 @@ function processBody(body) {
     var plain = decryptPayload(wrapper.data);
     if (!plain) return null;
     var payload = JSON.parse(plain);
+    var before = JSON.stringify(payload);
     var path = getApiPath();
     if (path === "home/config") {
       stripHomeConfigAds(payload);
+      unlockPayloadRoot(payload);
+    } else if (LIST_CONTENT_PATHS[path]) {
+      // 列表/社区流：不递归 stripAds，避免误伤 fields/banner/medias
+      stripListContentPayload(payload);
     } else {
       stripAds(payload);
       if (payload.data) stripAds(payload.data);
       unlockVideo(payload);
+      unlockPayloadRoot(payload);
     }
-    unlockPayloadRoot(payload);
+    if (JSON.stringify(payload) === before) return null;
     wrapper.data = encryptPayload(JSON.stringify(payload));
     if (wrapper.timestamp === undefined) {
       wrapper.timestamp = Math.floor(Date.now() / 1000);
