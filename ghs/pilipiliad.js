@@ -1,16 +1,4 @@
-/******************************
 
-# 脚本功能：皮皮PWA——去广告—模拟会员—解锁漫画/视频
-# 目标站点：https://pilipwa4.hmufnno.cc
-# 特别说明：捕获成功后，点击通知即可观看
-# 脚本作者：彭于晏💞
-# 更新时间：2026-6-11
-# 抓包校验：2026-06-11-153402 / apiv1.kogwzxje.top/api/
-# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
-
-*******************************/
-
-// hls-noad v1
 var CryptoJS;
 (function () {
   var g = typeof globalThis !== "undefined" ? globalThis : this;
