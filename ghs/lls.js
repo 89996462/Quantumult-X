@@ -17,18 +17,14 @@ const body = $response.body;
 
 // ====== 1. 处理 get-h5-entry-preconfigured ======
 // 返回清理后的预配置（移除客服、测速节点、iOS下载、视频CDN）
+// 客户端使用 XOR 0x88 解码响应体，需要返回 XOR 编码后的二进制串
 if (url.indexOf('get-h5-entry-preconfigured') !== -1) {
-    // 干净配置内容 (XOR 0x88 + gzip 压缩后的 base64)
-    // 原始干净配置: [*APILIST{*HTTPSGLJYWEBBRHUIZCOM*}*ENTRIES{}*HELPDESKS{}*DEVICE[*H[*FORCEVERSION*]*]*IPADOWNLOADURLS{}*FAURLS{}*]
-    const cleanConfigB64 = "H4sIAB8SMWoC/y3KQQqEMAxG4ftfIydpZmJDbX9Fi1CSqocQ9zOCvM23eJVSY2HvF4Xem8/yWU6Mo4Wd16wD3YTYjeHXTQHSCvz7uODgjEqh0qSWccCcNdL2j1sqekbRVHaT557Si+0HQDK47XEAAAA=";
-    $done({
-        body: cleanConfigB64,
-        headers: {
-            'Content-Type': 'application/json',
-            'Content-Encoding': 'gzip',
-            'Cache-Control': 'no-store'
-        }
-    });
+    const cleanConfig = "[*APILIST{*HTTPSGLJYWEBBRHUIZCOM*}*ENTRIES{}*HELPDESKS{}*DEVICE[*H[*FORCEVERSION*]*]*IPADOWNLOADURLS{}*FAURLS{}*]";
+    var xoredBody = "";
+    for (var i = 0; i < cleanConfig.length; i++) {
+        xoredBody += String.fromCharCode(cleanConfig.charCodeAt(i) ^ 0x88);
+    }
+    $done({ body: xoredBody });
     return;
 }
 
