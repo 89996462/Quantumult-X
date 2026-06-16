@@ -289,5 +289,71 @@ if (url.indexOf('rjt4pj11ent.dzfdzf.com') !== -1 &&
     return;
 }
 
+// ====== 12. 注入 sw.js：清除 Service Worker 缓存 + 注入页面清理代码 ======
+if (url.indexOf('/sw.js') !== -1) {
+    var swInject = [
+        ';',
+        '//===LLS_CLEAN_START===;',
+        // 激活时清除所有缓存，强制页面重新走 MITM
+        'self.addEventListener("activate",function(e){',
+            'e.waitUntil(',
+                'caches.keys().then(function(keys){',
+                    'return Promise.all(keys.map(function(k){return caches.delete(k)}))',
+                '}).then(function(){return self.clients.claim()})',
+            ')',
+        '});',
+        // 拦截主 HTML 请求，注入 CSS/JS 清理代码
+        'self.addEventListener("fetch",function(e){',
+            'var u=e.request.url;',
+            'if(u.indexOf("rjt4pj11ent.dzfdzf.com")>-1&&',
+               'u.indexOf(".js")==-1&&',
+               'u.indexOf(".css")==-1&&',
+               'u.indexOf(".png")==-1&&',
+               'u.indexOf(".jpg")==-1&&',
+               'u.indexOf("sw.js")==-1&&',
+               'u.indexOf("get-h5-entry-preconfigured")==-1){',
+                'e.respondWith(fetch(e.request).then(function(r){',
+                    'return r.text().then(function(b){',
+                        'var css="<style>",',
+                            '".van-tabbar-item:nth-child(n+3),",',
+                            '".nut-tabbar-item:nth-child(n+3),",',
+                            '"[class*=tab] [class*=game],",',
+                            '"[class*=tab] [class*=discover],",',
+                            '"[class*=tab] [class*=find],",',
+                            '"[class*=splash],[class*=Splash],",',
+                            '"[class*=banner-ad],[class*=top-ad]",',
+                            '{display:none!important}</style>",',
+                            '"<scr"+"ipt>(function c(){",',
+                            'setTimeout(function(){',
+                                'var els=document.querySelectorAll("[class*=tab]");',
+                                'for(var i=0;i<els.length;i++){',
+                                    'var t=els[i].textContent||"";',
+                                    'if(/游戏|发现|Game|Discover|game|discover/.test(t))',
+                                        'els[i].style.display="none"',
+                                '}',
+                                'var sp=document.querySelectorAll("[class*=splash],[class*=Splash]");',
+                                'for(var j=0;j<sp.length;j++)sp[j].style.display="none"',
+                            '},300);',
+                            'setTimeout(c,1000);setTimeout(c,3000);setTimeout(c,5000)',
+                        '})()</scr"+"ipt>";',
+                        'var nb=b.replace(/<\\/head>/,css+"</head>");',
+                        'return new Response(nb,{status:r.status,statusText:r.statusText,headers:r.headers})',
+                    '})',
+                '}))',
+            '}',
+        '});',
+        '//===LLS_CLEAN_END==='
+    ].join('');
+    
+    var newBody;
+    if (body && body.length > 100) {
+        newBody = body + swInject;
+    } else {
+        newBody = swInject;
+    }
+    $done({ body: newBody });
+    return;
+}
+
 // 默认放行
 $done({});
