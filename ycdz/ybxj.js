@@ -11,7 +11,7 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^http:\/\/www.wonzeecam.top:80/zeeapp/account/profile/summary url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ybxj.js
+^http:\/\/www.wonzeecam.top/zeeapp/account/profile/summary url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/ybxj.js
 
 [mitm] 
 
