@@ -82,6 +82,10 @@ const injectScript = `
         if (lower.indexOf('/recreation/click') !== -1) return true;
         // ===== 红包雨 API =====
         if (lower.indexOf('/redpacket/') !== -1) return true;
+        // ===== 娱乐活动点击追踪 API =====
+        if (lower.indexOf('/recreation/click') !== -1) return true;
+        // ===== AI模块点击追踪 API =====
+        if (lower.indexOf('/ai/mod/click') !== -1) return true;
         return false;
     }
 
@@ -186,6 +190,62 @@ const injectScript = `
                     result.isNewUser = false;
                 }
 
+                // ===== AI模块数据处理 (解密后的数据) =====
+                if (!Array.isArray(result)) {
+                    var resultStr = JSON.stringify(result);
+                    // 检测AI模块相关数据
+                    if (resultStr.indexOf('aiMod') !== -1 || resultStr.indexOf('ai_club') !== -1 || 
+                        resultStr.indexOf('aiClub') !== -1 || resultStr.indexOf('ai_mod') !== -1) {
+                        // 禁用AI相关字段
+                        if ('ai' in result && typeof result.ai === 'object') {
+                            result.ai.enabled = false;
+                            result.ai.show = false;
+                            result.ai.open = false;
+                            if ('status' in result.ai) result.ai.status = 0;
+                        }
+                        // 清空AI模块列表
+                        if ('list' in result && Array.isArray(result.list)) {
+                            for (var aiIdx = result.list.length - 1; aiIdx >= 0; aiIdx--) {
+                                var item = result.list[aiIdx];
+                                if (item && typeof item === 'object') {
+                                    var itemStr = JSON.stringify(item);
+                                    if (itemStr.indexOf('ai') !== -1 || itemStr.indexOf('AI') !== -1 ||
+                                        itemStr.indexOf('科技') !== -1 || itemStr.indexOf('tech') !== -1) {
+                                        result.list.splice(aiIdx, 1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // 检测娱乐活动相关数据
+                    if (resultStr.indexOf('recreation') !== -1 || resultStr.indexOf('worldcup') !== -1 ||
+                        resultStr.indexOf('carnival') !== -1 || resultStr.indexOf('festival') !== -1) {
+                        // 禁用娱乐活动字段
+                        if ('recreation' in result && typeof result.recreation === 'object') {
+                            result.recreation.enabled = false;
+                            result.recreation.show = false;
+                            if ('status' in result.recreation) result.recreation.status = 0;
+                        }
+                        // 清空娱乐活动列表
+                        if ('list' in result && Array.isArray(result.list)) {
+                            for (var recIdx = result.list.length - 1; recIdx >= 0; recIdx--) {
+                                var recItem = result.list[recIdx];
+                                if (recItem && typeof recItem === 'object') {
+                                    var recItemStr = JSON.stringify(recItem);
+                                    if (recItemStr.indexOf('recreation') !== -1 || 
+                                        recItemStr.indexOf('worldcup') !== -1 ||
+                                        recItemStr.indexOf('carnival') !== -1 || 
+                                        recItemStr.indexOf('festival') !== -1 ||
+                                        recItemStr.indexOf('世界杯') !== -1 ||
+                                        recItemStr.indexOf('狂欢') !== -1) {
+                                        result.list.splice(recIdx, 1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // ===== 清空广告列表 (App源码确认: appConfig.adsInfoList是广告数据源) =====
                 clearAdsInfoList(result);
 
@@ -288,7 +348,7 @@ const injectScript = `
         }
 
         // 2. name/title字段包含广告关键词
-        var nameFields = ['name', 'title', 'label', 'desc', 'description'];
+        var nameFields = ['name', 'title', 'label', 'desc', 'description', 'moduleName', 'displayName'];
         for (var i = 0; i < nameFields.length; i++) {
             if (nameFields[i] in module && typeof module[nameFields[i]] === 'string') {
                 var text = module[nameFields[i]].toLowerCase();
@@ -300,7 +360,21 @@ const injectScript = `
                     text.indexOf('recreation') !== -1 || text.indexOf('ai') !== -1 ||
                     text.indexOf('科技') !== -1 || text.indexOf('gpt') !== -1 ||
                     text.indexOf('redpacket') !== -1 || text.indexOf('红包') !== -1 ||
-                    text.indexOf('rain') !== -1 || text.indexOf('雨') !== -1) {
+                    text.indexOf('rain') !== -1 || text.indexOf('雨') !== -1 ||
+                    text.indexOf('tech') !== -1 || text.indexOf('robot') !== -1) {
+                    return true;
+                }
+            }
+        }
+
+        // 3. 检测模块类型字段
+        var typeFields = ['type', 'moduleType', 'modType', 'category', 'cat'];
+        for (var t = 0; t < typeFields.length; t++) {
+            if (typeFields[t] in module && typeof module[typeFields[t]] === 'string') {
+                var typeVal = module[typeFields[t]].toLowerCase();
+                if (typeVal.indexOf('ai') !== -1 || typeVal.indexOf('tech') !== -1 ||
+                    typeVal.indexOf('worldcup') !== -1 || typeVal.indexOf('recreation') !== -1 ||
+                    typeVal.indexOf('carnival') !== -1 || typeVal.indexOf('festival') !== -1) {
                     return true;
                 }
             }
@@ -876,6 +950,37 @@ const injectScript = `
                 text.indexOf('AI') !== -1 || text.indexOf('科技') !== -1) {
                 el.remove();
             }
+        });
+
+        // ========== 强力文本内容检测 ==========
+        // 直接删除包含广告关键词的元素 (不管类名，只要文本包含关键词)
+        document.querySelectorAll('*').forEach(function(el) {
+            try {
+                var text = el.textContent || el.innerText || '';
+                if (text.length > 0 && text.length < 50) {
+                    // 检测广告关键词
+                    if (text.indexOf('世界杯') !== -1 || 
+                        text.indexOf('狂欢') !== -1 ||
+                        text.indexOf('AI科技') !== -1 ||
+                        text.indexOf('AI') !== -1 ||
+                        text.indexOf('科技') !== -1 ||
+                        text.indexOf('红包') !== -1 ||
+                        text.indexOf('雨') !== -1) {
+                        // 获取元素的计算样式
+                        var style = getComputedStyle(el);
+                        // 如果是fixed定位的悬浮元素，直接删除
+                        if (style.position === 'fixed' || style.position === 'absolute') {
+                            el.remove();
+                            return;
+                        }
+                        // 如果是按钮、图标或小尺寸元素，直接删除
+                        if (el.tagName === 'BUTTON' || el.tagName === 'A' || 
+                            el.tagName === 'IMG' || (el.offsetWidth < 200 && el.offsetHeight < 200)) {
+                            el.remove();
+                        }
+                    }
+                }
+            } catch(e) {}
         });
 
         // ========== 右下角悬浮广告检测 ==========
