@@ -90,10 +90,15 @@ const injectScript = `
             return result;
         }
 
-        if (result && typeof result === 'object' && !Array.isArray(result)) {
+        if (result && typeof result === 'object') {
             try {
-                // ===== 用户信息 mine/info - VIP模拟 =====
-                if ('isVip' in result || 'vipLevel' in result || 'vipExpireDate' in result || 'snapVip' in result) {
+                // 调试: 打印解密后的数据结构 (帮助识别广告字段)
+                if (!Array.isArray(result)) {
+                    var keys = Object.keys(result).slice(0, 15).join(',');
+                    if (window.console) console.log('[Butterfly] JSON.parse keys:', keys);
+                }
+                // ===== VIP模拟 (特定字段检测) =====
+                if (!Array.isArray(result) && ('isVip' in result || 'vipLevel' in result || 'vipExpireDate' in result || 'snapVip' in result)) {
                     result.isVip = true;
                     result.vipLevel = VIP_LEVEL;
                     result.vipExpireDate = VIP_EXPIRE;
@@ -113,8 +118,8 @@ const injectScript = `
                     if ('expireDate' in result) result.expireDate = VIP_EXPIRE;
                 }
 
-                // ===== 钱包信息 mine/wallet - 金币/积分模拟 =====
-                if (('amount' in result && 'integral' in result) || ('fruitCoin' in result) || ('coin' in result && 'integral' in result)) {
+                // ===== 钱包模拟 =====
+                if (!Array.isArray(result) && (('amount' in result && 'integral' in result) || ('fruitCoin' in result) || ('coin' in result && 'integral' in result))) {
                     if (typeof result.amount === 'number') result.amount = COIN_AMOUNT;
                     if (typeof result.integral === 'number') result.integral = INTEGRAL_AMOUNT;
                     if (typeof result.coin === 'number') result.coin = COIN_AMOUNT;
@@ -128,8 +133,8 @@ const injectScript = `
                     if ('diamond' in result) result.diamond = 999999;
                 }
 
-                // ===== VIP试用倒计时 vip/tiroCountdown - 设为已过期 =====
-                if ('tiroCountdown' in result || 'tiroExpire' in result || 'countdown' in result || 'tiroStatus' in result) {
+                // ===== VIP试用倒计时 =====
+                if (!Array.isArray(result) && ('tiroCountdown' in result || 'tiroExpire' in result || 'tiroStatus' in result)) {
                     result.tiroCountdown = 0;
                     result.tiroExpire = "1970-01-01T00:00:00Z";
                     if ('tiroStatus' in result) result.tiroStatus = 0;
@@ -137,106 +142,196 @@ const injectScript = `
                     if ('canUse' in result) result.canUse = false;
                 }
 
-                // ===== 红包/活动弹窗 - 关闭 =====
-                if ('canClick' in result && ('prizeAmount' in result || 'redPacket' in result)) {
+                // ===== 红包弹窗关闭 =====
+                if (!Array.isArray(result) && 'canClick' in result && ('prizeAmount' in result || 'redPacket' in result)) {
                     result.canClick = false;
                     result.enabled = false;
                     if ('show' in result) result.show = false;
                 }
 
-                // ===== VIP产品列表 - 标记为已购买 =====
-                if ('list' in result && 'isNewUser' in result) {
+                // ===== VIP产品列表 =====
+                if (!Array.isArray(result) && 'list' in result && 'isNewUser' in result) {
                     result.isNewUser = false;
                 }
 
-                // ===== 模块列表 modules/list - 过滤广告模块 =====
-                if (result.homePage && Array.isArray(result.homePage)) {
-                    result.homePage = filterAdArray(result.homePage);
-                }
-                if (result.modules && Array.isArray(result.modules)) {
-                    result.modules = filterAdArray(result.modules);
-                }
-                if (result.list && Array.isArray(result.list)) {
-                    // 针对模块列表中的广告
-                    var filtered = filterAdArray(result.list);
-                    if (filtered.length > 0) result.list = filtered;
-                }
-
-                // ===== 娱乐/内容列表 recreation/list_v2 - 过滤广告条目 =====
-                if (result.data && Array.isArray(result.data)) {
-                    result.data = filterAdArray(result.data);
-                }
-                if (result.records && Array.isArray(result.records)) {
-                    result.records = filterAdArray(result.records);
-                }
-                if (result.items && Array.isArray(result.items)) {
-                    result.items = filterAdArray(result.items);
-                }
-
-                // ===== 签到任务 task/sign - 保持正常 =====
-                // ===== 证书二维码 mine/certificate/qr - 不修改 =====
-                // ===== 货币汇率 mine/currencys - 不修改 =====
+                // ===== 递归处理: 禁用广告配置 + 过滤广告数组 =====
+                recursiveProcess(result, 0);
 
             } catch(e) { if (window.console) console.log('[Butterfly] parse error:', e); }
-        }
-
-        // 处理数组类型 (解密后的数组数据)
-        if (result && Array.isArray(result)) {
-            var filtered = filterAdArray(result);
-            if (filtered.length > 0 || result.length === 0) {
-                return filtered;
-            }
         }
 
         return result;
     };
 
-    // ========== 广告过滤函数 ==========
-    function filterAdArray(arr) {
-        if (!Array.isArray(arr)) return arr;
-        var filtered = [];
-        for (var i = 0; i < arr.length; i++) {
-            var item = arr[i];
-            if (item && typeof item === 'object') {
-                if (!isAdItem(item)) {
-                    filtered.push(item);
+    // ========== 递归处理函数: 深度遍历所有嵌套对象/数组 ==========
+    function recursiveProcess(obj, depth) {
+        if (depth > 10 || !obj || typeof obj !== 'object') return;
+
+        if (Array.isArray(obj)) {
+            // 过滤数组中的广告项
+            for (var i = obj.length - 1; i >= 0; i--) {
+                if (obj[i] && typeof obj[i] === 'object') {
+                    if (isAdItem(obj[i])) {
+                        obj.splice(i, 1); // 删除广告项
+                    } else {
+                        recursiveProcess(obj[i], depth + 1);
+                    }
                 }
-            } else {
-                filtered.push(item);
+            }
+        } else {
+            // 对象: 先禁用广告配置,再递归处理子属性
+            disableAdConfig(obj);
+
+            for (var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    var val = obj[key];
+                    if (val && typeof val === 'object') {
+                        if (Array.isArray(val)) {
+                            // 过滤数组中的广告
+                            for (var j = val.length - 1; j >= 0; j--) {
+                                if (val[j] && typeof val[j] === 'object' && isAdItem(val[j])) {
+                                    val.splice(j, 1);
+                                }
+                            }
+                            // 递归处理剩余项
+                            recursiveProcess(val, depth + 1);
+                        } else {
+                            recursiveProcess(val, depth + 1);
+                        }
+                    }
+                }
             }
         }
-        return filtered;
     }
 
+    // ========== 禁用广告配置标志 ==========
+    function disableAdConfig(obj) {
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
+
+        // 广告开关字段 → 全部关闭
+        var adFlags = [
+            'showAd', 'adEnabled', 'hasAd', 'adSwitch', 'enableAd', 'adOpen',
+            'showBanner', 'showSplash', 'showPopup', 'showPromote',
+            'splashAd', 'bannerAd', 'popupAd', 'insertAd', 'feedAd',
+            'openAd', 'adShow', 'adDisplay', 'displayAd',
+            'showInsertAd', 'showFeedAd', 'showOpenAd', 'showVideoAd',
+            'adConfig', 'adSetting', 'adSettingSwitch',
+            'splashSwitch', 'splashEnabled', 'splashAdSwitch', 'splashAdEnabled',
+            'bannerSwitch', 'bannerEnabled', 'popupSwitch', 'popupEnabled',
+            'isAd', 'isAdvertisement', 'isPromote', 'isBanner',
+            'openScreenAd', 'openScreenAdSwitch', 'openScreenAdEnabled',
+            'rewardAdSwitch', 'rewardAdEnabled', 'rewardVideoAd',
+            'interstitialAd', 'interstitialAdSwitch',
+            'nativeAd', 'nativeAdSwitch',
+            'canShowAd', 'adVisible', 'adStatus',
+            'thirdAd', 'thirdAdSwitch', 'thirdAdEnabled',
+            'floatingAd', 'floatingAdSwitch',
+            'marqueeAd', 'marqueeAdSwitch',
+            'noticeAd', 'noticeAdSwitch',
+            'guideAd', 'guideAdSwitch'
+        ];
+
+        for (var i = 0; i < adFlags.length; i++) {
+            var key = adFlags[i];
+            if (key in obj) {
+                // 布尔值 → false
+                if (typeof obj[key] === 'boolean') obj[key] = false;
+                // 数字 → 0
+                else if (typeof obj[key] === 'number') obj[key] = 0;
+                // 对象 → 置空enabled/show
+                else if (obj[key] && typeof obj[key] === 'object') {
+                    if ('enabled' in obj[key]) obj[key].enabled = false;
+                    if ('show' in obj[key]) obj[key].show = false;
+                    if ('switch' in obj[key]) obj[key]['switch'] = false;
+                    if ('open' in obj[key]) obj[key].open = false;
+                    if ('enable' in obj[key]) obj[key].enable = false;
+                    if ('status' in obj[key]) obj[key].status = 0;
+                }
+            }
+        }
+
+        // 开屏/splash相关配置 → 清空
+        var splashKeys = ['splash', 'splashAd', 'splashConfig', 'splashData', 'splashInfo', 'openScreen', 'openScreenAd', 'launchAd', 'bootAd'];
+        for (var s = 0; s < splashKeys.length; s++) {
+            if (splashKeys[s] in obj) {
+                obj[splashKeys[s]] = null;
+            }
+        }
+
+        // 红包/活动弹窗 → 关闭
+        if ('redPacket' in obj && obj.redPacket && typeof obj.redPacket === 'object') {
+            obj.redPacket.canClick = false;
+            obj.redPacket.enabled = false;
+            obj.redPacket.show = false;
+        }
+    }
+
+    // ========== 广告项检测函数 (更激进) ==========
     function isAdItem(item) {
         if (!item || typeof item !== 'object') return false;
-        // 检查广告标识字段
-        var adKeys = ['adType', 'adId', 'adUrl', 'isAd', 'adBanner', 'adImage', 'adLink', 'adCode', 'adPosition', 'adSource'];
+
+        // 1. 检查广告标识字段 (存在即判定为广告)
+        var adKeys = [
+            'adType', 'adId', 'adUrl', 'isAd', 'adBanner', 'adImage', 'adLink',
+            'adCode', 'adPosition', 'adSource', 'adImg', 'adTitle', 'adDesc',
+            'adPic', 'adVideo', 'adAction', 'adTarget', 'adSpace', 'adSlot',
+            'adPlace', 'adPlatform', 'adNetwork', 'adProvider', 'advertiser',
+            'isAdvertisement', 'isPromote', 'isBanner', 'isSplash', 'isPopup',
+            'showType', 'adShowType', 'itemType', 'contentType'
+        ];
         for (var j = 0; j < adKeys.length; j++) {
-            if (adKeys[j] in item) return true;
+            if (adKeys[j] in item) {
+                // showType/itemType/contentType 需要额外检查值
+                if (adKeys[j] === 'showType' || adKeys[j] === 'adShowType' || adKeys[j] === 'itemType' || adKeys[j] === 'contentType') {
+                    var sv = String(item[adKeys[j]]);
+                    if (sv === '99' || sv === '98' || sv === 'ad' || sv === 'banner' || sv === 'splash' || sv === 'popup' || sv === 'promote') return true;
+                    // 如果不是广告类型,继续检查其他字段
+                } else {
+                    return true;
+                }
+            }
         }
-        // 检查type字段
+
+        // 2. 检查type字段
         if ('type' in item) {
             var t = String(item.type).toLowerCase();
-            if (t === 'ad' || t === 'banner' || t === 'splash' || t === 'popup' || t === 'promote' || t === 'promotion') return true;
+            if (['ad', 'banner', 'splash', 'popup', 'promote', 'promotion', 'advert', 'advertisement', 'sponsor', 'insert', 'float', 'marquee', 'notice'].indexOf(t) !== -1) return true;
+            // 数字类型 98/99
+            if (item.type === 99 || item.type === 98 || item.type === '99' || item.type === '98') return true;
         }
-        // 检查showType字段 (showType=98/99通常是广告)
-        if ('showType' in item && (item.showType === 99 || item.showType === 98 || item.showType === '99' || item.showType === '98')) return true;
-        // 检查name/title中包含广告关键词
-        var nameFields = ['name', 'title', 'titleName', 'moduleName'];
+
+        // 3. 检查moduleType字段
+        if ('moduleType' in item) {
+            var mt = String(item.moduleType).toLowerCase();
+            if (['ad', 'banner', 'splash', 'popup', 'promote', 'promotion', 'sponsor'].indexOf(mt) !== -1) return true;
+        }
+
+        // 4. 检查name/title等文本字段中的广告关键词
+        var nameFields = ['name', 'title', 'titleName', 'moduleName', 'desc', 'description', 'label', 'tag'];
+        var adKeywords = ['广告', '推广', '赞助', 'sponsor', 'advert', ' promotion', '推广位', '广告位'];
         for (var k = 0; k < nameFields.length; k++) {
             if (nameFields[k] in item && typeof item[nameFields[k]] === 'string') {
                 var nv = item[nameFields[k]].toLowerCase();
-                if (nv.indexOf('广告') !== -1 || nv.indexOf('ad ') !== -1 || nv.indexOf('推广') !== -1 || nv.indexOf('sponsor') !== -1) return true;
+                for (var kw = 0; kw < adKeywords.length; kw++) {
+                    if (nv.indexOf(adKeywords[kw]) !== -1) return true;
+                }
             }
         }
-        // 检查link/url是否指向广告域名
-        var urlFields = ['link', 'url', 'jumpUrl', 'redirectUrl', 'icon', 'imgUrl', 'imageUrl'];
+
+        // 5. 检查URL字段是否指向广告域名
+        var urlFields = ['link', 'url', 'jumpUrl', 'redirectUrl', 'icon', 'imgUrl', 'imageUrl', 'picUrl', 'coverUrl', 'thumbnail', 'logo', 'actionUrl', 'clickUrl', 'h5Url', 'webUrl'];
         for (var m = 0; m < urlFields.length; m++) {
             if (urlFields[m] in item && typeof item[urlFields[m]] === 'string') {
                 if (isAdUrl(item[urlFields[m]])) return true;
             }
         }
+
+        // 6. 检查是否有jumpType/action为广告跳转
+        if ('jumpType' in item || 'action' in item || 'actionType' in item) {
+            var jt = String(item.jumpType || item.action || item.actionType || '').toLowerCase();
+            if (jt === 'ad' || jt === 'advert' || jt === 'web' && ('adUrl' in item || 'adLink' in item)) return true;
+        }
+
         return false;
     }
 
@@ -255,7 +350,7 @@ const injectScript = `
         };
     }
 
-    // ========== 3. 拦截XMLHttpRequest 阻止广告请求 ==========
+    // ========== 3. 拦截XMLHttpRequest 阻止广告请求 + 响应处理 ==========
     var _open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(method, reqUrl) {
         if (isAdUrl(reqUrl)) {
@@ -263,6 +358,72 @@ const injectScript = `
         }
         return _open.apply(this, arguments);
     };
+
+    // Hook XHR responseText getter - 拦截解密后的响应数据
+    var _responseTextDesc = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText');
+    if (_responseTextDesc && _responseTextDesc.get) {
+        var _origGet = _responseTextDesc.get;
+        Object.defineProperty(XMLHttpRequest.prototype, 'responseText', {
+            get: function() {
+                var text = _origGet.call(this);
+                // 如果响应包含加密包装,尝试处理
+                if (text && typeof text === 'string' && text.indexOf('"hash":true') !== -1) {
+                    try {
+                        var parsed = _parse(text);
+                        if (parsed && parsed.hash === true && typeof parsed.data === 'string') {
+                            // 这是加密包装,让app正常解密
+                            // 但我们hook了JSON.parse,解密后的数据会被处理
+                        }
+                    } catch(e) {}
+                }
+                return text;
+            },
+            configurable: true
+        });
+    }
+
+    // ========== 3.5 Hook axios响应拦截器 ==========
+    // Vue应用通常使用axios,hook其响应拦截器作为后备
+    function hookAxios() {
+        if (window.axios && window.axios.interceptors && window.axios.interceptors.response) {
+            var _use = window.axios.interceptors.response.use.bind(window.axios.interceptors.response);
+            window.axios.interceptors.response.use = function(onFulfilled, onRejected) {
+                var wrappedFulfilled = function(response) {
+                    if (response && response.data) {
+                        try {
+                            recursiveProcess(response.data, 0);
+                        } catch(e) {}
+                    }
+                    return onFulfilled ? onFulfilled(response) : response;
+                };
+                return _use(wrappedFulfilled, onRejected);
+            };
+            if (window.console) console.log('[Butterfly] axios拦截器已hook');
+        }
+    }
+    // 立即尝试 + 延迟尝试 (axios可能尚未加载)
+    hookAxios();
+    setTimeout(hookAxios, 100);
+    setTimeout(hookAxios, 500);
+    setTimeout(hookAxios, 2000);
+
+    // ========== 3.6 Hook Vue.prototype.$axios (如果存在) ==========
+    function hookVueAxios() {
+        if (window.Vue && window.Vue.prototype && window.Vue.prototype.$axios) {
+            var ax = window.Vue.prototype.$axios;
+            if (ax.interceptors && ax.interceptors.response) {
+                ax.interceptors.response.use(function(response) {
+                    if (response && response.data) {
+                        try { recursiveProcess(response.data, 0); } catch(e) {}
+                    }
+                    return response;
+                });
+                if (window.console) console.log('[Butterfly] Vue.$axios拦截器已hook');
+            }
+        }
+    }
+    setTimeout(hookVueAxios, 500);
+    setTimeout(hookVueAxios, 2000);
 
     // ========== 4. 拦截window.open 阻止广告跳转 ==========
     var _windowOpen = window.open;
@@ -299,26 +460,72 @@ const injectScript = `
     function removeAdElements() {
         if (!document.body) return;
 
-        // 移除开屏广告
-        document.querySelectorAll('[class*="splash"], [class*="Splash"], [id*="splash"], [id*="Splash"]').forEach(function(el) { el.remove(); });
+        // 开屏广告/启动广告 (视频/图片/容器)
+        document.querySelectorAll(
+            '[class*="splash"], [class*="Splash"], [id*="splash"], [id*="Splash"],' +
+            '[class*="launch-ad"], [class*="LaunchAd"], [class*="boot-ad"], [class*="BootAd"],' +
+            '[class*="open-screen"], [class*="OpenScreen"], [class*="openScreen"],' +
+            '[class*="startup-ad"], [class*="StartupAd"]'
+        ).forEach(function(el) { el.remove(); });
 
-        // 移除广告横幅 (仅含ad关键字的)
-        document.querySelectorAll('[class*="ad-banner"], [class*="adBanner"], [class*="ad_card"], [class*="adCard"], [class*="banner-ad"]').forEach(function(el) { el.style.display = 'none'; });
+        // 广告横幅/卡片
+        document.querySelectorAll(
+            '[class*="ad-banner"], [class*="adBanner"], [class*="ad_card"], [class*="adCard"],' +
+            '[class*="banner-ad"], [class*="ad-container"], [class*="adContainer"],' +
+            '[class*="ad-wrapper"], [class*="adWrapper"], [class*="ad-item"], [class*="adItem"],' +
+            '[class*="ad-box"], [class*="adBox"], [class*="ad-slot"], [class*="adSlot"],' +
+            '[class*="ad-feed"], [class*="adFeed"], [class*="ad-cell"], [class*="adCell"],' +
+            '[class*="ad-list"], [class*="adList"], [class*="ad-row"], [class*="adRow"]'
+        ).forEach(function(el) { el.style.display = 'none'; });
 
-        // 移除全屏视频广告
-        document.querySelectorAll('[class*="fullscreen-video-ad"], [class*="FullscreenVideoAd"], [class*="fullScreenAd"], [class*="video-ad"]').forEach(function(el) { el.remove(); });
+        // 全屏视频广告/插屏广告
+        document.querySelectorAll(
+            '[class*="fullscreen-video-ad"], [class*="FullscreenVideoAd"], [class*="fullScreenAd"],' +
+            '[class*="video-ad"], [class*="VideoAd"], [class*="interstitial"], [class*="Interstitial"],' +
+            '[class*="insert-ad"], [class*="InsertAd"], [class*="insertAd"]'
+        ).forEach(function(el) { el.remove(); });
 
-        // 移除广告弹窗
-        document.querySelectorAll('[class*="ad-popup"], [class*="adPopup"], [class*="popup-ad"]').forEach(function(el) { el.remove(); });
+        // 广告弹窗/浮窗
+        document.querySelectorAll(
+            '[class*="ad-popup"], [class*="adPopup"], [class*="popup-ad"],' +
+            '[class*="ad-dialog"], [class*="adDialog"], [class*="ad-modal"], [class*="adModal"],' +
+            '[class*="floating-ad"], [class*="FloatingAd"], [class*="floatingAd"],' +
+            '[class*="float-ad"], [class*="floatAd"], [class*="ad-float"], [class*="adFloat"]'
+        ).forEach(function(el) { el.remove(); });
 
-        // 移除推广链接
-        document.querySelectorAll('[class*="promote"], [class*="Promote"], [class*="promotion"], [class*="Promotion"]').forEach(function(el) { el.style.display = 'none'; });
+        // 推广/赞助
+        document.querySelectorAll(
+            '[class*="promote"], [class*="Promote"], [class*="promotion"], [class*="Promotion"],' +
+            '[class*="sponsor"], [class*="Sponsor"]'
+        ).forEach(function(el) { el.style.display = 'none'; });
 
-        // 移除广告注入的iframe/script
-        document.querySelectorAll('iframe[src*="eqfx9bas"], iframe[src*="yihaici"], iframe[src*="epuf3tk"], iframe[src*="speedfan"], script[src*="eqfx9bas"], script[src*="yihaici"], script[src*="epuf3tk"]').forEach(function(el) { el.remove(); });
+        // 广告注入的iframe/script
+        document.querySelectorAll(
+            'iframe[src*="eqfx9bas"], iframe[src*="yihaici"], iframe[src*="epuf3tk"],' +
+            'iframe[src*="speedfan"], iframe[src*="u7d2w"],' +
+            'script[src*="eqfx9bas"], script[src*="yihaici"], script[src*="epuf3tk"]'
+        ).forEach(function(el) { el.remove(); });
 
-        // 移除赌博/代理广告
-        document.querySelectorAll('[class*="gamble"], [class*="Gamble"], [class*="agent"], [class*="proxy-ad"]').forEach(function(el) { el.style.display = 'none'; });
+        // 赌博/代理广告
+        document.querySelectorAll(
+            '[class*="gamble"], [class*="Gamble"], [class*="agent-ad"], [class*="proxy-ad"]'
+        ).forEach(function(el) { el.style.display = 'none'; });
+
+        // 通用: 检查所有video元素,移除广告视频
+        document.querySelectorAll('video[src*="splash-"], video[src*="ad-"]').forEach(function(el) { el.remove(); });
+
+        // 通用: 检查所有img元素,移除广告图片
+        document.querySelectorAll('img[src*="ad-card-bg"], img[src*="buyGold"], img[src*="ad-banner"]').forEach(function(el) { el.style.display = 'none'; });
+
+        // 通用: 检查所有带ad属性的元素
+        document.querySelectorAll('[data-ad], [data-ad-type], [data-ad-id], [ad-type], [ad-id]').forEach(function(el) { el.style.display = 'none'; });
+
+        // 弹窗遮罩层 (如果只剩遮罩没有内容,移除)
+        document.querySelectorAll('[class*="mask"], [class*="Mask"], [class*="overlay"], [class*="Overlay"]').forEach(function(el) {
+            if (el.children.length === 0 && getComputedStyle(el).position === 'fixed') {
+                el.style.display = 'none';
+            }
+        });
     }
 
     // 使用MutationObserver持续监控
