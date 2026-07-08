@@ -64,7 +64,8 @@ const injectScript = `
         'u7d2w.com',
         'pg71json',
         'pg71.epuf3tk',
-        'pg71h5.yihaici'
+        'pg71h5.yihaici',
+        'mmmims.lkkwip.cn'
     ];
 
     function isAdUrl(u) {
@@ -80,6 +81,8 @@ const injectScript = `
         // App源码确认的广告API
         if (lower.indexOf('/ads/click') !== -1) return true;
         if (lower.indexOf('/recreation/click') !== -1) return true;
+        if (lower.indexOf('/redPacket/') !== -1) return true;
+        if (lower.indexOf('/recreation/list') !== -1) return true;
         return false;
     }
 
@@ -150,6 +153,25 @@ const injectScript = `
                     result.canClick = false;
                     result.enabled = false;
                     if ('show' in result) result.show = false;
+                }
+
+                // ===== recreation列表过滤 (世界杯狂欢广告) =====
+                if (!Array.isArray(result) && 'list' in result && ('recreationId' in result || 'activityType' in result)) {
+                    if (Array.isArray(result.list)) {
+                        for (var r = result.list.length - 1; r >= 0; r--) {
+                            var item = result.list[r];
+                            if (item && typeof item === 'object') {
+                                if ('type' in item && item.type === 'recreation') {
+                                    result.list.splice(r, 1);
+                                } else if ('title' in item) {
+                                    var title = String(item.title);
+                                    if (title.indexOf('世界杯') !== -1 || title.indexOf('狂欢') !== -1 || title.indexOf('AI科技') !== -1) {
+                                        result.list.splice(r, 1);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // ===== VIP产品列表 =====
@@ -301,6 +323,14 @@ const injectScript = `
             obj.redPacket.canClick = false;
             obj.redPacket.enabled = false;
             obj.redPacket.show = false;
+        }
+
+        // recreation(世界杯狂欢)相关 → 关闭
+        if ('recreation' in obj && obj.recreation && typeof obj.recreation === 'object') {
+            obj.recreation.enabled = false;
+            obj.recreation.show = false;
+            obj.recreation.canClick = false;
+            if ('list' in obj.recreation) obj.recreation.list = [];
         }
     }
 
@@ -508,6 +538,9 @@ const injectScript = `
         document.querySelectorAll('video[src*="splash-"], video[src*="ad-"]').forEach(function(el) { el.remove(); });
         document.querySelectorAll('img[src*="ad-card-bg"], img[src*="buyGold"], img[src*="ad-banner"]').forEach(function(el) { el.style.display = 'none'; });
 
+        // AI科技广告图片 (mmmims.lkkwip.cn)
+        document.querySelectorAll('img[src*="mmmims.lkkwip.cn"]').forEach(function(el) { el.remove(); });
+
         // 带ad属性的元素
         document.querySelectorAll('[data-ad], [data-ad-type], [data-ad-id]').forEach(function(el) { el.style.display = 'none'; });
 
@@ -530,6 +563,31 @@ const injectScript = `
             var text = el.textContent || el.innerText || '';
             if (text.indexOf('AI科技') !== -1) {
                 el.style.display = 'none';
+            }
+        });
+
+        // 删除包含广告关键词的元素 (世界杯狂欢、AI科技)
+        document.querySelectorAll('*').forEach(function(el) {
+            var text = el.textContent || el.innerText || '';
+            if (text.indexOf('世界杯') !== -1 || text.indexOf('AI科技') !== -1 || text.indexOf('狂欢') !== -1) {
+                if (el.children.length === 0 || (el.children.length <= 2 && el.tagName !== 'BODY')) {
+                    el.style.display = 'none';
+                }
+            }
+        });
+
+        // 视频页面悬浮广告 (固定定位元素)
+        document.querySelectorAll(
+            '[style*="position: fixed"], [style*="position:fixed"],' +
+            '[class*="float"], [class*="Float"], [class*="popup"], [class*="Popup"],' +
+            '[class*="modal"], [class*="Modal"], [class*="overlay"], [class*="Overlay"]'
+        ).forEach(function(el) {
+            var text = el.textContent || el.innerText || '';
+            var style = getComputedStyle(el);
+            if (style.position === 'fixed') {
+                if (text.indexOf('世界杯') !== -1 || text.indexOf('AI科技') !== -1 || text.indexOf('红包') !== -1) {
+                    el.remove();
+                }
             }
         });
     }
