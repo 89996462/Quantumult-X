@@ -157,8 +157,8 @@ const injectScript = `
                     result.isNewUser = false;
                 }
 
-                // ===== 过滤底部导航项 (删除"AI科技"等指定模块) =====
-                filterNavItems(result);
+                // ===== 清空广告列表 (App源码确认: appConfig.adsInfoList是广告数据源) =====
+                clearAdsInfoList(result);
 
                 // ===== 递归处理: 禁用广告配置 + 过滤广告数组 =====
                 recursiveProcess(result, 0);
@@ -169,44 +169,32 @@ const injectScript = `
         return result;
     };
 
-    // ========== 过滤底部导航项 (删除指定模块) ==========
-    // 需要删除的导航/模块名称关键词
-    var navBlocklist = ['AI科技', 'AI科技 ', ' AI科技', 'ai科技', 'Ai科技'];
-
-    function filterNavItems(obj) {
+    // ========== 清空广告列表 (App源码确认: adsInfoList是广告数据源) ==========
+    // bb()函数从 appConfig.adsInfoList 获取广告,清空后所有广告组件无数据
+    function clearAdsInfoList(obj) {
         if (!obj || typeof obj !== 'object') return;
-        // 递归遍历所有数组,删除名称匹配的导航项
+        // 直接清空 adsInfoList
+        if ('adsInfoList' in obj) {
+            obj.adsInfoList = [];
+        }
+        // 递归查找嵌套的 adsInfoList
         for (var key in obj) {
             if (!obj.hasOwnProperty(key)) continue;
             var val = obj[key];
-            if (Array.isArray(val)) {
-                for (var i = val.length - 1; i >= 0; i--) {
-                    if (val[i] && typeof val[i] === 'object' && isBlockedNav(val[i])) {
-                        val.splice(i, 1);
+            if (val && typeof val === 'object') {
+                if ('adsInfoList' in val) {
+                    val.adsInfoList = [];
+                }
+                // 继续递归
+                if (typeof val === 'object' && !Array.isArray(val)) {
+                    clearAdsInfoList(val);
+                } else if (Array.isArray(val)) {
+                    for (var i = 0; i < val.length; i++) {
+                        if (val[i] && typeof val[i] === 'object') clearAdsInfoList(val[i]);
                     }
                 }
-                // 递归处理子项
-                for (var j = 0; j < val.length; j++) {
-                    if (val[j] && typeof val[j] === 'object') filterNavItems(val[j]);
-                }
-            } else if (val && typeof val === 'object') {
-                filterNavItems(val);
             }
         }
-    }
-
-    function isBlockedNav(item) {
-        if (!item || typeof item !== 'object') return false;
-        var nameFields = ['name', 'title', 'titleName', 'moduleName', 'tabName', 'label', 'text'];
-        for (var i = 0; i < nameFields.length; i++) {
-            if (nameFields[i] in item && typeof item[nameFields[i]] === 'string') {
-                var nv = item[nameFields[i]];
-                for (var j = 0; j < navBlocklist.length; j++) {
-                    if (nv.indexOf(navBlocklist[j]) !== -1) return true;
-                }
-            }
-        }
-        return false;
     }
 
     // ========== 递归处理函数: 深度遍历所有嵌套对象/数组 ==========
@@ -254,12 +242,12 @@ const injectScript = `
     function disableAdConfig(obj) {
         if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
 
-        // App源码确认的广告字段: isAdv, advType, homeAdvFirst
-        if ('isAdv' in obj) obj.isAdv = false;
-        if ('advType' in obj) obj.advType = -1;
+        // App源码确认: adsInfoList是广告数据源,清空它
+        if ('adsInfoList' in obj) {
+            obj.adsInfoList = [];
+        }
+        // homeAdvFirst是store状态,控制首页广告优先
         if ('homeAdvFirst' in obj) obj.homeAdvFirst = false;
-        if ('advertising_key' in obj) obj.advertising_key = '';
-        if ('nineGridFirst' in obj) {} // 保持正常功能
 
         // 广告开关字段 → 全部关闭
         var adFlags = [
@@ -316,71 +304,28 @@ const injectScript = `
         }
     }
 
-    // ========== 广告项检测函数 (基于App源码实际字段) ==========
-    // 从App JS源码发现的实际广告字段:
-    // isAdv (bool) - 广告标记 | advType (enum) - 广告类型 | advertising_key - 广告key
-    // advType枚举: 0=START开屏 1=SHORTVIDEOADV 2=HOMEPOPUPADV 3=HOME 10=MOVIE_LIST_ADV
-    //              40=SEARCHADV 41=VIDEOADV 301=TopAdvsList 42=ADV_FULL
+    // ========== 广告项检测函数 (保守模式 - 只检查源码确认的字段) ==========
+    // App源码确认: isAdv = ("adv" === info.type) || info.position
+    // advType是组件prop不是数据字段,isAdv是计算属性不是数据字段
     function isAdItem(item) {
         if (!item || typeof item !== 'object') return false;
 
-        // 1. isAdv = true → 广告 (App源码确认的核心字段)
-        if (item.isAdv === true || item.isAdv === 1 || item.isAdv === '1' || item.isAdv === 'true') return true;
+        // 1. type === "adv" → 广告 (App源码确认的核心判断)
+        if (item.type === 'adv' || item.type === 'ADV') return true;
 
-        // 2. advType 存在且为广告类型枚举 → 广告
-        if ('advType' in item && item.advType != null && item.advType !== undefined) {
-            var advTypeVals = [0, 1, 2, 3, 10, 40, 41, 42, 301, '0', '1', '2', '3', '10', '40', '41', '42', '301'];
-            if (advTypeVals.indexOf(item.advType) !== -1) return true;
-            // 任何非空advType都可能是广告
-            if (item.advType !== '' && item.advType !== 0 && item.advType !== '0') return true;
-        }
+        // 2. position 字段存在且非空 → 广告 (App源码确认)
+        if ('position' in item && item.position != null && item.position !== '' && item.position !== 0 && item.position !== false) return true;
 
-        // 3. advertising_key 存在 → 广告
+        // 3. advertising_key 存在 → 广告 (App源码确认)
         if ('advertising_key' in item && item.advertising_key) return true;
 
-        // 4. 其他广告标识字段
-        var adKeys = [
-            'adType', 'adId', 'adUrl', 'isAd', 'adBanner', 'adImage', 'adLink',
-            'adCode', 'adPosition', 'adSource', 'adImg', 'adTitle', 'adDesc',
-            'adPic', 'adVideo', 'adAction', 'adTarget', 'adSpace', 'adSlot',
-            'adPlace', 'advertiser', 'isAdvertisement', 'isPromote'
-        ];
-        for (var j = 0; j < adKeys.length; j++) {
-            if (adKeys[j] in item && item[adKeys[j]]) return true;
-        }
-
-        // 5. 检查type字段 (App模块类型)
-        if ('type' in item) {
-            var t = String(item.type);
-            var adTypeStrs = ['ad', 'banner', 'splash', 'popup', 'promote', 'promotion', 'advert', 'advertisement', 'sponsor', 'SHORTVIDEOADV', 'HOMEPOPUPADV', 'VIDEOADV', 'SEARCHADV', 'MOVIE_LIST_ADV', 'TopAdvsList', 'ADV_FULL'];
-            if (adTypeStrs.indexOf(t) !== -1 || adTypeStrs.indexOf(t.toLowerCase()) !== -1) return true;
-            // 数字广告类型 0/1/2/3/10/40/41/42/301
-            var adTypeNums = [0, 1, 2, 3, 10, 40, 41, 42, 301];
-            if (adTypeNums.indexOf(item.type) !== -1) return true;
-        }
-
-        // 6. 检查name/title等文本字段中的广告关键词
-        var nameFields = ['name', 'title', 'titleName', 'moduleName', 'desc', 'description', 'label', 'tag', 'advTitle'];
-        var adKeywords = ['广告', '推广', '赞助', 'sponsor', 'advert'];
-        for (var k = 0; k < nameFields.length; k++) {
-            if (nameFields[k] in item && typeof item[nameFields[k]] === 'string') {
-                var nv = item[nameFields[k]].toLowerCase();
-                for (var kw = 0; kw < adKeywords.length; kw++) {
-                    if (nv.indexOf(adKeywords[kw]) !== -1) return true;
-                }
-            }
-        }
-
-        // 7. 检查URL字段是否指向广告域名
-        var urlFields = ['link', 'url', 'jumpUrl', 'redirectUrl', 'icon', 'imgUrl', 'imageUrl', 'picUrl', 'coverUrl', 'href', 'actionUrl', 'clickUrl', 'h5Url', 'webUrl'];
+        // 4. URL字段指向广告域名 → 广告
+        var urlFields = ['link', 'url', 'jumpUrl', 'redirectUrl', 'href', 'actionUrl', 'clickUrl', 'h5Url', 'webUrl'];
         for (var m = 0; m < urlFields.length; m++) {
             if (urlFields[m] in item && typeof item[urlFields[m]] === 'string') {
                 if (isAdUrl(item[urlFields[m]])) return true;
             }
         }
-
-        // 8. homeAdvFirst 标志
-        if ('homeAdvFirst' in item && item.homeAdvFirst === true) return true;
 
         return false;
     }
@@ -583,11 +528,8 @@ const injectScript = `
             '.van-tabbar__item, .tabbar-item, [class*="tabbar-item"], [class*="tab-item"], [class*="nav-item"], [role="tab"]'
         ).forEach(function(el) {
             var text = el.textContent || el.innerText || '';
-            for (var i = 0; i < navBlocklist.length; i++) {
-                if (text.indexOf(navBlocklist[i]) !== -1) {
-                    el.style.display = 'none';
-                    break;
-                }
+            if (text.indexOf('AI科技') !== -1) {
+                el.style.display = 'none';
             }
         });
     }
