@@ -1338,7 +1338,15 @@ const injectScript = `
 `;
 
 // ========== 注入脚本到HTML页面 ==========
-if (body && (url.indexOf('d18v10algpi965.cloudfront.net') !== -1)) {
+// 基于内容判断，不再依赖具体域名
+// 如果body包含HTML标签，则是HTML页面，注入脚本
+var isHtmlPage = body && (body.indexOf('<html') !== -1 || 
+                          body.indexOf('</head>') !== -1 || 
+                          body.indexOf('<body') !== -1 || 
+                          body.indexOf('<div id="app">') !== -1 ||
+                          body.indexOf('/init.js') !== -1);
+
+if (isHtmlPage) {
     var newBody = body;
 
     // 在</head>前注入 (最优先)
