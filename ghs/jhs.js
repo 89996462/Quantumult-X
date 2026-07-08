@@ -86,6 +86,10 @@ const injectScript = `
         if (lower.indexOf('/recreation/click') !== -1) return true;
         // ===== AI模块点击追踪 API =====
         if (lower.indexOf('/ai/mod/click') !== -1) return true;
+        // ===== 世界杯狂欢广告域名 =====
+        if (lower.indexOf('va2p.com') !== -1) return true;
+        // ===== AI科技页面 =====
+        if (lower.indexOf('/ai') !== -1 && lower.indexOf('/api/app/ai') === -1) return true;
         return false;
     }
 
@@ -833,6 +837,16 @@ const injectScript = `
             'iframe[src*="speedfan"], iframe[src*="u7d2w"],' +
             'script[src*="eqfx9bas"], script[src*="yihaici"], script[src*="epuf3tk"]'
         ).forEach(function(el) { el.remove(); });
+
+        // 世界杯狂欢广告链接 (va2p.com)
+        document.querySelectorAll('a[href*="va2p.com"]').forEach(function(el) { el.remove(); });
+        // AI科技广告链接 (/ai页面)
+        document.querySelectorAll('a[href*="/ai"]').forEach(function(el) {
+            var href = el.getAttribute('href') || '';
+            if (href.indexOf('/api/app/ai') === -1 && href.indexOf('/ai/mod') === -1) {
+                el.remove();
+            }
+        });
 
         // 赌博/代理广告
         document.querySelectorAll(
