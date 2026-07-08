@@ -380,63 +380,85 @@ function unlockVip(obj) {
 
 // ============ 响应体标准化 ============
 function normalizeBody(body) {
+  // 空响应直接返回 null（不抛异常）
+  if (body === undefined || body === null) return null;
+  if (body === '') return null;
   if (typeof body === 'string') return body;
   if (body instanceof Uint8Array || body instanceof ArrayBuffer) {
-    var arr = new Uint8Array(body);
-    var str = '';
-    for (var i = 0; i < arr.length; i++) {
-      str += String.fromCharCode(arr[i]);
+    try {
+      var arr = new Uint8Array(body);
+      var str = '';
+      for (var i = 0; i < arr.length; i++) {
+        str += String.fromCharCode(arr[i]);
+      }
+      return str;
+    } catch (e) {
+      return null;
     }
-    return str;
   }
   return String(body);
 }
 
 // ============ 主处理逻辑 ============
-function processResponse(body) {
+function processResponse(rawBody) {
+  // 解析 JSON 包装层
   try {
-    var rawBody = normalizeBody(body);
     var wrapper = JSON.parse(rawBody);
-
-    // 仅在 hash=true 且 code=200 时处理
-    if (wrapper.hash !== true || typeof wrapper.data !== 'string' || !wrapper.data) {
-      return undefined; // 非加密响应，直接放行
-    }
-
-    // 解密数据
-    var innerData = decryptResponse(wrapper.data);
-    if (!innerData) {
-      console.log('[Butterfly] decrypt failed, pass through');
-      return undefined;
-    }
-
-    // 修改数据
-    if (wrapper.code === 200) {
-      stripAds(innerData);
-      unlockVip(innerData);
-    }
-
-    // 设为明文：hash=false, data=修改后的对象
-    wrapper.hash = false;
-    wrapper.data = innerData;
-
-    return JSON.stringify(wrapper);
   } catch (e) {
-    console.log('[Butterfly] process error: ' + e.message);
-    return undefined;
+    // 非 JSON 响应（如 main JS 等），直接透传
+    return null;
   }
+
+  // 仅在 hash=true 且 code=200 时处理加密响应
+  if (wrapper.hash !== true || typeof wrapper.data !== 'string' || !wrapper.data) {
+    return null; // 非加密响应，透传
+  }
+
+  // 解密数据
+  var innerData;
+  try {
+    innerData = decryptResponse(wrapper.data);
+  } catch (e) {
+    console.log('[Butterfly] decrypt error: ' + e.message);
+    return null;
+  }
+  if (!innerData) {
+    console.log('[Butterfly] decrypt failed, pass through');
+    return null;
+  }
+
+  // 修改数据
+  if (wrapper.code === 200) {
+    stripAds(innerData);
+    unlockVip(innerData);
+  }
+
+  // 设为明文：hash=false, data=修改后的对象
+  wrapper.hash = false;
+  wrapper.data = innerData;
+
+  return JSON.stringify(wrapper);
 }
 
 // ============ Quantumult X 入口 ============
-var result = processResponse($response.body);
+var rawBody = normalizeBody($response.body);
+
+// 空响应 / 非字符串 → 直接透传
+if (!rawBody) {
+  $done({});
+}
+
+var result = processResponse(rawBody);
 
 if (result) {
+  // 成功修改 → 返回修改后的 JSON
   var headers = $response.headers || {};
   delete headers['Content-Encoding'];
   delete headers['Transfer-Encoding'];
   headers['Content-Type'] = 'application/json; charset=utf-8';
-
   $done({ body: result, headers: headers });
 } else {
-  $done({});
+  // result 为 null 表示不修改但也不报错 → 透传原始响应
+  // 注意：必须透传 body，否则客户端收到空响应
+  $done({ body: rawBody });
 }
