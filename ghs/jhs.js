@@ -1058,6 +1058,60 @@ const injectScript = `
                 el.remove();
             }
         });
+
+        // ========== 激进模式: 删除右下角所有fixed元素 ==========
+        // 适用于无法获取精确类名的情况
+        document.querySelectorAll('*').forEach(function(el) {
+            try {
+                var style = getComputedStyle(el);
+                if (style.position === 'fixed') {
+                    var rect = el.getBoundingClientRect();
+                    var windowWidth = window.innerWidth || document.documentElement.clientWidth;
+                    var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+                    
+                    // 右下角区域 (右边缘350px内，下边缘400px内)
+                    var isBottomRight = rect.right > windowWidth - 350 && rect.bottom > windowHeight - 400;
+                    
+                    // 小尺寸元素 (宽高小于250px)
+                    var isSmall = rect.width < 250 && rect.height < 250;
+                    
+                    // 可见元素
+                    var isVisible = style.display !== 'none' && style.visibility !== 'hidden';
+                    
+                    if (isBottomRight && isSmall && isVisible) {
+                        var text = el.textContent || el.innerText || '';
+                        var className = el.className || '';
+                        
+                        // 保留功能性按钮
+                        var isFunctional = text.indexOf('客服') !== -1 || 
+                                          text.indexOf('帮助') !== -1 ||
+                                          text.indexOf('设置') !== -1 ||
+                                          text.indexOf('反馈') !== -1 ||
+                                          text.indexOf('分享') !== -1 ||
+                                          text.indexOf('收藏') !== -1 ||
+                                          text.indexOf('购物') !== -1 ||
+                                          text.indexOf('购物车') !== -1 ||
+                                          text.indexOf('订单') !== -1 ||
+                                          text.indexOf('消息') !== -1 ||
+                                          text.indexOf('通知') !== -1 ||
+                                          text.indexOf('搜索') !== -1 ||
+                                          text.indexOf('顶部') !== -1 ||
+                                          text.indexOf('返回') !== -1 ||
+                                          text.indexOf('关闭') !== -1 ||
+                                          text.indexOf('确定') !== -1 ||
+                                          className.indexOf('toast') !== -1 ||
+                                          className.indexOf('toast-container') !== -1 ||
+                                          className.indexOf('loading') !== -1 ||
+                                          className.indexOf('loading-mask') !== -1;
+                        
+                        // 删除非功能性的右下角悬浮元素
+                        if (!isFunctional) {
+                            el.remove();
+                        }
+                    }
+                }
+            } catch(e) {}
+        });
     }
 
     // 使用MutationObserver持续监控
