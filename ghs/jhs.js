@@ -80,6 +80,14 @@ const injectScript = `
         // App源码确认的广告API
         if (lower.indexOf('/ads/click') !== -1) return true;
         if (lower.indexOf('/recreation/click') !== -1) return true;
+        // ===== 红包雨 API =====
+        if (lower.indexOf('/redpacket/') !== -1) return true;
+        // ===== AI科技 API =====
+        if (lower.indexOf('/ai/mod/list') !== -1) return true;
+        // ===== 娱乐活动/世界杯狂欢 API =====
+        if (lower.indexOf('/recreation/list') !== -1) return true;
+        // ===== 活动公告 API =====
+        if (lower.indexOf('/modules/announce') !== -1) return true;
         return false;
     }
 
@@ -146,10 +154,37 @@ const injectScript = `
                 }
 
                 // ===== 红包弹窗关闭 =====
-                if (!Array.isArray(result) && 'canClick' in result && ('prizeAmount' in result || 'redPacket' in result)) {
+                if (!Array.isArray(result) && ('canClick' in result && ('prizeAmount' in result || 'redPacket' in result))) {
                     result.canClick = false;
                     result.enabled = false;
                     if ('show' in result) result.show = false;
+                }
+                // ===== 红包数据检测 (redPacket字段) =====
+                if (!Array.isArray(result) && 'redPacket' in result && result.redPacket && typeof result.redPacket === 'object') {
+                    result.redPacket.canClick = false;
+                    result.redPacket.enabled = false;
+                    result.redPacket.show = false;
+                    result.redPacket.active = false;
+                    if ('status' in result.redPacket) result.redPacket.status = 0;
+                }
+                // ===== 活动弹窗检测 (activity/campaign/event/worldcup等) =====
+                if (!Array.isArray(result) && ('activity' in result || 'campaign' in result || 'event' in result)) {
+                    if ('activity' in result && result.activity && typeof result.activity === 'object') {
+                        result.activity.enabled = false;
+                        result.activity.show = false;
+                        result.activity.active = false;
+                        if ('status' in result.activity) result.activity.status = 0;
+                    }
+                    if ('campaign' in result && result.campaign && typeof result.campaign === 'object') {
+                        result.campaign.enabled = false;
+                        result.campaign.show = false;
+                        if ('status' in result.campaign) result.campaign.status = 0;
+                    }
+                    if ('event' in result && result.event && typeof result.event === 'object') {
+                        result.event.enabled = false;
+                        result.event.show = false;
+                        if ('status' in result.event) result.event.status = 0;
+                    }
                 }
 
                 // ===== VIP产品列表 =====
@@ -269,7 +304,19 @@ const injectScript = `
             'floatingAd', 'floatingAdSwitch',
             'marqueeAd', 'marqueeAdSwitch',
             'noticeAd', 'noticeAdSwitch',
-            'guideAd', 'guideAdSwitch'
+            'guideAd', 'guideAdSwitch',
+            // ===== 活动/红包相关 =====
+            'activity', 'activityEnabled', 'activitySwitch', 'showActivity',
+            'campaign', 'campaignEnabled', 'campaignSwitch', 'showCampaign',
+            'event', 'eventEnabled', 'eventSwitch', 'showEvent',
+            'redPacket', 'redPacketEnabled', 'showRedPacket', 'canClick',
+            // ===== AI科技相关 =====
+            'aiModule', 'aiEnabled', 'aiSwitch', 'showAi', 'aiMod',
+            // ===== 世界杯/娱乐活动 =====
+            'worldcup', 'worldCup', 'worldCupEnabled', 'showWorldCup',
+            'recreation', 'recreationEnabled', 'showRecreation',
+            'rain', 'rainEnabled', 'showRain', 'redRain',
+            'floatBall', 'floatBallEnabled', 'showFloatBall'
         ];
 
         for (var i = 0; i < adFlags.length; i++) {
@@ -301,6 +348,49 @@ const injectScript = `
             obj.redPacket.canClick = false;
             obj.redPacket.enabled = false;
             obj.redPacket.show = false;
+            obj.redPacket.active = false;
+            if ('status' in obj.redPacket) obj.redPacket.status = 0;
+        }
+
+        // 活动/世界杯弹窗 → 关闭
+        if ('activity' in obj && obj.activity && typeof obj.activity === 'object') {
+            obj.activity.enabled = false;
+            obj.activity.show = false;
+            obj.activity.active = false;
+            if ('status' in obj.activity) obj.activity.status = 0;
+        }
+
+        // 活动/世界杯弹窗 → 关闭
+        if ('campaign' in obj && obj.campaign && typeof obj.campaign === 'object') {
+            obj.campaign.enabled = false;
+            obj.campaign.show = false;
+            if ('status' in obj.campaign) obj.campaign.status = 0;
+        }
+
+        // 事件弹窗 → 关闭
+        if ('event' in obj && obj.event && typeof obj.event === 'object') {
+            obj.event.enabled = false;
+            obj.event.show = false;
+            if ('status' in obj.event) obj.event.status = 0;
+        }
+
+        // AI模块 → 关闭
+        if ('ai' in obj && obj.ai && typeof obj.ai === 'object') {
+            obj.ai.enabled = false;
+            obj.ai.show = false;
+            if ('status' in obj.ai) obj.ai.status = 0;
+        }
+
+        // 世界杯活动 → 关闭
+        if ('worldcup' in obj && obj.worldcup && typeof obj.worldcup === 'object') {
+            obj.worldcup.enabled = false;
+            obj.worldcup.show = false;
+            if ('status' in obj.worldcup) obj.worldcup.status = 0;
+        }
+        if ('worldCup' in obj && obj.worldCup && typeof obj.worldCup === 'object') {
+            obj.worldCup.enabled = false;
+            obj.worldCup.show = false;
+            if ('status' in obj.worldCup) obj.worldCup.status = 0;
         }
     }
 
@@ -325,6 +415,39 @@ const injectScript = `
             if (urlFields[m] in item && typeof item[urlFields[m]] === 'string') {
                 if (isAdUrl(item[urlFields[m]])) return true;
             }
+        }
+
+        // 5. 活动类型广告 → 广告 (type字段匹配活动关键词)
+        if ('type' in item && typeof item.type === 'string') {
+            var typeLower = item.type.toLowerCase();
+            if (typeLower.indexOf('activity') !== -1 || typeLower.indexOf('campaign') !== -1 || 
+                typeLower.indexOf('event') !== -1 || typeLower.indexOf('recreation') !== -1 ||
+                typeLower.indexOf('worldcup') !== -1 || typeLower.indexOf('world_cup') !== -1 ||
+                typeLower.indexOf('redpacket') !== -1 || typeLower.indexOf('red_packet') !== -1 ||
+                typeLower.indexOf('rain') !== -1 || typeLower.indexOf('ai') !== -1) {
+                return true;
+            }
+        }
+
+        // 6. 标题/名称包含广告关键词 → 广告
+        var titleFields = ['title', 'name', 'label', 'desc', 'description'];
+        for (var t = 0; t < titleFields.length; t++) {
+            if (titleFields[t] in item && typeof item[titleFields[t]] === 'string') {
+                var text = item[titleFields[t]].toLowerCase();
+                if (text.indexOf('广告') !== -1 || text.indexOf('adv') !== -1 || 
+                    text.indexOf('promote') !== -1 || text.indexOf('sponsor') !== -1 ||
+                    text.indexOf('world cup') !== -1 || text.indexOf('worldcup') !== -1 ||
+                    text.indexOf('ai') !== -1 || text.indexOf('科技') !== -1) {
+                    return true;
+                }
+            }
+        }
+
+        // 7. 红包/活动相关字段 → 广告
+        if ('redPacket' in item || 'redpacket' in item || 'prizeAmount' in item || 
+            'canClick' in item || 'activityId' in item || 'campaignId' in item ||
+            'eventId' in item || 'rain' in item || 'floatBall' in item) {
+            return true;
         }
 
         return false;
@@ -532,6 +655,60 @@ const injectScript = `
                 el.style.display = 'none';
             }
         });
+
+        // 删除底部导航中的"AI"相关项
+        document.querySelectorAll(
+            '.van-tabbar__item, .tabbar-item, [class*="tabbar-item"], [class*="tab-item"], [class*="nav-item"], [role="tab"]'
+        ).forEach(function(el) {
+            var text = el.textContent || el.innerText || '';
+            if (text.indexOf('AI') !== -1 && !text.indexOf('AI科技') === -1) {
+                el.style.display = 'none';
+            }
+        });
+
+        // 红包雨/活动弹窗
+        document.querySelectorAll(
+            '[class*="redpacket"], [class*="redPacket"], [class*="RedPacket"],' +
+            '[class*="red-packet"], [class*="red_rain"], [class*="redRain"],' +
+            '[class*="rain"], [class*="Rain"], [class*="hongbao"], [class*="HongBao"],' +
+            '[class*="prize"], [class*="Prize"], [class*="bonus"], [class*="Bonus"],' +
+            '[class*="canClick"]'
+        ).forEach(function(el) { el.remove(); });
+
+        // 世界杯/狂欢活动弹窗
+        document.querySelectorAll(
+            '[class*="worldcup"], [class*="worldCup"], [class*="WorldCup"],' +
+            '[class*="world-cup"], [class*="copa"], [class*="Copa"],' +
+            '[class*="recreation"], [class*="Recreation"],' +
+            '[class*="festival"], [class*="Festival"], [class*="狂欢"],' +
+            '[class*="event"], [class*="Event"], [class*="campaign"], [class*="Campaign"],' +
+            '[class*="activity"], [class*="Activity"]'
+        ).forEach(function(el) { el.style.display = 'none'; });
+
+        // AI科技相关元素
+        document.querySelectorAll(
+            '[class*="ai"], [class*="AI"], [class*="Ai"],' +
+            '[class*="tech"], [class*="Tech"], [class*="科技"],' +
+            '[class*="gpt"], [class*="GPT"], [class*="robot"], [class*="Robot"],' +
+            '[class*="float-ball"], [class*="floatBall"], [class*="FloatBall"],' +
+            '[class*="float-ball-btn"], [class*="floatBallBtn"]'
+        ).forEach(function(el) {
+            var text = el.textContent || el.innerText || '';
+            if (text.indexOf('AI') !== -1 || text.indexOf('科技') !== -1 || 
+                text.indexOf('robot') !== -1 || text.indexOf('gpt') !== -1) {
+                el.style.display = 'none';
+            }
+        });
+
+        // 根据文本内容删除活动弹窗
+        document.querySelectorAll('[class*="popup"], [class*="modal"], [class*="dialog"]').forEach(function(el) {
+            var text = el.textContent || el.innerText || '';
+            if (text.indexOf('红包') !== -1 || text.indexOf('雨') !== -1 || 
+                text.indexOf('世界杯') !== -1 || text.indexOf('狂欢') !== -1 ||
+                text.indexOf('AI') !== -1 || text.indexOf('科技') !== -1) {
+                el.remove();
+            }
+        });
     }
 
     // 使用MutationObserver持续监控
@@ -574,7 +751,26 @@ const injectScript = `
         [class*="ad-container"], [class*="adContainer"], [class*="ad-wrapper"],
         [class*="google-ad"], [class*="adsbygoogle"],
         /* 广告角标 */
-        .corner-tag.isAdv {
+        .corner-tag.isAdv,
+        /* 红包雨相关 */
+        [class*="redpacket"], [class*="redPacket"], [class*="RedPacket"],
+        [class*="red-packet"], [class*="red_rain"], [class*="redRain"],
+        [class*="rain"], [class*="HongBao"], [class*="hongbao"],
+        /* 世界杯/狂欢活动 */
+        [class*="worldcup"], [class*="worldCup"], [class*="WorldCup"],
+        [class*="world-cup"], [class*="copa"], [class*="recreation"],
+        [class*="festival"], [class*="狂欢"],
+        /* AI科技相关 */
+        [class*="ai"], [class*="AI"], [class*="Ai"],
+        [class*="tech"], [class*="Tech"], [class*="科技"],
+        [class*="gpt"], [class*="robot"], [class*="Robot"],
+        /* 活动弹窗 */
+        [class*="activity"], [class*="Activity"],
+        [class*="campaign"], [class*="Campaign"],
+        [class*="event"], [class*="Event"],
+        /* 浮动球/悬浮广告 */
+        [class*="float-ball"], [class*="floatBall"], [class*="FloatBall"],
+        [class*="float-ball-btn"], [class*="floatBallBtn"] {
             display: none !important;
         }
     \`;
