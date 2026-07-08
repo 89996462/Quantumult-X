@@ -40,18 +40,6 @@ else {
 const url = $request.url;
 const body = $response.body;
 
-// ========== JSON API响应处理 ==========
-if (url.indexOf('/api/app/ai/mod/list') !== -1) {
-    $done({ body: '{"code":200,"data":[],"hash":false,"msg":"success"}' });
-}
-else if (url.indexOf('/api/app/recreation/list_v2') !== -1) {
-    $done({ body: '{"code":200,"data":[],"msg":"success"}' });
-}
-else if (url.indexOf('/api/app/modules/list') !== -1) {
-    $done({ body: '{"code":200,"data":[],"hash":false,"msg":"success"}' });
-}
-else {
-
 // ========== 注入的JS代码 (IIFE) ==========
 const injectScript = `
 <script>
