@@ -1120,7 +1120,12 @@ const injectScript = `
                         
                         // 删除非功能性的右下角悬浮元素
                         if (!isFunctional) {
-                            el.remove();
+                            // 添加广告标记class，通过CSS隐藏
+                            el.classList.add('ad-float-element');
+                            // 同时直接设置样式 (双重保险)
+                            el.style.display = 'none !important';
+                            el.style.visibility = 'hidden !important';
+                            el.style.opacity = '0 !important';
                         }
                     }
                 }
@@ -1214,11 +1219,95 @@ const injectScript = `
         [class*="festival-btn"], [class*="festivalBtn"],
         [class*="suspend"], [class*="Suspend"],
         [class*="popup-ball"], [class*="popupBall"],
-        [class*="popup-btn"], [class*="popupBtn"] {
+        [class*="popup-btn"], [class*="popupBtn"],
+        /* 动态标记的广告悬浮元素 */
+        .ad-float-element {
             display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
         }
     \`;
     (document.head || document.documentElement).appendChild(style);
+
+    // ========== 动态CSS规则生成: 隐藏右下角悬浮广告 ==========
+    function generateAdCss() {
+        try {
+            var cssRules = [];
+            var seenSelectors = {};
+            
+            document.querySelectorAll('*').forEach(function(el) {
+                try {
+                    var style = getComputedStyle(el);
+                    if (style.position === 'fixed') {
+                        var rect = el.getBoundingClientRect();
+                        var windowWidth = window.innerWidth || document.documentElement.clientWidth;
+                        var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+                        
+                        var isBottomRight = rect.right > windowWidth - 400 && rect.bottom > windowHeight - 400;
+                        var isSmall = rect.width < 300 && rect.height < 300;
+                        var isVisible = style.display !== 'none' && style.visibility !== 'hidden';
+                        
+                        if (isBottomRight && isSmall && isVisible) {
+                            var text = el.textContent || el.innerText || '';
+                            var className = el.className || '';
+                            var id = el.id || '';
+                            
+                            var isFunctional = text.indexOf('客服') !== -1 || 
+                                              text.indexOf('帮助') !== -1 ||
+                                              text.indexOf('设置') !== -1 ||
+                                              text.indexOf('反馈') !== -1 ||
+                                              text.indexOf('分享') !== -1 ||
+                                              text.indexOf('收藏') !== -1 ||
+                                              text.indexOf('购物') !== -1 ||
+                                              text.indexOf('购物车') !== -1 ||
+                                              text.indexOf('订单') !== -1 ||
+                                              text.indexOf('消息') !== -1 ||
+                                              text.indexOf('通知') !== -1 ||
+                                              text.indexOf('搜索') !== -1 ||
+                                              text.indexOf('顶部') !== -1 ||
+                                              text.indexOf('返回') !== -1 ||
+                                              text.indexOf('关闭') !== -1 ||
+                                              text.indexOf('确定') !== -1 ||
+                                              className.indexOf('toast') !== -1 ||
+                                              className.indexOf('loading') !== -1;
+                            
+                            if (!isFunctional) {
+                                // 生成CSS选择器
+                                var selector = '';
+                                if (id) {
+                                    selector = '#' + id;
+                                } else if (className && typeof className === 'string') {
+                                    var classes = className.split(/\s+/).filter(function(c) { return c && c.length > 2; });
+                                    if (classes.length > 0) {
+                                        selector = '.' + classes.join('.');
+                                    }
+                                }
+                                
+                                if (selector && !seenSelectors[selector]) {
+                                    seenSelectors[selector] = true;
+                                    cssRules.push(selector);
+                                }
+                            }
+                        }
+                    }
+                } catch(e) {}
+            });
+            
+            // 如果找到了广告元素，生成CSS规则
+            if (cssRules.length > 0) {
+                var dynamicStyle = document.createElement('style');
+                dynamicStyle.id = 'ad-hide-styles';
+                dynamicStyle.textContent = cssRules.join(',\n') + ' {\n    display: none !important;\n    visibility: hidden !important;\n    opacity: 0 !important;\n    pointer-events: none !important;\n}';
+                (document.head || document.documentElement).appendChild(dynamicStyle);
+            }
+        } catch(e) {}
+    }
+    
+    // 定时生成CSS规则 (处理动态渲染的广告)
+    setTimeout(generateAdCss, 1000);
+    setTimeout(generateAdCss, 3000);
+    setTimeout(generateAdCss, 5000);
 
     // ========== 9. 拦截addEventListener 阻止广告SDK初始化 ==========
     // 阻止 eqfx9bas 广告SDK的脚本加载
