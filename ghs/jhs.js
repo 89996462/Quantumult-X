@@ -9,7 +9,33 @@
  *   2. App前端JS解密data字段后通过JSON.parse解析
  *   3. 本脚本注入JS,hook JSON.parse拦截解密后的数据并修改
  *   4. 同时拦截fetch/XHR阻止广告请求,移除广告DOM元素
+ *
+ * 双模式:
+ *   - script-request-header: 删除If-None-Match/If-Modified-Since,强制200返回完整HTML
+ *   - script-response-body: 注入去广告JS到HTML
  **********************************************/
+
+// ========== 模式1: script-request-header ==========
+// 删除浏览器缓存头,防止304导致无法注入
+if (typeof $response === 'undefined' || !$response) {
+    var reqHeaders = $request.headers || {};
+    // 删除所有大小写变体
+    var keysToDelete = ['If-None-Match', 'If-Modified-Since', 'if-none-match', 'if-modified-since', 'IF-NONE-MATCH', 'IF-MODIFIED-SINCE'];
+    for (var i = 0; i < keysToDelete.length; i++) {
+        if (reqHeaders[keysToDelete[i]]) {
+            delete reqHeaders[keysToDelete[i]];
+        }
+    }
+    // 遍历删除所有包含If-None-Match/If-Modified-Since的key (不区分大小写)
+    for (var k in reqHeaders) {
+        if (k.toLowerCase() === 'if-none-match' || k.toLowerCase() === 'if-modified-since') {
+            delete reqHeaders[k];
+        }
+    }
+    $done({ headers: reqHeaders });
+}
+// ========== 模式2: script-response-body ==========
+else {
 
 const url = $request.url;
 const body = $response.body;
@@ -391,3 +417,5 @@ if (body && (url.indexOf('d18v10algpi965.cloudfront.net') !== -1)) {
 } else {
     $done({});
 }
+
+} // 结束 script-response-body 模式
