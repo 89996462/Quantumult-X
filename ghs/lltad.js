@@ -28,7 +28,7 @@ const AES_IV = "1ae94ef112d431cd";
 const SIGN_SALT = "shDOUArrDhpeAMw9FGY79Zmy3MLWwNWy";
 const VIA_M = "ct";
 
-const AD_KEY_RE = /^(ads|pop_ads|popAds|pop_app_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|buoy|nav_prepend|showApp|show_app)$/i;
+const AD_KEY_RE = /^(ads|pop_ads|popAds|pop_app_ads|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|ads_screen|ads_pop|floating_ads|floating_ai|floating|banner|home_banner|home_ads|notice|notice_app|start_screen_ads|person_ads|post_detail_ads|buoy|nav_prepend|showApp|show_app)$/i;
 
 const AD_TITLE_RE = /(裸聊|抖阴|AI科技|约炮|世界杯|投注|上门约炮|高端约炮|星狐直播|开元棋牌|开元电子|新葡京|暗网视频|8688|赔率异常|同城约炮|同城聊骚|真人在线|ttav)/i;
 
@@ -105,9 +105,11 @@ function stripAds(node) {
       if (k === "ads" && v && typeof v === "object" && !Array.isArray(v)) node[k] = null;
       else if (k === "notice" && v && typeof v === "object") node[k] = {};
       else if (k === "showApp" || k === "show_app") { node[k] = 0; continue; }
+      else if (k === "floating_ai") { node[k] = "0"; continue; }
       else if (k === "config" && v && typeof v === "object") {
         ["buoy","person_ads","post_detail_ads","nav_prepend"].forEach(function(x) { if (Array.isArray(v[x])) v[x] = []; });
         if (v.show_app !== undefined) v.show_app = 0;
+        if (v.floating_ai !== undefined) v.floating_ai = "0";
         stripAds(v);
       } else node[k] = Array.isArray(v) ? [] : (v && typeof v === "object" ? {} : v);
       continue;
