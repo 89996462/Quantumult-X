@@ -32,6 +32,11 @@ if (typeof $response === 'undefined' || !$response) {
             delete reqHeaders[k];
         }
     }
+    // 强制设置不缓存的请求头
+    reqHeaders['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    reqHeaders['Pragma'] = 'no-cache';
+    reqHeaders['Expires'] = '0';
+    
     $done({ headers: reqHeaders });
 }
 // ========== 模式2: script-response-body ==========
@@ -303,11 +308,16 @@ const injectScript = `
             }
         }
 
-        // 红包/活动弹窗 → 关闭
+        // 红包/活动弹窗 → 关闭 (包含redPacket和redPacket大小写变体)
         if ('redPacket' in obj && obj.redPacket && typeof obj.redPacket === 'object') {
             obj.redPacket.canClick = false;
             obj.redPacket.enabled = false;
             obj.redPacket.show = false;
+        }
+        if ('redpacket' in obj && obj.redpacket && typeof obj.redpacket === 'object') {
+            obj.redpacket.canClick = false;
+            obj.redpacket.enabled = false;
+            obj.redpacket.show = false;
         }
     }
 
@@ -676,7 +686,14 @@ if (body && (url.indexOf('d18v10algpi965.cloudfront.net') !== -1)) {
         newBody = newBody + injectScript;
     }
 
-    $done({ body: newBody });
+    // 强制设置不缓存的响应头
+    var headers = $response.headers || {};
+    headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    headers['Pragma'] = 'no-cache';
+    headers['Expires'] = '0';
+    headers['X-Cache'] = 'BYPASS';
+
+    $done({ body: newBody, headers: headers });
 } else {
     $done({});
 }
