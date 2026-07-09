@@ -82,9 +82,7 @@ const injectScript = `
         'lottery-ad.com',
         // 广告追踪域名
         'api-dc-prod-008.cyou',
-        'api-dc2-prod-08.cyou',
-        // CloudFront相关域名会通过通配符处理
-        '.cloudfront.net'
+        'api-dc2-prod-08.cyou'
     ];
 
     function isAdUrl(u) {
@@ -664,14 +662,14 @@ const injectScript = `
         return el;
     };
 
-    if (window.console && DEBUG_MODE) console.log('[Butterfly] 去广告+VIP模拟脚本已加载 v2.4');
+    if (window.console && DEBUG_MODE) console.log('[Butterfly] 去广告+VIP模拟脚本已加载 v2.2');
 })();
 </script>
 `;
 
 // ========== 注入脚本到HTML页面 ==========
 // 只对HTML文件注入，避免破坏JS/CSS文件
-if (body && url.indexOf('.cloudfront.net') !== -1) {
+if (body && (url.indexOf('.cloudfront.net') !== -1)) {
     // 检查是否为HTML文件（通过响应头判断）
     var contentType = $response.headers['Content-Type'] || $response.headers['content-type'] || '';
     if (contentType.indexOf('html') === -1 && contentType.indexOf('text/html') === -1) {
