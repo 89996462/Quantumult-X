@@ -80,7 +80,7 @@ const injectScript = `
         'ia-tech.com',
         'prize-ad.com',
         'lottery-ad.com',
-        // 广告追踪域名
+        // 广告追踪域名 (使用路径匹配，域名经常换)
         'api-dc-prod-008.cyou',
         'api-dc2-prod-08.cyou'
     ];
@@ -669,7 +669,8 @@ const injectScript = `
 
 // ========== 注入脚本到HTML页面 ==========
 // 只对HTML文件注入，避免破坏JS/CSS文件
-if (body && (url.indexOf('d18v10algpi965.cloudfront.net') !== -1)) {
+// 支持所有cloudfront子域名 (app换了新域名)
+if (body && (url.indexOf('.cloudfront.net') !== -1)) {
     // 检查是否为HTML文件（通过响应头判断）
     var contentType = $response.headers['Content-Type'] || $response.headers['content-type'] || '';
     if (contentType.indexOf('html') === -1 && contentType.indexOf('text/html') === -1) {
