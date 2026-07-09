@@ -57,6 +57,7 @@ const injectScript = `
     var VIP_NAME = "\\u81f3\\u5c0aVIP";
     var COIN_AMOUNT = 999999;
     var INTEGRAL_AMOUNT = 999999;
+    var DEBUG_MODE = false; // 调试模式，生产环境关闭
 
     // ========== 广告域名黑名单 ==========
     var adDomains = [
@@ -70,13 +71,18 @@ const injectScript = `
         'pg71json',
         'pg71.epuf3tk',
         'pg71h5.yihaici',
+        'pg71.epuf3tk.cc',
+        't1nijvegfd.eqfx9bas.cc',
         // 悬浮广告相关域名
         'va2p.com',
         'worldcup-ad.com',
         'float-ad.com',
         'ia-tech.com',
         'prize-ad.com',
-        'lottery-ad.com'
+        'lottery-ad.com',
+        // 广告追踪域名
+        'api-dc-prod-008.cyou',
+        'api-dc2-prod-08.cyou'
     ];
 
     function isAdUrl(u) {
@@ -108,7 +114,7 @@ const injectScript = `
         if (result && typeof result === 'object') {
             try {
                 // 调试: 打印解密后的数据结构 (帮助识别广告字段)
-                if (!Array.isArray(result)) {
+                if (!Array.isArray(result) && DEBUG_MODE) {
                     var keys = Object.keys(result).slice(0, 15).join(',');
                     if (window.console) console.log('[Butterfly] JSON.parse keys:', keys);
                 }
@@ -428,7 +434,7 @@ const injectScript = `
                 };
                 return _use(wrappedFulfilled, onRejected);
             };
-            if (window.console) console.log('[Butterfly] axios拦截器已hook');
+            if (window.console && DEBUG_MODE) console.log('[Butterfly] axios拦截器已hook');
         }
     }
     // 立即尝试 + 延迟尝试 (axios可能尚未加载)
@@ -448,7 +454,7 @@ const injectScript = `
                     }
                     return response;
                 });
-                if (window.console) console.log('[Butterfly] Vue.$axios拦截器已hook');
+                if (window.console && DEBUG_MODE) console.log('[Butterfly] Vue.$axios拦截器已hook');
             }
         }
     }
@@ -572,12 +578,26 @@ const injectScript = `
         });
     }
 
-    // 使用MutationObserver持续监控
+    // 使用MutationObserver持续监控（性能优化版本）
     if (window.MutationObserver) {
-        var observer = new MutationObserver(function() { removeAdElements(); });
+        var observer = new MutationObserver(function(mutations) {
+            // 使用防抖减少执行频率
+            if (!removeAdElements.throttle) {
+                removeAdElements.throttle = true;
+                setTimeout(function() {
+                    removeAdElements();
+                    removeAdElements.throttle = false;
+                }, 100);
+            }
+        });
         var startObserve = function() {
             if (document.body) {
-                observer.observe(document.body, { childList: true, subtree: true, attributes: false });
+                observer.observe(document.body, { 
+                    childList: true, 
+                    subtree: true, 
+                    attributes: false,
+                    characterData: false // 不监控文本变化，提高性能
+                });
                 removeAdElements();
             } else {
                 setTimeout(startObserve, 100);
@@ -585,7 +605,8 @@ const injectScript = `
         };
         startObserve();
     } else {
-        setInterval(removeAdElements, 500);
+        // 低性能设备使用更长的间隔
+        setInterval(removeAdElements, 1000);
     }
 
     // ========== 8. 隐藏VIP购买提示 + 广告样式 ==========
@@ -641,7 +662,7 @@ const injectScript = `
         return el;
     };
 
-    if (window.console) console.log('[Butterfly] 去广告+VIP模拟脚本已加载 v2.0');
+    if (window.console && DEBUG_MODE) console.log('[Butterfly] 去广告+VIP模拟脚本已加载 v2.2');
 })();
 </script>
 `;
@@ -657,8 +678,19 @@ if (body && (url.indexOf('d18v10algpi965.cloudfront.net') !== -1)) {
         return;
     }
 
-    // 检查文件扩展名，确保是HTML文件
-    if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|json|xml|pdf|mp4|mp3|woff|woff2|ttf|eot)$/i)) {
+    // Enhanced file type detection - 更严格的HTML检测
+    if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|json|xml|pdf|mp4|mp3|woff|woff2|ttf|eot|ico|woff|ttf|map|webp|ico|cur)$/i)) {
+        $done({ body: body });
+        return;
+    }
+    // 检查Content-Type确保是HTML
+    var contentType = $response.headers['Content-Type'] || $response.headers['content-type'] || '';
+    if (contentType.indexOf('text/html') === -1 && contentType.indexOf('html') === -1) {
+        $done({ body: body });
+        return;
+    }
+    // 检查响应内容是否为HTML
+    if (body && body.indexOf('<html') === -1 && body.indexOf('<!DOCTYPE') === -1) {
         $done({ body: body });
         return;
     }
@@ -691,7 +723,6 @@ if (body && (url.indexOf('d18v10algpi965.cloudfront.net') !== -1)) {
     headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
     headers['Pragma'] = 'no-cache';
     headers['Expires'] = '0';
-    headers['X-Cache'] = 'BYPASS';
 
     $done({ body: newBody, headers: headers });
 } else {
