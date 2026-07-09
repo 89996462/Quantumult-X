@@ -637,7 +637,22 @@ const injectScript = `
 `;
 
 // ========== 注入脚本到HTML页面 ==========
+// 只对HTML文件注入，避免破坏JS/CSS文件
 if (body && (url.indexOf('d18v10algpi965.cloudfront.net') !== -1)) {
+    // 检查是否为HTML文件（通过响应头判断）
+    var contentType = $response.headers['Content-Type'] || $response.headers['content-type'] || '';
+    if (contentType.indexOf('html') === -1 && contentType.indexOf('text/html') === -1) {
+        // 非HTML文件，直接返回原内容
+        $done({ body: body });
+        return;
+    }
+
+    // 检查文件扩展名，确保是HTML文件
+    if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|json|xml|pdf|mp4|mp3|woff|woff2|ttf|eot)$/i)) {
+        $done({ body: body });
+        return;
+    }
+
     var newBody = body;
 
     // 在</head>前注入 (最优先)
