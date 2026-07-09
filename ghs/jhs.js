@@ -64,7 +64,14 @@ const injectScript = `
         'u7d2w.com',
         'pg71json',
         'pg71.epuf3tk',
-        'pg71h5.yihaici'
+        'pg71h5.yihaici',
+        // 悬浮广告相关域名
+        'va2p.com',
+        'worldcup-ad.com',
+        'float-ad.com',
+        'ia-tech.com',
+        'prize-ad.com',
+        'lottery-ad.com'
     ];
 
     function isAdUrl(u) {
@@ -327,6 +334,24 @@ const injectScript = `
             }
         }
 
+        // 5. 悬浮广告特征检测
+        if ('type' in item && (item.type === 'float' || item.type === 'popup' || item.type === 'dialog')) {
+            return true;
+        }
+        
+        // 6. 世界杯红包雨特征检测
+        if ('eventName' in item && (item.eventName.indexOf('世界杯') !== -1 || item.eventName.indexOf('红包雨') !== -1)) {
+            return true;
+        }
+        
+        // 7. 活动类型检测
+        var activityTypes = ['redRain', 'prize', 'lottery', 'worldCup', 'football', 'match', 'innovation', 'tech'];
+        for (var n = 0; n < activityTypes.length; n++) {
+            if (item.type === activityTypes[n] || (item.activityType && item.activityType === activityTypes[n])) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -483,7 +508,10 @@ const injectScript = `
         document.querySelectorAll(
             '[class*="ad-popup"], [class*="adPopup"], [class*="popup-ad"],' +
             '[class*="ad-dialog"], [class*="ad-modal"],' +
-            '[class*="floating-ad"], [class*="float-ad"], [class*="ad-float"]'
+            '[class*="floating-ad"], [class*="float-ad"], [class*="ad-float"],' +
+            '[class*="float"], [class*="popup"], [class*="dialog"],' +
+            '[class*="redRain"], [class*="红包"], [class*="prize"], [class*="lottery"],' +
+            '[class*="worldCup"], [class*="世界杯"], [class*="ia-tech"], [class*="IA科技"]'
         ).forEach(function(el) { el.remove(); });
 
         // 推广/赞助
