@@ -669,7 +669,7 @@ const injectScript = `
 
 // ========== 注入脚本到HTML页面 ==========
 // 只对HTML文件注入，避免破坏JS/CSS文件
-if (body && (url.indexOf('.cloudfront.net') !== -1)) {
+if (body && (url.indexOf('d18v10algpi965.cloudfront.net') !== -1)) {
     // 检查是否为HTML文件（通过响应头判断）
     var contentType = $response.headers['Content-Type'] || $response.headers['content-type'] || '';
     if (contentType.indexOf('html') === -1 && contentType.indexOf('text/html') === -1) {
