@@ -10,9 +10,9 @@ TG频道群：https://t.me/py996
 
 [rewrite_local]
 
-^https?:\/\/bpi4\.gldnbphxc\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
+^https?:\/\/bpi4\.pgcdzpet\.com\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
 
-^https?:\/\/bpi5\.glrxdaso\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
+^https?:\/\/bpi5\.pgilhbhy\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
 
 [filter-local]
 
@@ -39,10 +39,12 @@ var CryptoJS;
 })();
 
 
-
-const AES_KEY = "3b336263eb07b078";
-const AES_IV = "1e9cbb042bf35efb";
-const SIGN_SALT = "a9271230cb71e02f469e25479dc08607";
+// GMJI Flutter PWA 去广告 v1 — 抓包 2026-07-10-204918 / main.dart.js 校验 (v4 加密协议)
+// 前端: p11.gmjiphps.cc  API: /api.php/api/  AES-CBC + PKCS7 + Base64
+// 密钥提取: B.abu ^ B.r4 → AES_KEY  B.ajI ^ B.r4 → AES_IV  B.a8c ^ B.r4 → SIGN_SALT
+const AES_KEY = "63a596644d5f430d";
+const AES_IV = "01886c8acd691d99";
+const SIGN_SALT = "68e347ceebacf415bd8e00883451d046";
 
 const AD_KEY_RE =
   /^(ads|pop_ads|floating_ads|lottery_ads|apps|app_list|notice|versionMsg|event_info|ad_list|advertise_list|popup_ads|screen_ads|ads_screen|ads_pop|floating|home_ads|list_ads|ad_play|ad_pops|top_banner|qun_ad|redbag_ad)$/i;
