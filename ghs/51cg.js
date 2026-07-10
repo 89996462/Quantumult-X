@@ -275,9 +275,14 @@ function stripHomeConfigAds(payload) {
   if (!data || typeof data !== "object") return;
   // ads 为单个对象(bPK)；null 跳过开屏，[] 会崩溃
   if (data.ads != null) data.ads = null;
+  // 清除列表类广告位
   ["floating_ads", "pop_ads", "lottery_ads", "apps"].forEach(function (k) {
     if (Array.isArray(data[k])) data[k] = [];
   });
+  // 清除 notice 弹窗广告（开屏广告/首页弹窗），v4协议后变为 dict 格式
+  if (data.notice && typeof data.notice === "object" && !Array.isArray(data.notice)) {
+    data.notice = {};
+  }
 }
 
 function stripAds(node) {
