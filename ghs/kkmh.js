@@ -13,30 +13,27 @@
  * 双模式:
  *   - script-request-header: 删除If-None-Match/If-Modified-Since,强制200返回完整HTML
  *   - script-response-body: 注入去广告JS到HTML
+ *
+ * 与副本(d18v10algpi965)的关系：isAdItem/isAdUrl 逻辑完全一致。
+ * 仅 adDomains 增加了 d3sjt6i1mx4tjc 特有的追踪IP域名。
  **********************************************/
 
 // ========== 模式1: script-request-header ==========
 // 删除浏览器缓存头,防止304导致无法注入
 if (typeof $response === 'undefined' || !$response) {
     var reqHeaders = $request.headers || {};
-    // 删除所有大小写变体
     var keysToDelete = ['If-None-Match', 'If-Modified-Since', 'if-none-match', 'if-modified-since', 'IF-NONE-MATCH', 'IF-MODIFIED-SINCE'];
     for (var i = 0; i < keysToDelete.length; i++) {
-        if (reqHeaders[keysToDelete[i]]) {
-            delete reqHeaders[keysToDelete[i]];
-        }
+        if (reqHeaders[keysToDelete[i]]) delete reqHeaders[keysToDelete[i]];
     }
-    // 遍历删除所有包含If-None-Match/If-Modified-Since的key (不区分大小写)
     for (var k in reqHeaders) {
         if (k.toLowerCase() === 'if-none-match' || k.toLowerCase() === 'if-modified-since') {
             delete reqHeaders[k];
         }
     }
-    // 强制设置不缓存的请求头
     reqHeaders['Cache-Control'] = 'no-cache, no-store, must-revalidate';
     reqHeaders['Pragma'] = 'no-cache';
     reqHeaders['Expires'] = '0';
-    
     $done({ headers: reqHeaders });
 }
 // ========== 模式2: script-response-body ==========
@@ -46,6 +43,8 @@ const url = $request.url;
 const body = $response.body;
 
 // ========== 注入的JS代码 (IIFE) ==========
+// isAdItem 和 isAdUrl 逻辑与副本完全一致
+// 仅 adDomains 列表增加了 d3sjt6i1mx4tjc 抓包确认的追踪域名
 const injectScript = `
 <script>
 (function() {
@@ -57,16 +56,33 @@ const injectScript = `
     var VIP_NAME = "\\u81f3\\u5c0aVIP";
     var COIN_AMOUNT = 999999;
     var INTEGRAL_AMOUNT = 999999;
-    var DEBUG_MODE = false; // 调试模式，生产环境关闭
+    var DEBUG_MODE = false;
 
-    // ========== 广告域名黑名单 (基于d3sjt6i1mx4tjc抓包分析) ==========
+    // ========== 广告域名黑名单 ==========
     var adDomains = [
-        // 事件追踪上报域名
+        'eqfx9bas.cc',
+        'yihaici.top',
+        'yihaici.com',
+        'epuf3tk.cc',
+        'jmnkojis4.com',
+        'speedfan',
+        'u7d2w.com',
+        'pg71json',
+        'pg71.epuf3tk',
+        'pg71h5.yihaici',
+        'pg71.epuf3tk.cc',
+        't1nijvegfd.eqfx9bas.cc',
+        // 悬浮广告相关域名
+        'va2p.com',
+        'worldcup-ad.com',
+        'float-ad.com',
+        'ia-tech.com',
+        'prize-ad.com',
+        'lottery-ad.com',
+        // 广告追踪域名
         'api-dc-prod-008.cyou',
         'api-dc2-prod-08.cyou',
-        // 事件追踪CDN域名
-        'd3k4e7spixznr4.cloudfront.net',
-        // 事件追踪IP (AWS新加坡等)
+        // d3sjt6i1mx4tjc 特有: 事件追踪IP
         '13.212.103.98',
         '47.129.175.127',
         '54.255.68.213',
@@ -86,15 +102,9 @@ const injectScript = `
         if (lower.indexOf('/mp4/splash-') !== -1) return true;
         if (lower.indexOf('/png/buygold-') !== -1) return true;
         if (lower.indexOf('/png/ad-card-bg-') !== -1) return true;
-        // 弹窗广告背景图
-        if (lower.indexOf('popup-bg-') !== -1) return true;
-        // 启动页广告
-        if (lower.indexOf('splash-') !== -1 && (lower.indexOf('.webp') !== -1 || lower.indexOf('.png') !== -1 || lower.indexOf('.jpg') !== -1)) return true;
         // App源码确认的广告API
         if (lower.indexOf('/ads/click') !== -1) return true;
         if (lower.indexOf('/recreation/click') !== -1) return true;
-        // 广告弹窗JS (VideoGoldPopupAdv)
-        if (lower.indexOf('videogoldpopupadv') !== -1) return true;
         return false;
     }
 
@@ -110,12 +120,11 @@ const injectScript = `
 
         if (result && typeof result === 'object') {
             try {
-                // 调试: 打印解密后的数据结构 (帮助识别广告字段)
                 if (!Array.isArray(result) && DEBUG_MODE) {
                     var keys = Object.keys(result).slice(0, 15).join(',');
-                    if (window.console) console.log('[AdBlock] JSON.parse keys:', keys);
+                    if (window.console) console.log('[Butterfly] JSON.parse keys:', keys);
                 }
-                // ===== VIP模拟 (特定字段检测) =====
+                // ===== VIP模拟 =====
                 if (!Array.isArray(result) && ('isVip' in result || 'vipLevel' in result || 'vipExpireDate' in result || 'snapVip' in result)) {
                     result.isVip = true;
                     result.vipLevel = VIP_LEVEL;
@@ -172,34 +181,27 @@ const injectScript = `
                     result.isNewUser = false;
                 }
 
-                // ===== 清空广告列表 (App源码确认: appConfig.adsInfoList是广告数据源) =====
+                // ===== 清空广告列表 =====
                 clearAdsInfoList(result);
 
-                // ===== 递归处理: 禁用广告配置 + 过滤广告数组 =====
+                // ===== 递归处理 =====
                 recursiveProcess(result, 0);
 
-            } catch(e) { if (window.console) console.log('[AdBlock] parse error:', e); }
+            } catch(e) { if (window.console) console.log('[Butterfly] parse error:', e); }
         }
 
         return result;
     };
 
-    // ========== 清空广告列表 (App源码确认: adsInfoList是广告数据源) ==========
+    // ========== 清空广告列表 ==========
     function clearAdsInfoList(obj) {
         if (!obj || typeof obj !== 'object') return;
-        // 直接清空 adsInfoList
-        if ('adsInfoList' in obj) {
-            obj.adsInfoList = [];
-        }
-        // 递归查找嵌套的 adsInfoList
+        if ('adsInfoList' in obj) obj.adsInfoList = [];
         for (var key in obj) {
             if (!obj.hasOwnProperty(key)) continue;
             var val = obj[key];
             if (val && typeof val === 'object') {
-                if ('adsInfoList' in val) {
-                    val.adsInfoList = [];
-                }
-                // 继续递归
+                if ('adsInfoList' in val) val.adsInfoList = [];
                 if (typeof val === 'object' && !Array.isArray(val)) {
                     clearAdsInfoList(val);
                 } else if (Array.isArray(val)) {
@@ -211,37 +213,27 @@ const injectScript = `
         }
     }
 
-    // ========== 递归处理函数: 深度遍历所有嵌套对象/数组 ==========
+    // ========== 递归处理函数 ==========
     function recursiveProcess(obj, depth) {
         if (depth > 10 || !obj || typeof obj !== 'object') return;
 
         if (Array.isArray(obj)) {
-            // 过滤数组中的广告项
             for (var i = obj.length - 1; i >= 0; i--) {
                 if (obj[i] && typeof obj[i] === 'object') {
-                    if (isAdItem(obj[i])) {
-                        obj.splice(i, 1); // 删除广告项
-                    } else {
-                        recursiveProcess(obj[i], depth + 1);
-                    }
+                    if (isAdItem(obj[i])) obj.splice(i, 1);
+                    else recursiveProcess(obj[i], depth + 1);
                 }
             }
         } else {
-            // 对象: 先禁用广告配置,再递归处理子属性
             disableAdConfig(obj);
-
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     var val = obj[key];
                     if (val && typeof val === 'object') {
                         if (Array.isArray(val)) {
-                            // 过滤数组中的广告
                             for (var j = val.length - 1; j >= 0; j--) {
-                                if (val[j] && typeof val[j] === 'object' && isAdItem(val[j])) {
-                                    val.splice(j, 1);
-                                }
+                                if (val[j] && typeof val[j] === 'object' && isAdItem(val[j])) val.splice(j, 1);
                             }
-                            // 递归处理剩余项
                             recursiveProcess(val, depth + 1);
                         } else {
                             recursiveProcess(val, depth + 1);
@@ -256,14 +248,9 @@ const injectScript = `
     function disableAdConfig(obj) {
         if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
 
-        // App源码确认: adsInfoList是广告数据源,清空它
-        if ('adsInfoList' in obj) {
-            obj.adsInfoList = [];
-        }
-        // homeAdvFirst是store状态,控制首页广告优先
+        if ('adsInfoList' in obj) obj.adsInfoList = [];
         if ('homeAdvFirst' in obj) obj.homeAdvFirst = false;
 
-        // 广告开关字段 → 全部关闭
         var adFlags = [
             'showAd', 'adEnabled', 'hasAd', 'adSwitch', 'enableAd', 'adOpen',
             'showBanner', 'showSplash', 'showPopup', 'showPromote',
@@ -284,8 +271,6 @@ const injectScript = `
             'marqueeAd', 'marqueeAdSwitch',
             'noticeAd', 'noticeAdSwitch',
             'guideAd', 'guideAdSwitch'
-            // 注意: adSlotKey/adSlotName/adSlot/adId/creativeId/adType 已移除
-            // 这些字段名太通用(如adId可能代表adminId等)，由isAdItem的组合检测处理
         ];
 
         for (var i = 0; i < adFlags.length; i++) {
@@ -304,15 +289,11 @@ const injectScript = `
             }
         }
 
-        // 开屏/splash相关配置 → 清空
         var splashKeys = ['splash', 'splashAd', 'splashConfig', 'splashData', 'splashInfo', 'openScreen', 'openScreenAd', 'launchAd', 'bootAd', 'splashAdv', 'splash_adv'];
         for (var s = 0; s < splashKeys.length; s++) {
-            if (splashKeys[s] in obj) {
-                obj[splashKeys[s]] = null;
-            }
+            if (splashKeys[s] in obj) obj[splashKeys[s]] = null;
         }
 
-        // 红包/活动弹窗 → 关闭
         if ('redPacket' in obj && obj.redPacket && typeof obj.redPacket === 'object') {
             obj.redPacket.canClick = false;
             obj.redPacket.enabled = false;
@@ -325,25 +306,19 @@ const injectScript = `
         }
     }
 
-    // ========== 广告项检测函数 (保守模式 - 避免误伤正常内容) ==========
-    // 关键修复: position是常见排序字段，不能单独作为广告判定依据
+    // ========== 广告项检测函数 (与副本完全一致) ==========
+    // App源码确认: isAdv = ("adv" === info.type) || info.position
     function isAdItem(item) {
         if (!item || typeof item !== 'object') return false;
 
         // 1. type === "adv" → 广告 (App源码确认的核心判断)
         if (item.type === 'adv' || item.type === 'ADV') return true;
 
-        // 2. advertising_key 存在 → 广告 (App源码确认)
-        if ('advertising_key' in item && item.advertising_key) return true;
+        // 2. position 字段存在且非空 → 广告 (App源码确认)
+        if ('position' in item && item.position != null && item.position !== '' && item.position !== 0 && item.position !== false) return true;
 
-        // 3. 抓包确认的广告位字段组合检测 (必须同时满足多项才算广告)
-        var hasAdSlot = ('ad_slot_key' in item) || ('adSlotKey' in item) || ('ad_slot_name' in item) || ('adSlotName' in item);
-        var hasAdId = ('ad_id' in item) || ('adId' in item) || ('creative_id' in item) || ('creativeId' in item);
-        var hasAdType = ('ad_type' in item) || ('adType' in item);
-        // 只有同时具备广告位+广告ID/类型特征才判定为广告
-        if (hasAdSlot && (hasAdId || hasAdType)) return true;
-        // page_key + ad_slot_key 同时存在 → 事件追踪广告数据
-        if (hasAdSlot && ('page_key' in item || 'pageKey' in item || 'page_name' in item || 'pageName' in item)) return true;
+        // 3. advertising_key 存在 → 广告 (App源码确认)
+        if ('advertising_key' in item && item.advertising_key) return true;
 
         // 4. URL字段指向广告域名 → 广告
         var urlFields = ['link', 'url', 'jumpUrl', 'redirectUrl', 'href', 'actionUrl', 'clickUrl', 'h5Url', 'webUrl'];
@@ -358,16 +333,18 @@ const injectScript = `
             return true;
         }
         
-        // 6. 活动类型检测 (红包雨、抽奖等 - 保守列表)
-        var activityTypes = ['redRain', 'prize', 'lottery', 'worldCup', 'football', 'match'];
+        // 6. 世界杯红包雨特征检测
+        if ('eventName' in item && (item.eventName.indexOf('世界杯') !== -1 || item.eventName.indexOf('红包雨') !== -1)) {
+            return true;
+        }
+        
+        // 7. 活动类型检测
+        var activityTypes = ['redRain', 'prize', 'lottery', 'worldCup', 'football', 'match', 'innovation', 'tech'];
         for (var n = 0; n < activityTypes.length; n++) {
             if (item.type === activityTypes[n] || (item.activityType && item.activityType === activityTypes[n])) {
                 return true;
             }
         }
-
-        // 注意: position 是常见的列表排序字段,绝对不单独用作广告判定!
-        // 只有与 type="adv" 同时存在时才能判定为广告(已在前面处理)
 
         return false;
     }
@@ -387,7 +364,7 @@ const injectScript = `
         };
     }
 
-    // ========== 3. 拦截XMLHttpRequest 阻止广告请求 ==========
+    // ========== 3. 拦截XMLHttpRequest ==========
     var _open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(method, reqUrl) {
         if (isAdUrl(reqUrl)) {
@@ -396,7 +373,6 @@ const injectScript = `
         return _open.apply(this, arguments);
     };
 
-    // Hook XHR responseText getter - 拦截解密后的响应数据
     var _responseTextDesc = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText');
     if (_responseTextDesc && _responseTextDesc.get) {
         var _origGet = _responseTextDesc.get;
@@ -406,10 +382,7 @@ const injectScript = `
                 if (text && typeof text === 'string' && text.indexOf('"hash":true') !== -1) {
                     try {
                         var parsed = _parse(text);
-                        if (parsed && parsed.hash === true && typeof parsed.data === 'string') {
-                            // 这是加密包装,让app正常解密
-                            // 但我们hook了JSON.parse,解密后的数据会被处理
-                        }
+                        if (parsed && parsed.hash === true && typeof parsed.data === 'string') {}
                     } catch(e) {}
                 }
                 return text;
@@ -418,22 +391,20 @@ const injectScript = `
         });
     }
 
-    // ========== 3.5 Hook axios响应拦截器 ==========
+    // ========== 3.5 Hook axios ==========
     function hookAxios() {
         if (window.axios && window.axios.interceptors && window.axios.interceptors.response) {
             var _use = window.axios.interceptors.response.use.bind(window.axios.interceptors.response);
             window.axios.interceptors.response.use = function(onFulfilled, onRejected) {
                 var wrappedFulfilled = function(response) {
                     if (response && response.data) {
-                        try {
-                            recursiveProcess(response.data, 0);
-                        } catch(e) {}
+                        try { recursiveProcess(response.data, 0); } catch(e) {}
                     }
                     return onFulfilled ? onFulfilled(response) : response;
                 };
                 return _use(wrappedFulfilled, onRejected);
             };
-            if (window.console && DEBUG_MODE) console.log('[AdBlock] axios拦截器已hook');
+            if (window.console && DEBUG_MODE) console.log('[Butterfly] axios拦截器已hook');
         }
     }
     hookAxios();
@@ -441,7 +412,7 @@ const injectScript = `
     setTimeout(hookAxios, 500);
     setTimeout(hookAxios, 2000);
 
-    // ========== 3.6 Hook Vue.prototype.$axios (如果存在) ==========
+    // ========== 3.6 Hook Vue.$axios ==========
     function hookVueAxios() {
         if (window.Vue && window.Vue.prototype && window.Vue.prototype.$axios) {
             var ax = window.Vue.prototype.$axios;
@@ -452,21 +423,21 @@ const injectScript = `
                     }
                     return response;
                 });
-                if (window.console && DEBUG_MODE) console.log('[AdBlock] Vue.$axios拦截器已hook');
+                if (window.console && DEBUG_MODE) console.log('[Butterfly] Vue.$axios拦截器已hook');
             }
         }
     }
     setTimeout(hookVueAxios, 500);
     setTimeout(hookVueAxios, 2000);
 
-    // ========== 4. 拦截window.open 阻止广告跳转 ==========
+    // ========== 4. 拦截window.open ==========
     var _windowOpen = window.open;
     window.open = function(u) {
         if (isAdUrl(u)) return null;
         return _windowOpen.apply(this, arguments);
     };
 
-    // ========== 5. 拦截location跳转 阻止广告重定向 ==========
+    // ========== 5. 拦截location跳转 ==========
     var _assign = window.location.assign.bind(window.location);
     var _replace = window.location.replace.bind(window.location);
     window.location.assign = function(u) {
@@ -476,7 +447,7 @@ const injectScript = `
         if (!isAdUrl(u)) return _replace(u);
     };
 
-    // ========== 6. 拦截Service Worker注册 阻止广告缓存 ==========
+    // ========== 6. 拦截Service Worker ==========
     if ('serviceWorker' in navigator) {
         var _register = navigator.serviceWorker.register.bind(navigator.serviceWorker);
         navigator.serviceWorker.register = function(scriptUrl, options) {
@@ -522,14 +493,8 @@ const injectScript = `
             '[class*="ad-dialog"], [class*="ad-modal"],' +
             '[class*="floating-ad"], [class*="float-ad"], [class*="ad-float"],' +
             '[class*="float"], [class*="popup"], [class*="dialog"],' +
-            '[class*="redRain"], [class*="\\u7ea2\\u5305"], [class*="prize"], [class*="lottery"],' +
-            '[class*="worldCup"], [class*="\\u4e16\\u754c\\u676f"]'
-        ).forEach(function(el) { el.remove(); });
-
-        // 金币弹窗广告 (抓包确认: VideoGoldPopupAdv)
-        document.querySelectorAll(
-            '[class*="VideoGoldPopupAdv"], [class*="gold-popup"], [class*="GoldPopup"],' +
-            '[class*="gold-adv"], [class*="goldAdv"]'
+            '[class*="redRain"], [class*="红包"], [class*="prize"], [class*="lottery"],' +
+            '[class*="worldCup"], [class*="世界杯"], [class*="ia-tech"], [class*="IA科技"]'
         ).forEach(function(el) { el.remove(); });
 
         // 推广/赞助
@@ -540,39 +505,47 @@ const injectScript = `
 
         // 广告注入的iframe/script
         document.querySelectorAll(
-            'iframe[src*="eventTracking"], iframe[src*="batchReport"],' +
-            'script[src*="eventTracking"], script[src*="batchReport"]'
+            'iframe[src*="eqfx9bas"], iframe[src*="yihaici"], iframe[src*="epuf3tk"],' +
+            'iframe[src*="speedfan"], iframe[src*="u7d2w"],' +
+            'script[src*="eqfx9bas"], script[src*="yihaici"], script[src*="epuf3tk"]'
         ).forEach(function(el) { el.remove(); });
+
+        // 赌博/代理广告
+        document.querySelectorAll(
+            '[class*="gamble"], [class*="Gamble"], [class*="agent-ad"], [class*="proxy-ad"]'
+        ).forEach(function(el) { el.style.display = 'none'; });
 
         // 广告视频/图片
         document.querySelectorAll('video[src*="splash-"], video[src*="ad-"]').forEach(function(el) { el.remove(); });
-        document.querySelectorAll('img[src*="ad-card-bg"], img[src*="buyGold"], img[src*="ad-banner"], img[src*="popup-bg"]').forEach(function(el) { el.style.display = 'none'; });
+        document.querySelectorAll('img[src*="ad-card-bg"], img[src*="buyGold"], img[src*="ad-banner"]').forEach(function(el) { el.style.display = 'none'; });
 
         // 带ad属性的元素
         document.querySelectorAll('[data-ad], [data-ad-type], [data-ad-id]').forEach(function(el) { el.style.display = 'none'; });
 
-        // 弹窗遮罩层 (空遮罩移除)
+        // 弹窗遮罩层
         document.querySelectorAll('[class*="mask"], [class*="overlay"]').forEach(function(el) {
             if (el.children.length === 0 && getComputedStyle(el).position === 'fixed') {
                 el.style.display = 'none';
             }
         });
 
-        // 隐藏带isAdv标记的corner-tag (广告角标)
+        // 广告角标
         document.querySelectorAll('.corner-tag.isAdv, .corner-tag[class*="isAdv"]').forEach(function(el) {
             el.style.display = 'none';
         });
 
-        // 导航站广告项 (抓包确认: ad_slot_name="导航站-精品软件")
-        document.querySelectorAll('[class*="app-list"], [class*="appList"], [class*="navigation"]').forEach(function(el) {
+        // 底部导航"AI科技"
+        document.querySelectorAll(
+            '.van-tabbar__item, .tabbar-item, [class*="tabbar-item"], [class*="tab-item"], [class*="nav-item"], [role="tab"]'
+        ).forEach(function(el) {
             var text = el.textContent || el.innerText || '';
-            if (text.indexOf('\\u7cbe\\u54c1\\u8f6f\\u4ef6') !== -1 || text.indexOf('\\u5e7f\\u544a') !== -1) {
+            if (text.indexOf('AI科技') !== -1) {
                 el.style.display = 'none';
             }
         });
     }
 
-    // 使用MutationObserver持续监控（性能优化版本）
+    // MutationObserver 持续监控
     if (window.MutationObserver) {
         var observer = new MutationObserver(function(mutations) {
             if (!removeAdElements.throttle) {
@@ -604,7 +577,6 @@ const injectScript = `
     // ========== 8. 隐藏VIP购买提示 + 广告样式 ==========
     var style = document.createElement('style');
     style.textContent = \`
-        /* VIP购买提示 */
         [class*="vip-guide"], [class*="VipGuide"], [class*="vipGuide"],
         [class*="buy-vip"], [class*="buyVip"], [class*="BuyVip"],
         [class*="vip-expire"], [class*="vipExpire"],
@@ -612,28 +584,21 @@ const injectScript = `
         [class*="vip-banner"], [class*="vipBanner"],
         [class*="recharge-banner"], [class*="rechargeBanner"],
         [class*="first-charge"], [class*="firstCharge"],
-        /* 原价标签 */
         [class*="origin-price"], [class*="originPrice"],
-        /* 开屏广告 */
         .splash_adv, .splashVideo, #splashVideo, .splash-loading-img,
         [class*="splash-ad"], [class*="splashAd"], [class*="SplashAd"],
-        /* 广告轮播/卡片 */
         .adv-swiper-slide, [class*="adv-swiper"], [class*="advTitle"],
         [class*="adv-card"], [class*="adv-item"], [class*="adv-list"],
         [class*="adv-banner"], [class*="adv-container"], [class*="adv-wrapper"],
-        /* 广告容器 */
         [class*="ad-container"], [class*="adContainer"], [class*="ad-wrapper"],
         [class*="google-ad"], [class*="adsbygoogle"],
-        /* 抓包确认的弹窗广告 */
-        [class*="VideoGoldPopupAdv"], [class*="gold-popup-adv"],
-        /* 广告角标 */
         .corner-tag.isAdv {
             display: none !important;
         }
     \`;
     (document.head || document.documentElement).appendChild(style);
 
-    // ========== 9. 拦截addEventListener 阻止广告SDK初始化 ==========
+    // ========== 9. 阻止广告脚本加载 ==========
     var _createElement = document.createElement.bind(document);
     document.createElement = function(tagName) {
         var el = _createElement(tagName);
@@ -643,9 +608,7 @@ const injectScript = `
                 Object.defineProperty(el, 'src', {
                     get: _src.get,
                     set: function(val) {
-                        if (isAdUrl(val)) {
-                            return; // 阻止设置广告脚本src
-                        }
+                        if (isAdUrl(val)) return;
                         _src.set.call(el, val);
                     },
                     configurable: true
@@ -655,32 +618,30 @@ const injectScript = `
         return el;
     };
 
-    if (window.console && DEBUG_MODE) console.log('[AdBlock] 去广告+VIP模拟脚本已加载 v1.0 (d3sjt6i1mx4tjc)');
+    if (window.console && DEBUG_MODE) console.log('[Butterfly] 去广告+VIP模拟脚本已加载 v2.2 (d3sjt6i1mx4tjc)');
 })();
 </script>
 `;
 
 // ========== 注入脚本到HTML页面 ==========
-// 只对HTML文件注入，避免破坏JS/CSS文件
-if (body && (url.indexOf('d3sjt6i1mx4tjc.cloudfront.net') !== -1)) {
-    // 检查是否为HTML文件（通过响应头判断）
+// 匹配所有cloudfront子域名
+if (body && (url.indexOf('.cloudfront.net') !== -1)) {
     var contentType = $response.headers['Content-Type'] || $response.headers['content-type'] || '';
     if (contentType.indexOf('html') === -1 && contentType.indexOf('text/html') === -1) {
         $done({ body: body });
         return;
     }
 
-    // Enhanced file type detection - 更严格的HTML检测
-    if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|json|xml|pdf|mp4|mp3|woff|woff2|ttf|eot|ico|woff|ttf|map|webp|ico|cur)$/i)) {
+    if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|json|xml|pdf|mp4|mp3|woff|woff2|ttf|eot|ico|webp|map|cur)$/i)) {
         $done({ body: body });
         return;
     }
-    // 检查Content-Type确保是HTML
+
     if (contentType.indexOf('text/html') === -1 && contentType.indexOf('html') === -1) {
         $done({ body: body });
         return;
     }
-    // 检查响应内容是否为HTML
+
     if (body && body.indexOf('<html') === -1 && body.indexOf('<!DOCTYPE') === -1) {
         $done({ body: body });
         return;
@@ -688,28 +649,18 @@ if (body && (url.indexOf('d3sjt6i1mx4tjc.cloudfront.net') !== -1)) {
 
     var newBody = body;
 
-    // 在</head>前注入 (最优先)
     if (newBody.indexOf('</head>') !== -1) {
         newBody = newBody.replace('</head>', injectScript + '</head>');
-    }
-    // 在<div id="app">后注入
-    else if (newBody.indexOf('<div id="app">') !== -1) {
+    } else if (newBody.indexOf('<div id="app">') !== -1) {
         newBody = newBody.replace('<div id="app">', '<div id="app">' + injectScript);
-    }
-    // 在<body>后注入
-    else if (newBody.indexOf('<body') !== -1) {
+    } else if (newBody.indexOf('<body') !== -1) {
         newBody = newBody.replace(/<body([^>]*)>/, '<body$1>' + injectScript);
-    }
-    // 在/init.js前注入
-    else if (newBody.indexOf('/init.js') !== -1) {
+    } else if (newBody.indexOf('/init.js') !== -1) {
         newBody = newBody.replace('/init.js', injectScript + '/init.js');
-    }
-    // 末尾追加
-    else {
+    } else {
         newBody = newBody + injectScript;
     }
 
-    // 强制设置不缓存的响应头
     var headers = $response.headers || {};
     headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
     headers['Pragma'] = 'no-cache';
