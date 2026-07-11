@@ -3,16 +3,14 @@
 脚本功能：51吃瓜——解锁—金币视频—VIP视频-净化广告
 特别说明：开启脚本即可在线观看视频-不需要跳转观看
 脚本作者：彭于晏💞
-更新时间：2026—6-11
+更新时间：2026-7-11
 TG反馈群：https://t.me/plus8889
 TG频道群：https://t.me/py996
 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
 [rewrite_local]
 
-^https?:\/\/bpi4\.pgcdzpet\.com\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
-
-^https?:\/\/bpi5\.pgilhbhy\.cc\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
+^https?:\/\/bpi[45]\.[a-z0-9-]+\.[a-z]{2,}\/api\.php\/api\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/51cg.js
 
 [filter-local]
 
@@ -24,7 +22,7 @@ TG频道群：https://t.me/py996
 
 [mitm]
 
-hostname = p11.gmjiphps.cc, *.gmjiphps.cc, bpi4.gldnbphxc.cc, bpi5.glrxdaso.cc, *.gldnbphxc.cc, *.glrxdaso.cc, pic.myedua.cn, *.myedua.cn, pic.fkqwky.cn, pic.sfbjdu.cn, hlsapp.fkqwky.cn, hlsapp.sfbjdu.cn, raw.githubusercontent.com
+hostname = p11.gmjiphps.cc, *.gmjiphps.cc, bpi4.azmnhrfc.com, bpi5.azmzyrwn.cc, *.azmnhrfc.com, *.azmzyrwn.cc, pic.myedua.cn, *.myedua.cn, pic.fkqwky.cn, pic.sfbjdu.cn, hlsapp.fkqwky.cn, hlsapp.sfbjdu.cn, raw.githubusercontent.com
 
 *******************************/
 
@@ -154,7 +152,7 @@ function isAdItem(item) {
   if (item.ad_type !== undefined && item.ad_type !== 0) return true;
   if (item.type === 1 && (item.url || item.url_config || item.link_url)) {
     var ext = String(item.url || item.url_config || item.link_url || "");
-    if (/^https?:\/\//i.test(ext) && !/gmjiphps|gldnbphxc|glrxdaso|myedua/i.test(ext)) return true;
+    if (/^https?:\/\//i.test(ext) && !/gmjiphps|pgcdzpet|pgilhbhy|azmnhrfc|azmzyrwn|myedua/i.test(ext)) return true;
   }
   var u = String(
     item.img_url || item.url || item.link_url || item.image || item.url_str || item.icon || item.icon_new || item.url_config || item.resource_url || ""
@@ -383,6 +381,17 @@ function processBody(body) {
 var body = $response.body;
 var newBody = processBody(body);
 if (newBody && newBody.length) {
+  // 域名自动记录：首次在新域名上成功运行时通知
+  try {
+    var currentHost = ($request && $request.url) ? $request.url.replace(/^https?:\/\/([^\/]+).*$/, "$1") : "";
+    var knownHosts = $prefs.valueForKey("51cg_api_hosts") || "";
+    if (currentHost && knownHosts.indexOf(currentHost) === -1) {
+      $prefs.setValueForKey(knownHosts + (knownHosts ? "," : "") + currentHost, "51cg_api_hosts");
+      if (knownHosts) {
+        $notification.post("51吃瓜 API域名变更", "", "新域名: " + currentHost + "\n请更新QX [mitm] hostname");
+      }
+    }
+  } catch (e) {}
   $done({ body: newBody, headers: fixHeaders($response.headers, newBody) });
 } else {
   $done();
