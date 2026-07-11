@@ -1,13 +1,18 @@
 /**********************************************
-
-脚本功能：快看漫画——解锁—金币视频—VIP视频-去广告-漫画无解
-特别说明：开启脚本即可在线观看视频
-特别说明：必须开启HTTP抓包,并且关闭其他的脚本
-更新时间：2026—7-11
-TG反馈群：https://t.me/plus8889
-TG频道群：https://t.me/py996
-使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️ 
-
+ * Butterfly 去广告 + VIP模拟脚本
+ * 目标网站: https://d18v10algpi965.cloudfront.net
+ * App: com.abc.Butterfly v2.2.0 (iOS H5)
+ * 功能: 净化全部广告 + 模拟VIP响应
+ *
+ * 原理:
+ *   1. API响应为加密格式 {"code":200,"data":"<base64>","hash":true}
+ *   2. App前端JS解密data字段后通过JSON.parse解析
+ *   3. 本脚本注入JS,hook JSON.parse拦截解密后的数据并修改
+ *   4. 同时拦截fetch/XHR阻止广告请求,移除广告DOM元素
+ *
+ * 双模式:
+ *   - script-request-header: 删除If-None-Match/If-Modified-Since,强制200返回完整HTML
+ *   - script-response-body: 注入去广告JS到HTML
  **********************************************/
 
 // ========== 模式1: script-request-header ==========
