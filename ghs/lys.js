@@ -61,7 +61,16 @@ const injectScript = `
         'coinMouthExpireDate', 'vipType', 'vipStatus', 'expireDate', 'userVip',
         'isVipUser', 'vipUser', 'vipFlag', 'isVipFlag', 'canWatchVip',
         'vipCountDown', 'vipTrial', 'vipRemainDays', 'vipForever',
-        'isMember', 'memberLevel', 'memberExpire', 'memberType'
+        'isMember', 'memberLevel', 'memberExpire', 'memberType',
+        // 视频相关字段
+        'videoFree', 'videoUnlock', 'videoVip', 'canWatch', 'canPlay', 'canDownload',
+        'videoLimit', 'videoLocked', 'videoNeedVip', 'hasVideo',
+        // 权限相关字段
+        'hasPermission', 'canAccess', 'unlocked', 'accessible', 'allow',
+        // 试用相关字段
+        'hasTiro', 'isTiro', 'canUse', 'countdown', 'tiroStatus', 'tiroCountdown', 'tiroExpire',
+        // 广告相关权限
+        'adFree', 'noAd', 'skipAd', 'hideAd', 'removeAd'
     ];
 
     // ========== 广告域名黑名单 ==========
@@ -97,6 +106,11 @@ const injectScript = `
     var _parse = JSON.parse;
     JSON.parse = function(text) {
         var result = _parse.apply(this, arguments);
+        
+        // 调试：显示处理的API URL
+        if (typeof window !== 'undefined' && window.location && window.location.href) {
+            console.log('处理API响应:', window.location.href);
+        }
 
         // 处理所有对象，包括加密外层包装
         if (result && typeof result === 'object') {
@@ -168,7 +182,7 @@ const injectScript = `
                     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
                     
                     // 检查常见的VIP相关字段
-                    var vipKeywords = ['isVip', 'vipLevel', 'vipExpireDate', 'vipInfo', 'snapVip', 'vipStatus', 'expireDate', 'userVip', 'isVipUser', 'vipUser', 'vipFlag', 'isVipFlag', 'memberLevel', 'memberExpire'];
+                    var vipKeywords = ['isVip', 'vipLevel', 'vipExpireDate', 'vipInfo', 'snapVip', 'vipStatus', 'expireDate', 'userVip', 'isVipUser', 'vipUser', 'vipFlag', 'isVipFlag', 'memberLevel', 'memberExpire', 'tiroCountdown', 'tiroExpire', 'tiroStatus'];
                     for (var i = 0; i < vipKeywords.length; i++) {
                         if (vipKeywords[i] in obj) return true;
                     }
@@ -177,12 +191,43 @@ const injectScript = `
                     var keys = Object.keys(obj);
                     for (var j = 0; j < keys.length; j++) {
                         var key = keys[j];
-                        if (key.toLowerCase().indexOf('vip') !== -1 || key.toLowerCase().indexOf('member') !== -1) {
+                        if (key.toLowerCase().indexOf('vip') !== -1 || key.toLowerCase().indexOf('member') !== -1 || key.toLowerCase().indexOf('tiro') !== -1) {
                             return true;
                         }
                     }
                     
+                    // 检查是否为用户信息对象
+                    if (keys.some(k => k.toLowerCase().indexOf('user') !== -1 || k.toLowerCase().indexOf('mine') !== -1 || k.toLowerCase().indexOf('profile') !== -1)) {
+                        return true;
+                    }
+                    
                     return false;
+                }
+
+                // ===== VIP试用倒计时处理 =====
+                if (!Array.isArray(result) && ('tiroCountdown' in result || 'tiroExpire' in result || 'tiroStatus' in result)) {
+                    console.log('处理VIP试用倒计时API');
+                    result.tiroCountdown = 0;
+                    result.tiroExpire = "1970-01-01T00:00:00Z";
+                    if ('tiroStatus' in result) result.tiroStatus = 0;
+                    if ('countdown' in result) result.countdown = 0;
+                    if ('canUse' in result) result.canUse = false;
+                    result.hasTiro = false;
+                    result.isTiro = false;
+                }
+
+                // ===== 视频权限处理 =====
+                if (!Array.isArray(result) && ('videoFree' in result || 'videoUnlock' in result || 'videoVip' in result || 'canWatch' in result)) {
+                    console.log('处理视频权限API');
+                    result.videoFree = true;
+                    result.videoUnlock = true;
+                    result.videoVip = true;
+                    result.canWatch = true;
+                    result.canPlay = true;
+                    result.canDownload = true;
+                    result.videoLimit = false;
+                    result.videoLocked = false;
+                    result.videoNeedVip = false;
                 }
 
                 // ===== 钱包模拟 =====
