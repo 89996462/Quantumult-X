@@ -87,11 +87,7 @@ const injectScript = `
     JSON.parse = function(text) {
         var result = _parse.apply(this, arguments);
 
-        // 跳过加密外层包装 {code:200, data:"...", hash:true}
-        if (result && typeof result === 'object' && !Array.isArray(result) && result.hash === true && typeof result.data === 'string') {
-            return result;
-        }
-
+        // 处理所有对象，包括加密外层包装
         if (result && typeof result === 'object') {
             try {
                 // ===== VIP模拟 =====
@@ -547,7 +543,7 @@ if (isTarget && body) {
         return;
     }
 
-    // 检查响应内容是否为HTML
+    // 检查响应内容是否为HTML       
     var bodyStr = typeof body === 'string' ? body : '';
     if (bodyStr.indexOf('<html') === -1 && bodyStr.indexOf('<!DOCTYPE') === -1) {
         $done({});
