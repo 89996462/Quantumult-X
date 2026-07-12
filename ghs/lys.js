@@ -52,6 +52,17 @@ const injectScript = `
     var VIP_NAME = "\\u81f3\\u5c0aVIP";
     var COIN_AMOUNT = 999999;
     var INTEGRAL_AMOUNT = 999999;
+    
+    // 增强VIP模拟字段
+    var VIP_FIELDS = [
+        'isVip', 'vipLevel', 'vipExpireDate', 'vipName', 'snapVip', 'hasLocked', 
+        'hasBanned', 'forbidUpload', 'videoDiscountExpiration', 'goldVideoFreeExpire',
+        'videoFreeExpiration', 'broadcastExpire', 'loufengBookDiscountExpiration',
+        'coinMouthExpireDate', 'vipType', 'vipStatus', 'expireDate', 'userVip',
+        'isVipUser', 'vipUser', 'vipFlag', 'isVipFlag', 'canWatchVip',
+        'vipCountDown', 'vipTrial', 'vipRemainDays', 'vipForever',
+        'isMember', 'memberLevel', 'memberExpire', 'memberType'
+    ];
 
     // ========== 广告域名黑名单 ==========
     var adDomains = [
@@ -91,12 +102,15 @@ const injectScript = `
         if (result && typeof result === 'object') {
             try {
                 // ===== VIP模拟 =====
-                if (!Array.isArray(result) && ('isVip' in result || 'vipLevel' in result || 'vipExpireDate' in result || 'snapVip' in result)) {
+                if (!Array.isArray(result) && isVipRelatedObject(result)) {
+                    // 设置VIP基础信息
                     result.isVip = true;
                     result.vipLevel = VIP_LEVEL;
                     result.vipExpireDate = VIP_EXPIRE;
                     result.vipName = VIP_NAME;
                     result.snapVip = VIP_LEVEL;
+                    
+                    // 设置VIP相关权限
                     result.hasLocked = false;
                     result.hasBanned = false;
                     result.forbidUpload = false;
@@ -106,9 +120,69 @@ const injectScript = `
                     result.broadcastExpire = VIP_EXPIRE;
                     result.loufengBookDiscountExpiration = VIP_EXPIRE;
                     result.coinMouthExpireDate = VIP_EXPIRE;
-                    if ('vipType' in result) result.vipType = VIP_LEVEL;
-                    if ('vipStatus' in result) result.vipStatus = 1;
-                    if ('expireDate' in result) result.expireDate = VIP_EXPIRE;
+                    
+                    // 处理嵌套的vipInfo对象
+                    if ('vipInfo' in result && typeof result.vipInfo === 'object') {
+                        result.vipInfo.isVip = true;
+                        result.vipInfo.vipLevel = VIP_LEVEL;
+                        result.vipInfo.vipExpireDate = VIP_EXPIRE;
+                        result.vipInfo.vipName = VIP_NAME;
+                        result.vipInfo.snapVip = VIP_LEVEL;
+                        if ('vipType' in result.vipInfo) result.vipInfo.vipType = VIP_LEVEL;
+                        if ('vipStatus' in result.vipInfo) result.vipInfo.vipStatus = 1;
+                        if ('expireDate' in result.vipInfo) result.vipInfo.expireDate = VIP_EXPIRE;
+                    }
+                    
+                    // 统一设置所有VIP相关字段
+                    for (var i = 0; i < VIP_FIELDS.length; i++) {
+                        var field = VIP_FIELDS[i];
+                        if (field in result) {
+                            if (field.indexOf('vip') !== -1 || field.indexOf('Vip') !== -1 || field.indexOf('VIP') !== -1) {
+                                // VIP级别相关字段
+                                if (field === 'vipLevel' || field === 'userVip' || field === 'memberLevel') {
+                                    result[field] = VIP_LEVEL;
+                                }
+                                // 布尔值VIP字段
+                                else if (field.indexOf('is') === 0 || field.indexOf('has') === 0 || field.indexOf('can') === 0) {
+                                    result[field] = true;
+                                }
+                                // 到期时间相关字段
+                                else if (field.indexOf('Expire') !== -1 || field.indexOf('ExpireDate') !== -1 || field.indexOf('Remain') !== -1) {
+                                    result[field] = VIP_EXPIRE;
+                                }
+                                // 永久VIP字段
+                                else if (field.indexOf('Forever') !== -1) {
+                                    result[field] = true;
+                                }
+                                // 其他VIP字段设为9或true
+                                else {
+                                    result[field] = typeof result[field] === 'boolean' ? true : (typeof result[field] === 'number' ? VIP_LEVEL : true);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 检测是否为VIP相关对象
+                function isVipRelatedObject(obj) {
+                    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+                    
+                    // 检查常见的VIP相关字段
+                    var vipKeywords = ['isVip', 'vipLevel', 'vipExpireDate', 'vipInfo', 'snapVip', 'vipStatus', 'expireDate', 'userVip', 'isVipUser', 'vipUser', 'vipFlag', 'isVipFlag', 'memberLevel', 'memberExpire'];
+                    for (var i = 0; i < vipKeywords.length; i++) {
+                        if (vipKeywords[i] in obj) return true;
+                    }
+                    
+                    // 检查字段名中是否包含vip关键词
+                    var keys = Object.keys(obj);
+                    for (var j = 0; j < keys.length; j++) {
+                        var key = keys[j];
+                        if (key.toLowerCase().indexOf('vip') !== -1 || key.toLowerCase().indexOf('member') !== -1) {
+                            return true;
+                        }
+                    }
+                    
+                    return false;
                 }
 
                 // ===== 钱包模拟 =====
@@ -543,7 +617,7 @@ if (isTarget && body) {
         return;
     }
 
-    // 检查响应内容是否为HTML       
+    // 检查响应内容是否为HTML
     var bodyStr = typeof body === 'string' ? body : '';
     if (bodyStr.indexOf('<html') === -1 && bodyStr.indexOf('<!DOCTYPE') === -1) {
         $done({});
