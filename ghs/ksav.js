@@ -532,8 +532,10 @@ const injectScript = `
 `;
 
 // ========== 注入脚本到HTML页面 ==========
-var isTarget = url.indexOf('d270v74snrdyr6.cloudfront.net') !== -1 ||
-               url.indexOf('cjhecnimg.jiekrrj.cn') !== -1;
+// 智能域名匹配：CloudFront域名 + 任何包含jiekrrj的域名
+var isTarget = url.indexOf('.cloudfront.net') !== -1 ||
+               (url.indexOf('jiekrrj') !== -1 && url.indexOf('.cn') !== -1) ||
+               url.indexOf('.jiekrrj.') !== -1;
 
 if (isTarget && body) {
     // 检查文件扩展名排除非HTML
