@@ -8,7 +8,25 @@ TG反馈群：https://t.me/plus8889
 TG频道群：https://t.me/py996
 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
 
+ **********************************************
+
+^https?:\/\/.*\.00po\.shop\/.* url script-request-header https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/lysad.js
+^https?:\/\/.*\.00po\.shop\/.* url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/lysad.js
+
+ ========== 广告拦截 ==========
+^https?:\/\/api-dc-prod-\d+\.cyou\/ - reject
+^https?:\/\/api-dc2-prod-\d+\.cyou\/ - reject
+^https?:\/\/.*\.eqfx9bas\.cc\/ - reject
+^https?:\/\/.*\.yihaici\.(?:top|com)\/ - reject
+^https?:\/\/.*\.epuf3tk\.cc\/ - reject
+^https?:\/\/[^\/]+\/upload_01\/ads\/ - reject
+
+[mitm]
+
+hostname = oihqwlma.00po.shop, *.00po.shop, *.oukky-lys.shop, *.cyou, *.eqfx9bas.cc, *.yihaici.top, *.yihaici.com, *.epuf3tk.cc
+
  **********************************************/
+
 if (typeof $response === 'undefined' || !$response) {
     var reqHeaders = $request.headers || {};
     var keysToDelete = ['If-None-Match', 'If-Modified-Since', 'if-none-match', 'if-modified-since', 'IF-NONE-MATCH', 'IF-MODIFIED-SINCE'];
