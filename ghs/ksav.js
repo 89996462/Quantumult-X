@@ -1,18 +1,13 @@
 /**********************************************
- * light 去广告 + VIP模拟脚本
- * 目标网站: light系统站点
- * App: light体系 (非com.abc.Butterfly)
+ * Light体系站点去广告 + VIP模拟脚本 (最终修复版)
+ * 基于最新抓包数据优化
+ * App: light v2.1.7 (iOS H5)
  * 功能: 净化全站广告(开屏/悬浮窗/Banner/弹窗) + 模拟VIP
  *
- * 原理:
- *   1. API响应为加密格式 {"code":200,"data":"<base64>","hash":true}
- *   2. App前端JS解密data字段后通过JSON.parse解析
- *   3. 本脚本hook JSON.parse拦截解密后的明文数据并修改
- *   4. 同时拦截fetch/XHR阻止广告请求,移除广告DOM元素
- *
- * 双模式:
- *   - script-request-header: 删除缓存头,强制200返回完整HTML
- *   - script-response-body: 注入去广告JS到HTML
+ * 最终修复:
+ * 1. 精确识别加密API响应格式
+ * 2. 优化JSON.parse hook逻辑
+ * 3. 确保HTML页面注入正常工作
  **********************************************/
 
 // ========== 模式1: script-request-header ==========
@@ -35,14 +30,67 @@ if (typeof $response === 'undefined' || !$response) {
     reqHeaders['Expires'] = '0';
     $done({ headers: reqHeaders });
 }
+
 // ========== 模式2: script-response-body ==========
 else {
+    const url = $request.url;
+    const body = $response.body;
 
-const url = $request.url;
-const body = $response.body;
+    // ========== 匹配目标URL ==========
+    function isTargetUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        
+        // 主要域名匹配
+        if (url.indexOf('d270v74snrdyr6.cloudfront.net') !== -1) {
+            return true;
+        }
+        
+        // 其他可能的域名
+        if (url.indexOf('cjhecnimg.jiekrrj.cn') !== -1) {
+            return true;
+        }
+        
+        return false;
+    }
 
-// ========== 注入的JS代码 (IIFE) ==========
-const injectScript = `
+    const isTarget = isTargetUrl(url);
+    
+    if (!isTarget || !body) {
+        $done({});
+        return;
+    }
+
+    // ========== 检查响应类型 - 只处理HTML ==========
+    var bodyStr = typeof body === 'string' ? body : '';
+    
+    // 检查文件扩展名排除非HTML
+    if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|json|xml|pdf|mp4|mp3|woff|woff2|ttf|eot|ico|map|webp)(\?|$)/i)) {
+        $done({});
+        return;
+    }
+
+    // 检查Content-Type
+    var ctype = ($response.headers || {})['Content-Type'] || ($response.headers || {})['content-type'] || '';
+    var ctypeLower = ctype.toLowerCase();
+    
+    // 排除二进制/加密响应
+    if (ctypeLower.indexOf('application/octet-stream') !== -1 ||
+        ctypeLower.indexOf('application/x-gzip') !== -1 ||
+        ctypeLower.indexOf('application/zip') !== -1 ||
+        ctypeLower.indexOf('application/pdf') !== -1) {
+        $done({});
+        return;
+    }
+    
+    // 检查是否为HTML内容
+    if (ctypeLower.indexOf('text/html') === -1 && ctypeLower.indexOf('html') === -1 &&
+        bodyStr.indexOf('<html') === -1 && bodyStr.indexOf('<!DOCTYPE') === -1) {
+        $done({});
+        return;
+    }
+
+    // ========== 注入的JS代码 (IIFE) ==========
+    const injectScript = `
 <script>
 (function() {
     'use strict';
@@ -62,9 +110,13 @@ const injectScript = `
         'va2p.com', 'worldcup-ad.com', 'float-ad.com',
         'ia-tech.com', 'prize-ad.com', 'lottery-ad.com',
         'api-dc-prod-008.cyou', 'api-dc2-prod-08.cyou',
-        // 新增light相关广告域名
-        'd270v74snrdyr6.cloudfront.net',
-        'cjhecnimg.jiekrrj.cn'
+        'cjhecnimg.jiekrrj.cn',
+        // 通用广告域名模式
+        '\\.eqfx9bas\\.cc$',
+        '\\.yihaici\\.(?:top|com)$',
+        '\\.epuf3tk\\.cc$',
+        '\\.jiekrrj\\.cn$',
+        '\\.cyou$'
     ];
 
     function isAdUrl(u) {
@@ -72,6 +124,10 @@ const injectScript = `
         var lower = u.toLowerCase();
         for (var i = 0; i < adDomains.length; i++) {
             if (lower.indexOf(adDomains[i]) !== -1) return true;
+            // 检查域名模式
+            if (adDomains[i].startsWith('\\\\.') && lower.endsWith(adDomains[i].substring(1))) {
+                return true;
+            }
         }
         if (lower.indexOf('eventtracking/batchreport') !== -1) return true;
         if (lower.indexOf('/mp4/splash-') !== -1) return true;
@@ -80,16 +136,20 @@ const injectScript = `
         if (lower.indexOf('/ads/click') !== -1) return true;
         if (lower.indexOf('/recreation/click') !== -1) return true;
         if (lower.indexOf('/webp/splash-') !== -1) return true;
+        if (lower.indexOf('/mmtls/') !== -1) return true;
+        // 检测可能的广告域名模式
+        if (lower.match(/\\d+\\.\\d+\\.\\d+\\.\\d+/) && (lower.indexOf('ad') !== -1 || lower.indexOf('track') !== -1)) return true;
         return false;
     }
 
-    // ========== 1. Hook JSON.parse 拦截解密后的API数据 ==========
+    // ========== 核心：Hook JSON.parse 拦截所有API数据 ==========
     var _parse = JSON.parse;
     JSON.parse = function(text) {
         var result = _parse.apply(this, arguments);
 
-        // 跳过加密外层包装 {code:200, data:"...", hash:true}
+        // ===== 关键：跳过加密外层包装 {code:200, data:"...", hash:true} =====
         if (result && typeof result === 'object' && !Array.isArray(result) && result.hash === true && typeof result.data === 'string') {
+            // 这是加密格式，直接返回不处理，让前端JS解密
             return result;
         }
 
@@ -407,7 +467,7 @@ const injectScript = `
             '[class*="ad-popup"], [class*="adPopup"], [class*="popup-ad"],' +
             '[class*="ad-dialog"], [class*="ad-modal"],' +
             '[class*="floating-ad"], [class*="float-ad"], [class*="ad-float"],' +
-            '[class*="floating"], [class*="float"], [class*="popup"], [class*="dialog"],' +
+            '[class*="floating"], [class*="float"], [class*="popup'], [class*="dialog"],' +
             '[class*="redRain"], [class*="\\u7ea2\\u5305"], [class*="prize"], [class*="lottery"],' +
             '[class*="worldCup"], [class*="\\u4e16\\u754c\\u676f"], [class*="ia-tech"], [class*="AI\\u79d1\\u6280"]'
         ).forEach(function(el) { el.remove(); });
@@ -503,6 +563,8 @@ const injectScript = `
         '[class*="ad-container"], [class*="adContainer"], [class*="ad-wrapper"],',
         '[class*="google-ad"], [class*="adsbygoogle"],',
         '.corner-tag.isAdv',
+        '[class*="dark-waring-popup"]',
+        '[class*="loli-waring"]',
         '{display:none!important}'
     ].join('');
     (document.head || document.documentElement).appendChild(style);
@@ -530,30 +592,6 @@ const injectScript = `
 </script>
 `;
 
-// ========== 注入脚本到HTML页面 ==========
-var isTarget = url.indexOf('d270v74snrdyr6.cloudfront.net') !== -1;
-
-if (isTarget && body) {
-    // 检查文件扩展名排除非HTML
-    if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|json|xml|pdf|mp4|mp3|woff|woff2|ttf|eot|ico|map|webp)(\?|$)/i)) {
-        $done({});
-        return;
-    }
-
-    // 检查Content-Type
-    var ctype = ($response.headers || {})['Content-Type'] || ($response.headers || {})['content-type'] || '';
-    if (ctype && ctype.indexOf('text/html') === -1 && ctype.indexOf('html') === -1) {
-        $done({});
-        return;
-    }
-
-    // 检查响应内容是否为HTML
-    var bodyStr = typeof body === 'string' ? body : '';
-    if (bodyStr.indexOf('<html') === -1 && bodyStr.indexOf('<!DOCTYPE') === -1) {
-        $done({});
-        return;
-    }
-
     var newBody = bodyStr;
 
     // 在</head>前注入
@@ -575,8 +613,4 @@ if (isTarget && body) {
     headers['Expires'] = '0';
 
     $done({ body: newBody, headers: headers });
-} else {
-    $done({});
-}
-
 } // 结束 script-response-body 模式
