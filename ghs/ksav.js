@@ -1,6 +1,6 @@
 /**********************************************
- * 06erg 去广告 + VIP模拟脚本
- * 目标网站: https://06erg.com (-> da8ttmrfqqhqf.cloudfront.net)
+ * jiekrrj 去广告 + VIP模拟脚本
+ * 目标网站: jiekrrj.cn 体系 (-> d270v74snrdyr6.cloudfront.net)
  * App: com.abc.Butterfly v2.2.0 (iOS H5)
  * 功能: 净化全站广告(开屏/悬浮窗/Banner/弹窗) + 模拟VIP
  *
@@ -62,9 +62,9 @@ const injectScript = `
         'va2p.com', 'worldcup-ad.com', 'float-ad.com',
         'ia-tech.com', 'prize-ad.com', 'lottery-ad.com',
         'api-dc-prod-008.cyou', 'api-dc2-prod-08.cyou',
-        // 新增06erg相关广告域名
+        // 新增jiekrrj相关广告域名
         'd3k4e7spixznr4.cloudfront.net',
-        'sssyyshc.lkkwip.cn'
+        'zhaqyts.jiekrrj.cn'
     ];
 
     function isAdUrl(u) {
@@ -531,8 +531,8 @@ const injectScript = `
 `;
 
 // ========== 注入脚本到HTML页面 ==========
-var isTarget = url.indexOf('.cloudfront.net') !== -1 ||
-               url.indexOf('jiekrrj') !== -1;
+var isTarget = url.indexOf('d270v74snrdyr6.cloudfront.net') !== -1 ||
+               url.indexOf('jiekrrj.cn') !== -1;
 
 if (isTarget && body) {
     // 检查文件扩展名排除非HTML
