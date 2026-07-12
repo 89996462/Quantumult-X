@@ -165,13 +165,10 @@ const injectScript = `
                         console.log('视频VIP权限已设置');
                     }
                 }
+            } catch(e) {}
                 
-                // ===== VIP模拟 =====
-
-        // 处理所有对象，包括加密外层包装
-        if (result && typeof result === 'object') {
+            // ===== VIP模拟 =====
             try {
-                // ===== VIP模拟 =====
                 if (!Array.isArray(result) && isVipRelatedObject(result)) {
                     // 设置VIP基础信息
                     result.isVip = true;
