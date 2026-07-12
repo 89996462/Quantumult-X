@@ -1,7 +1,7 @@
 /**********************************************
- * Light体系站点去广告 + VIP模拟脚本
- * 目标网站: 基于2026-07-12-173249抓包数据
- * App: light v2.1.7 (iOS H5)
+ * light 去广告 + VIP模拟脚本
+ * 目标网站: light系统站点
+ * App: light体系 (非com.abc.Butterfly)
  * 功能: 净化全站广告(开屏/悬浮窗/Banner/弹窗) + 模拟VIP
  *
  * 原理:
@@ -62,11 +62,9 @@ const injectScript = `
         'va2p.com', 'worldcup-ad.com', 'float-ad.com',
         'ia-tech.com', 'prize-ad.com', 'lottery-ad.com',
         'api-dc-prod-008.cyou', 'api-dc2-prod-08.cyou',
-        // 新增Light相关广告域名
-        'cjhecnimg.jiekrrj.cn',
-        'api-dc-prod-008.cyou',
-        'api-dc2-prod-08.cyou',
-        'd270v74snrdyr6.cloudfront.net'
+        // 新增light相关广告域名
+        'd270v74snrdyr6.cloudfront.net',
+        'cjhecnimg.jiekrrj.cn'
     ];
 
     function isAdUrl(u) {
@@ -82,7 +80,6 @@ const injectScript = `
         if (lower.indexOf('/ads/click') !== -1) return true;
         if (lower.indexOf('/recreation/click') !== -1) return true;
         if (lower.indexOf('/webp/splash-') !== -1) return true;
-        if (lower.indexOf('/mmtls/') !== -1) return true;
         return false;
     }
 
@@ -506,8 +503,6 @@ const injectScript = `
         '[class*="ad-container"], [class*="adContainer"], [class*="ad-wrapper"],',
         '[class*="google-ad"], [class*="adsbygoogle"],',
         '.corner-tag.isAdv',
-        '[class*="dark-waring-popup"]',
-        '[class*="loli-waring"]',
         '{display:none!important}'
     ].join('');
     (document.head || document.documentElement).appendChild(style);
