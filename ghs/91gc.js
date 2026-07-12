@@ -1,22 +1,15 @@
 /**********************************************
- * 06erg 去广告 + VIP模拟脚本
- * 目标网站: https://06erg.com (-> da8ttmrfqqhqf.cloudfront.net)
- * App: com.abc.Butterfly v2.2.0 (iOS H5)
- * 功能: 净化全站广告(开屏/悬浮窗/Banner/弹窗) + 模拟VIP
- *
- * 原理:
- *   1. API响应为加密格式 {"code":200,"data":"<base64>","hash":true}
- *   2. App前端JS解密data字段后通过JSON.parse解析
- *   3. 本脚本hook JSON.parse拦截解密后的明文数据并修改
- *   4. 同时拦截fetch/XHR阻止广告请求,移除广告DOM元素
- *
- * 双模式:
- *   - script-request-header: 删除缓存头,强制200返回完整HTML
- *   - script-response-body: 注入去广告JS到HTML
- **********************************************/
 
-// ========== 模式1: script-request-header ==========
-// 删除浏览器缓存头,防止304导致无法注入
+# 脚本功能：91国产———解锁———金币视频———VIP视频-付费帖子
+# 特别说明：必须开启HTTP抓包,并且关闭其他的脚本
+# 特别说明：捕获成功后，点击通知即可观看
+# 脚本作者：彭于晏💞
+# 更新时间：2026-7-13
+# TG反馈群：https://t.me/plus8889
+# TG频道群：https://t.me/py996
+# 使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
+
+ **********************************************/
 if (typeof $response === 'undefined' || !$response) {
     var reqHeaders = $request.headers || {};
     var keysToDelete = ['If-None-Match', 'If-Modified-Since', 'if-none-match', 'if-modified-since', 'IF-NONE-MATCH', 'IF-MODIFIED-SINCE'];
