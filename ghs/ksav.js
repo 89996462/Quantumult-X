@@ -1,9 +1,8 @@
 /**********************************************
- * Light体系站点去广告 + VIP模拟脚本 (优化版)
+ * Light体系站点去广告 + VIP模拟脚本
  * 目标网站: 基于2026-07-12-173249抓包数据
  * App: light v2.1.7 (iOS H5)
  * 功能: 净化全站广告(开屏/悬浮窗/Banner/弹窗) + 模拟VIP
- * 支持域名通配，自动适配可能变更的域名
  *
  * 原理:
  *   1. API响应为加密格式 {"code":200,"data":"<base64>","hash":true}
@@ -42,41 +41,6 @@ else {
 const url = $request.url;
 const body = $response.body;
 
-// ========== 配置: 可能的域名模式 ==========
-const DOMAIN_PATTERNS = [
-    // 已知域名
-    'd270v74snrdyr6.cloudfront.net',
-    // 可能的域名变更模式
-    'd[0-9]{1,3}v[0-9]{1,6}s[0-9a-z]{6}\.cloudfront\.net', // 格式: d数字v数字s字母云域名
-    'd[0-9a-z]{12}\.cloudfront\.net', // 12字符随机域名
-    '[0-9a-z]{12,20}\.cloudfront\.net', // 通用cloudfront域名
-    // 其他可能的域名模式
-    '[0-9a-z]{8,16}\.cloudfront\.net'
-];
-
-// ========== 匹配函数：检查URL是否匹配域名模式 ==========
-function isTargetUrl(url) {
-    if (!url || typeof url !== 'string') return false;
-    
-    // 如果URL包含参数中的域名标识
-    for (var i = 0; i < DOMAIN_PATTERNS.length; i++) {
-        var pattern = DOMAIN_PATTERNS[i];
-        if (url.indexOf(pattern) !== -1) {
-            return true;
-        }
-    }
-    
-    // 如果URL包含通用特征
-    if (url.indexOf('.cloudfront.net') !== -1) {
-        // 检查是否是API请求
-        if (url.indexOf('/api/') !== -1 || url.indexOf('/js/') !== -1 || url.indexOf('/css/') !== -1) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
 // ========== 注入的JS代码 (IIFE) ==========
 const injectScript = `
 <script>
@@ -98,16 +62,11 @@ const injectScript = `
         'va2p.com', 'worldcup-ad.com', 'float-ad.com',
         'ia-tech.com', 'prize-ad.com', 'lottery-ad.com',
         'api-dc-prod-008.cyou', 'api-dc2-prod-08.cyou',
-        // Light相关广告域名
+        // 新增Light相关广告域名
         'cjhecnimg.jiekrrj.cn',
         'api-dc-prod-008.cyou',
         'api-dc2-prod-08.cyou',
-        // 通用广告域名模式
-        '\\.eqfx9bas\\.cc$',
-        '\\.yihaici\\.(?:top|com)$',
-        '\\.epuf3tk\\.cc$',
-        '\\.jiekrrj\\.cn$',
-        '\\.cyou$'
+        'd270v74snrdyr6.cloudfront.net'
     ];
 
     function isAdUrl(u) {
@@ -115,10 +74,6 @@ const injectScript = `
         var lower = u.toLowerCase();
         for (var i = 0; i < adDomains.length; i++) {
             if (lower.indexOf(adDomains[i]) !== -1) return true;
-            // 检查域名模式
-            if (adDomains[i].startsWith('\\\\.') && lower.endsWith(adDomains[i].substring(1))) {
-                return true;
-            }
         }
         if (lower.indexOf('eventtracking/batchreport') !== -1) return true;
         if (lower.indexOf('/mp4/splash-') !== -1) return true;
@@ -128,8 +83,6 @@ const injectScript = `
         if (lower.indexOf('/recreation/click') !== -1) return true;
         if (lower.indexOf('/webp/splash-') !== -1) return true;
         if (lower.indexOf('/mmtls/') !== -1) return true;
-        // 检测可能的广告域名模式
-        if (lower.match(/\\d+\\.\\d+\\.\\d+\\.\\d+/) && (lower.indexOf('ad') !== -1 || lower.indexOf('track') !== -1)) return true;
         return false;
     }
 
@@ -582,8 +535,8 @@ const injectScript = `
 </script>
 `;
 
-// ========== 匹配目标URL ==========
-var isTarget = isTargetUrl(url);
+// ========== 注入脚本到HTML页面 ==========
+var isTarget = url.indexOf('d270v74snrdyr6.cloudfront.net') !== -1;
 
 if (isTarget && body) {
     // 检查文件扩展名排除非HTML
