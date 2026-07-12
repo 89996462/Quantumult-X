@@ -1,13 +1,18 @@
 /**********************************************
- * Light体系站点去广告 + VIP模拟脚本 (最终修复版)
- * 基于最新抓包数据优化
- * App: light v2.1.7 (iOS H5)
+ * jiekrrj 去广告 + VIP模拟脚本
+ * 目标网站: https://cjhecnimg.jiekrrj.cn (-> d270v74snrdyr6.cloudfront.net)
+ * App: com.abc.Butterfly (iOS H5)
  * 功能: 净化全站广告(开屏/悬浮窗/Banner/弹窗) + 模拟VIP
  *
- * 最终修复:
- * 1. 精确识别加密API响应格式
- * 2. 优化JSON.parse hook逻辑
- * 3. 确保HTML页面注入正常工作
+ * 原理:
+ *   1. API响应为加密格式 {"code":200,"data":"<base64>","hash":true}
+ *   2. App前端JS解密data字段后通过JSON.parse解析
+ *   3. 本脚本hook JSON.parse拦截解密后的明文数据并修改
+ *   4. 同时拦截fetch/XHR阻止广告请求,移除广告DOM元素
+ *
+ * 双模式:
+ *   - script-request-header: 删除缓存头,强制200返回完整HTML
+ *   - script-response-body: 注入去广告JS到HTML
  **********************************************/
 
 // ========== 模式1: script-request-header ==========
@@ -30,74 +35,21 @@ if (typeof $response === 'undefined' || !$response) {
     reqHeaders['Expires'] = '0';
     $done({ headers: reqHeaders });
 }
-
 // ========== 模式2: script-response-body ==========
 else {
-    const url = $request.url;
-    const body = $response.body;
 
-    // ========== 匹配目标URL ==========
-    function isTargetUrl(url) {
-        if (!url || typeof url !== 'string') return false;
-        
-        // 主要域名匹配
-        if (url.indexOf('d270v74snrdyr6.cloudfront.net') !== -1) {
-            return true;
-        }
-        
-        // 其他可能的域名
-        if (url.indexOf('cjhecnimg.jiekrrj.cn') !== -1) {
-            return true;
-        }
-        
-        return false;
-    }
+const url = $request.url;
+const body = $response.body;
 
-    const isTarget = isTargetUrl(url);
-    
-    if (!isTarget || !body) {
-        $done({});
-        return;
-    }
-
-    // ========== 检查响应类型 - 只处理HTML ==========
-    var bodyStr = typeof body === 'string' ? body : '';
-    
-    // 检查文件扩展名排除非HTML
-    if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|json|xml|pdf|mp4|mp3|woff|woff2|ttf|eot|ico|map|webp)(\?|$)/i)) {
-        $done({});
-        return;
-    }
-
-    // 检查Content-Type
-    var ctype = ($response.headers || {})['Content-Type'] || ($response.headers || {})['content-type'] || '';
-    var ctypeLower = ctype.toLowerCase();
-    
-    // 排除二进制/加密响应
-    if (ctypeLower.indexOf('application/octet-stream') !== -1 ||
-        ctypeLower.indexOf('application/x-gzip') !== -1 ||
-        ctypeLower.indexOf('application/zip') !== -1 ||
-        ctypeLower.indexOf('application/pdf') !== -1) {
-        $done({});
-        return;
-    }
-    
-    // 检查是否为HTML内容
-    if (ctypeLower.indexOf('text/html') === -1 && ctypeLower.indexOf('html') === -1 &&
-        bodyStr.indexOf('<html') === -1 && bodyStr.indexOf('<!DOCTYPE') === -1) {
-        $done({});
-        return;
-    }
-
-    // ========== 注入的JS代码 (IIFE) ==========
-    const injectScript = `
+// ========== 注入的JS代码 (IIFE) ==========
+const injectScript = `
 <script>
 (function() {
     'use strict';
 
     var VIP_LEVEL = 9;
     var VIP_EXPIRE = "2099-12-31T23:59:59Z";
-    var VIP_NAME = "\\u81f3\\u5c0aVIP";
+    var VIP_NAME = "至尊VIP";
     var COIN_AMOUNT = 999999;
     var INTEGRAL_AMOUNT = 999999;
 
@@ -110,13 +62,10 @@ else {
         'va2p.com', 'worldcup-ad.com', 'float-ad.com',
         'ia-tech.com', 'prize-ad.com', 'lottery-ad.com',
         'api-dc-prod-008.cyou', 'api-dc2-prod-08.cyou',
+        // jiekrrj相关域名
+        'd3k4e7spixznr4.cloudfront.net',
         'cjhecnimg.jiekrrj.cn',
-        // 通用广告域名模式
-        '\\.eqfx9bas\\.cc$',
-        '\\.yihaici\\.(?:top|com)$',
-        '\\.epuf3tk\\.cc$',
-        '\\.jiekrrj\\.cn$',
-        '\\.cyou$'
+        'zhaqyts.jiekrrj.cn'
     ];
 
     function isAdUrl(u) {
@@ -124,10 +73,6 @@ else {
         var lower = u.toLowerCase();
         for (var i = 0; i < adDomains.length; i++) {
             if (lower.indexOf(adDomains[i]) !== -1) return true;
-            // 检查域名模式
-            if (adDomains[i].startsWith('\\\\.') && lower.endsWith(adDomains[i].substring(1))) {
-                return true;
-            }
         }
         if (lower.indexOf('eventtracking/batchreport') !== -1) return true;
         if (lower.indexOf('/mp4/splash-') !== -1) return true;
@@ -136,20 +81,16 @@ else {
         if (lower.indexOf('/ads/click') !== -1) return true;
         if (lower.indexOf('/recreation/click') !== -1) return true;
         if (lower.indexOf('/webp/splash-') !== -1) return true;
-        if (lower.indexOf('/mmtls/') !== -1) return true;
-        // 检测可能的广告域名模式
-        if (lower.match(/\\d+\\.\\d+\\.\\d+\\.\\d+/) && (lower.indexOf('ad') !== -1 || lower.indexOf('track') !== -1)) return true;
         return false;
     }
 
-    // ========== 核心：Hook JSON.parse 拦截所有API数据 ==========
+    // ========== 1. Hook JSON.parse 拦截解密后的API数据 ==========
     var _parse = JSON.parse;
     JSON.parse = function(text) {
         var result = _parse.apply(this, arguments);
 
-        // ===== 关键：跳过加密外层包装 {code:200, data:"...", hash:true} =====
+        // 跳过加密外层包装 {code:200, data:"...", hash:true}
         if (result && typeof result === 'object' && !Array.isArray(result) && result.hash === true && typeof result.data === 'string') {
-            // 这是加密格式，直接返回不处理，让前端JS解密
             return result;
         }
 
@@ -354,7 +295,7 @@ else {
             }
         }
         if ('type' in item && (item.type === 'float' || item.type === 'popup' || item.type === 'dialog')) return true;
-        if ('eventName' in item && (item.eventName.indexOf('\\u4e16\\u754c\\u676f') !== -1 || item.eventName.indexOf('\\u7ea2\\u5305\\u96e8') !== -1)) return true;
+        if ('eventName' in item && (item.eventName.indexOf('世界杯') !== -1 || item.eventName.indexOf('红包雨') !== -1)) return true;
 
         var activityTypes = ['redRain', 'prize', 'lottery', 'worldCup', 'football', 'match', 'innovation', 'tech'];
         for (var n = 0; n < activityTypes.length; n++) {
@@ -467,9 +408,9 @@ else {
             '[class*="ad-popup"], [class*="adPopup"], [class*="popup-ad"],' +
             '[class*="ad-dialog"], [class*="ad-modal"],' +
             '[class*="floating-ad"], [class*="float-ad"], [class*="ad-float"],' +
-            '[class*="floating"], [class*="float"], [class*="popup'], [class*="dialog"],' +
-            '[class*="redRain"], [class*="\\u7ea2\\u5305"], [class*="prize"], [class*="lottery"],' +
-            '[class*="worldCup"], [class*="\\u4e16\\u754c\\u676f"], [class*="ia-tech"], [class*="AI\\u79d1\\u6280"]'
+            '[class*="floating"], [class*="float"], [class*="popup"], [class*="dialog"],' +
+            '[class*="redRain"], [class*="红包"], [class*="prize"], [class*="lottery"],' +
+            '[class*="worldCup"], [class*="世界杯"], [class*="ia-tech"], [class*="AI科技"]'
         ).forEach(function(el) { el.remove(); });
 
         // 悬浮AI图标
@@ -514,7 +455,7 @@ else {
             '[class*="tab-item"], [class*="nav-item"], [role="tab"]'
         ).forEach(function(el) {
             var text = el.textContent || el.innerText || '';
-            if (text.indexOf('AI\\u79d1\\u6280') !== -1 || text.indexOf('AI') === 0) {
+            if (text.indexOf('AI科技') !== -1 || text.indexOf('AI') === 0) {
                 el.style.display = 'none';
             }
         });
@@ -563,8 +504,6 @@ else {
         '[class*="ad-container"], [class*="adContainer"], [class*="ad-wrapper"],',
         '[class*="google-ad"], [class*="adsbygoogle"],',
         '.corner-tag.isAdv',
-        '[class*="dark-waring-popup"]',
-        '[class*="loli-waring"]',
         '{display:none!important}'
     ].join('');
     (document.head || document.documentElement).appendChild(style);
@@ -592,6 +531,31 @@ else {
 </script>
 `;
 
+// ========== 注入脚本到HTML页面 ==========
+var isTarget = url.indexOf('d270v74snrdyr6.cloudfront.net') !== -1 ||
+               url.indexOf('cjhecnimg.jiekrrj.cn') !== -1;
+
+if (isTarget && body) {
+    // 检查文件扩展名排除非HTML
+    if (url.match(/\.(js|css|png|jpg|jpeg|gif|svg|json|xml|pdf|mp4|mp3|woff|woff2|ttf|eot|ico|map|webp)(\?|$)/i)) {
+        $done({});
+        return;
+    }
+
+    // 检查Content-Type
+    var ctype = ($response.headers || {})['Content-Type'] || ($response.headers || {})['content-type'] || '';
+    if (ctype && ctype.indexOf('text/html') === -1 && ctype.indexOf('html') === -1) {
+        $done({});
+        return;
+    }
+
+    // 检查响应内容是否为HTML
+    var bodyStr = typeof body === 'string' ? body : '';
+    if (bodyStr.indexOf('<html') === -1 && bodyStr.indexOf('<!DOCTYPE') === -1) {
+        $done({});
+        return;
+    }
+
     var newBody = bodyStr;
 
     // 在</head>前注入
@@ -613,4 +577,8 @@ else {
     headers['Expires'] = '0';
 
     $done({ body: newBody, headers: headers });
+} else {
+    $done({});
+}
+
 } // 结束 script-response-body 模式
