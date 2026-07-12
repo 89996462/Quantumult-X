@@ -33,6 +33,13 @@ if (typeof $response === 'undefined' || !$response) {
     reqHeaders['Cache-Control'] = 'no-cache, no-store, must-revalidate';
     reqHeaders['Pragma'] = 'no-cache';
     reqHeaders['Expires'] = '0';
+    
+    // 特殊处理视频相关API请求头
+    if ($request.url.indexOf('/api/app/vid/') !== -1) {
+        console.log('处理视频API请求:', $request.url);
+        // 视频API不需要特殊处理，但可以在这里添加日志
+    }
+    
     $done({ headers: reqHeaders });
 }
 // ========== 模式2: script-response-body ==========
@@ -110,7 +117,46 @@ const injectScript = `
         // 调试：显示处理的API URL
         if (typeof window !== 'undefined' && window.location && window.location.href) {
             console.log('处理API响应:', window.location.href);
+        } else {
+            console.log('处理API响应: URL不可用');
         }
+        
+        // 处理所有对象，包括加密外层包装
+        if (result && typeof result === 'object') {
+            try {
+                // ===== 视频API特殊处理 =====
+                if (window.location && window.location.href) {
+                    var currentUrl = window.location.href;
+                    if (currentUrl.indexOf('/api/app/vid/info') !== -1 || 
+                        currentUrl.indexOf('/api/app/vid/play') !== -1 ||
+                        currentUrl.indexOf('/api/app/vid/moduleVideo') !== -1) {
+                        console.log('处理视频相关API:', currentUrl);
+                        
+                        // 强制设置VIP视频权限
+                        result.isVip = true;
+                        result.canWatch = true;
+                        result.canPlay = true;
+                        result.canDownload = true;
+                        result.videoFree = true;
+                        result.videoUnlock = true;
+                        result.vipLevel = VIP_LEVEL;
+                        
+                        // 禁用所有视频限制
+                        result.videoLimit = false;
+                        result.videoLocked = false;
+                        result.videoNeedVip = false;
+                        result.needVip = false;
+                        result.vipRequired = false;
+                        
+                        // 设置VIP过期时间
+                        result.vipExpireDate = VIP_EXPIRE;
+                        result.videoExpire = VIP_EXPIRE;
+                        
+                        console.log('视频VIP权限已设置');
+                    }
+                }
+                
+                // ===== VIP模拟 =====
 
         // 处理所有对象，包括加密外层包装
         if (result && typeof result === 'object') {
@@ -228,6 +274,35 @@ const injectScript = `
                     result.videoLimit = false;
                     result.videoLocked = false;
                     result.videoNeedVip = false;
+                    result.needVip = false;
+                    result.vipRequired = false;
+                    result.isLocked = false;
+                    result.isLimited = false;
+                    result.requireVip = false;
+                    result.vipOnly = false;
+                }
+                
+                // 全面视频权限处理 - 检查所有可能限制视频的字段
+                if (!Array.isArray(result)) {
+                    var videoLimitFields = [
+                        'isLocked', 'isLimited', 'needVip', 'vipRequired', 'requireVip', 
+                        'vipOnly', 'locked', 'limited', 'vipOnly', 'premiumOnly',
+                        'needPurchase', 'needSubscription', 'requirePayment',
+                        'hasAccess', 'accessible', 'playable', 'streamable'
+                    ];
+                    
+                    for (var i = 0; i < videoLimitFields.length; i++) {
+                        var field = videoLimitFields[i];
+                        if (field in result) {
+                            if (field.indexOf('is') === 0 || field.indexOf('has') === 0 || field.indexOf('need') === 0 || field.indexOf('require') === 0) {
+                                // 限制性字段设为false
+                                result[field] = false;
+                            } else if (field.indexOf('accessible') !== -1 || field.indexOf('playable') !== -1 || field.indexOf('streamable') !== -1) {
+                                // 权限字段设为true
+                                result[field] = true;
+                            }
+                        }
+                    }
                 }
 
                 // ===== 钱包模拟 =====
