@@ -62,9 +62,8 @@ const injectScript = `
         'va2p.com', 'worldcup-ad.com', 'float-ad.com',
         'ia-tech.com', 'prize-ad.com', 'lottery-ad.com',
         'api-dc-prod-008.cyou', 'api-dc2-prod-08.cyou',
-        // 新增jiekrrj相关广告域名
-        'd3k4e7spixznr4.cloudfront.net',
-        'zhaqyts.jiekrrj.cn'
+        // 新增jiekrrj相关广告域名（注意：zhaqyts.jiekrrj.cn是视频域名，不能拦截）
+        'd3k4e7spixznr4.cloudfront.net'
     ];
 
     function isAdUrl(u) {
