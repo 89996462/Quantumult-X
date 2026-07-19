@@ -63,6 +63,7 @@ const injectScript = `
     ];
 
     // ========== 广告域名黑名单 ==========
+    // 注意：只列明确的广告域名，不要包含CDN内容域名（如*.shop、*.com等混合用途域名）
     var adDomains = [
         'eqfx9bas.cc', 'yihaici.top', 'yihaici.com', 'epuf3tk.cc',
         'jmnkojis4.com', 'speedfan', 'u7d2w.com', 'pg71json',
@@ -70,11 +71,7 @@ const injectScript = `
         't1nijvegfd.eqfx9bas.cc',
         'va2p.com', 'worldcup-ad.com', 'float-ad.com',
         'ia-tech.com', 'prize-ad.com', 'lottery-ad.com',
-        'api-dc-prod-008.cyou', 'api-dc2-prod-08.cyou',
-        // 00po相关域名
-        'oukky-lys.shop',
-        // 新增域名
-        'detkli-lys.hxscwine.com', 'lysoewrm.wdyzdc.com', 'hxscwine.com'
+        'api-dc-prod-008.cyou', 'api-dc2-prod-08.cyou'
     ];
 
     function isAdUrl(u) {
