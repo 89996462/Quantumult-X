@@ -90,11 +90,8 @@ const injectScript = `
         if (lower.indexOf('/ads/click') !== -1) return true;
         if (lower.indexOf('/recreation/click') !== -1) return true;
         if (lower.indexOf('/webp/splash-') !== -1) return true;
-        // 新增广告路径检测
-        if (lower.indexOf('/ads/') !== -1) return true;
-        if (lower.indexOf('/promotion/') !== -1) return true;
-        if (lower.indexOf('/activity/') !== -1) return true;
-        if (lower.indexOf('/recommend/') !== -1) return true;
+        // 仅拦截明确的广告路径，避免误杀 activity/recommend 等正常API
+        if (lower.indexOf('/ad/') !== -1) return true;
         return false;
     }
 
@@ -213,24 +210,20 @@ const injectScript = `
                 function isVipRelatedObject(obj) {
                     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
                     
-                    // 检查常见的VIP相关字段
+                    // 优先检查明确的VIP相关字段
                     var vipKeywords = ['isVip', 'vipLevel', 'vipExpireDate', 'vipInfo', 'snapVip', 'vipStatus', 'expireDate', 'userVip', 'isVipUser', 'vipUser', 'vipFlag', 'isVipFlag', 'memberLevel', 'memberExpire', 'tiroCountdown', 'tiroExpire', 'tiroStatus'];
                     for (var i = 0; i < vipKeywords.length; i++) {
                         if (vipKeywords[i] in obj) return true;
                     }
                     
-                    // 检查字段名中是否包含vip关键词
+                    // 仅检查对象的直接字段名（不递归），且仅匹配含vip/tiro的关键词
+                    // 移除过于宽泛的 member/user/mine/profile 匹配
                     var keys = Object.keys(obj);
                     for (var j = 0; j < keys.length; j++) {
-                        var key = keys[j];
-                        if (key.toLowerCase().indexOf('vip') !== -1 || key.toLowerCase().indexOf('member') !== -1 || key.toLowerCase().indexOf('tiro') !== -1) {
+                        var key = keys[j].toLowerCase();
+                        if (key.indexOf('vip') !== -1 || key.indexOf('tiro') !== -1) {
                             return true;
                         }
-                    }
-                    
-                    // 检查是否为用户信息对象
-                    if (keys.some(k => k.toLowerCase().indexOf('user') !== -1 || k.toLowerCase().indexOf('mine') !== -1 || k.toLowerCase().indexOf('profile') !== -1)) {
-                        return true;
                     }
                     
                     return false;
@@ -459,7 +452,9 @@ const injectScript = `
     function isAdItem(item) {
         if (!item || typeof item !== 'object') return false;
         if (item.type === 'adv' || item.type === 'ADV') return true;
-        if ('position' in item && item.position != null && item.position !== '' && item.position !== 0 && item.position !== false) return true;
+        // 移除：position字段太宽泛会误杀正常数据
+        // 仅当 position 为较大数值（>99）且伴随广告type时判定
+        if (item.position && typeof item.position === 'number' && item.position > 99 && (item.type === 'banner' || item.type === 'float' || item.type === 'popup')) return true;
         if ('advertising_key' in item && item.advertising_key) return true;
 
         var urlFields = ['link', 'url', 'jumpUrl', 'redirectUrl', 'href', 'actionUrl', 'clickUrl', 'h5Url', 'webUrl'];
@@ -468,10 +463,13 @@ const injectScript = `
                 if (isAdUrl(item[urlFields[m]])) return true;
             }
         }
-        if ('type' in item && (item.type === 'float' || item.type === 'popup' || item.type === 'dialog')) return true;
+        if ('type' in item && (item.type === 'float' || item.type === 'popup' || item.type === 'dialog')) {
+            // 仅当还有广告相关字段时才判定为广告
+            if (item.link || item.advertising_key || item.clickUrl || item.h5Url) return true;
+        }
         if ('eventName' in item && (item.eventName.indexOf('\\u4e16\\u754c\\u676f') !== -1 || item.eventName.indexOf('\\u7ea2\\u5305\\u96e8') !== -1)) return true;
 
-        var activityTypes = ['redRain', 'prize', 'lottery', 'worldCup', 'football', 'match', 'innovation', 'tech'];
+        var activityTypes = ['redRain', 'prize', 'lottery', 'worldCup'];
         for (var n = 0; n < activityTypes.length; n++) {
             if (item.type === activityTypes[n] || (item.activityType && item.activityType === activityTypes[n])) return true;
         }
@@ -577,12 +575,11 @@ const injectScript = `
             '[class*="video-ad"], [class*="interstitial"], [class*="insert-ad"]'
         ).forEach(function(el) { el.remove(); });
 
-        // 广告弹窗/浮窗/悬浮窗
+        // 广告弹窗/浮窗/悬浮窗（仅匹配明确广告前缀的，避免误杀正常UI）
         document.querySelectorAll(
             '[class*="ad-popup"], [class*="adPopup"], [class*="popup-ad"],' +
             '[class*="ad-dialog"], [class*="ad-modal"],' +
             '[class*="floating-ad"], [class*="float-ad"], [class*="ad-float"],' +
-            '[class*="floating"], [class*="float"], [class*="popup"], [class*="dialog"],' +
             '[class*="redRain"], [class*="\\u7ea2\\u5305"], [class*="prize"], [class*="lottery"],' +
             '[class*="worldCup"], [class*="\\u4e16\\u754c\\u676f"], [class*="ia-tech"], [class*="AI\\u79d1\\u6280"]'
         ).forEach(function(el) { el.remove(); });
@@ -594,10 +591,11 @@ const injectScript = `
             '[class*="AiRoot"], [class*="ai_float"]'
         ).forEach(function(el) { el.remove(); });
 
-        // 推广/赞助
+        // 推广/赞助（仅匹配明确的推广广告类名）
         document.querySelectorAll(
-            '[class*="promote"], [class*="Promote"], [class*="promotion"],' +
-            '[class*="Promotion"], [class*="sponsor"], [class*="Sponsor"]'
+            '[class*="adv-swiper"], [class*="advTitle"],' +
+            '[class*="adv-card"], [class*="adv-item"], [class*="adv-list"],' +
+            '[class*="adv-banner"], [class*="adv-container"], [class*="adv-wrapper"]'
         ).forEach(function(el) { el.style.display = 'none'; });
 
         // 广告注入的iframe/script
@@ -613,12 +611,7 @@ const injectScript = `
         // 带ad属性的元素
         document.querySelectorAll('[data-ad], [data-ad-type], [data-ad-id]').forEach(function(el) { el.style.display = 'none'; });
 
-        // 空遮罩层移除
-        document.querySelectorAll('[class*="mask"], [class*="overlay"]').forEach(function(el) {
-            if (el.children.length === 0 && getComputedStyle(el).position === 'fixed') {
-                el.style.display = 'none';
-            }
-        });
+        // 移除：遮罩层处理会影响正常弹窗和模态框
 
         // 广告角标
         document.querySelectorAll('.corner-tag.isAdv, .corner-tag[class*="isAdv"]').forEach(function(el) { el.style.display = 'none'; });
@@ -675,7 +668,8 @@ const injectScript = `
         '.adv-swiper-slide, [class*="adv-swiper"], [class*="advTitle"],',
         '[class*="adv-card"], [class*="adv-item"], [class*="adv-list"],',
         '[class*="adv-banner"], [class*="adv-container"], [class*="adv-wrapper"],',
-        '[class*="ad-container"], [class*="adContainer"], [class*="ad-wrapper"],',
+        // 只匹配明确的广告类名（ad-container/ad-wrapper），避免误杀 reading、header 等含"ad"的正常词
+        '[class*="ad-banner"], [class*="adBanner"], [class*="ad-item"], [class*="ad-box"], [class*="ad-slot"],',
         '[class*="google-ad"], [class*="adsbygoogle"],',
         '.corner-tag.isAdv',
         '{display:none!important}'
@@ -706,7 +700,7 @@ const injectScript = `
 `;
 
 // ========== 注入脚本到HTML页面 ==========
-var isTarget = url.indexOf('oihqwlma.00po.shop') !== -1 ||
+var isTarget = url.indexOf('oihawlma.00po.shop') !== -1 ||
                url.indexOf('00po.shop') !== -1;
 
 if (isTarget && body) {
