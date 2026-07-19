@@ -72,7 +72,9 @@ const injectScript = `
         'ia-tech.com', 'prize-ad.com', 'lottery-ad.com',
         'api-dc-prod-008.cyou', 'api-dc2-prod-08.cyou',
         // 00po相关域名
-        'oukky-lys.shop'
+        'oukky-lys.shop',
+        // 新增域名
+        'detkli-lys.hxscwine.com', 'lysoewrm.wdyzdc.com', 'hxscwine.com'
     ];
 
     function isAdUrl(u) {
@@ -88,6 +90,11 @@ const injectScript = `
         if (lower.indexOf('/ads/click') !== -1) return true;
         if (lower.indexOf('/recreation/click') !== -1) return true;
         if (lower.indexOf('/webp/splash-') !== -1) return true;
+        // 新增广告路径检测
+        if (lower.indexOf('/ads/') !== -1) return true;
+        if (lower.indexOf('/promotion/') !== -1) return true;
+        if (lower.indexOf('/activity/') !== -1) return true;
+        if (lower.indexOf('/recommend/') !== -1) return true;
         return false;
     }
 
@@ -596,8 +603,8 @@ const injectScript = `
         // 广告注入的iframe/script
         document.querySelectorAll(
             'iframe[src*="eqfx9bas"], iframe[src*="yihaici"], iframe[src*="epuf3tk"],' +
-            'iframe[src*="speedfan"], iframe[src*="u7d2w"],' +
-            'script[src*="eqfx9bas"], script[src*="yihaici"], script[src*="epuf3tk"]'
+            'iframe[src*="speedfan"], iframe[src*="u7d2w"], iframe[src*="detkli-lys"], iframe[src*="hxscwine"],' +
+            'script[src*="eqfx9bas"], script[src*="yihaici"], script[src*="epuf3tk"], script[src*="detkli-lys"], script[src*="hxscwine"]'
         ).forEach(function(el) { el.remove(); });
 
         // 广告视频
