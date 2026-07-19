@@ -561,9 +561,8 @@ const injectScript = `
             '.adv-swiper-slide, [class*="adv-swiper"], [class*="advTitle"],' +
             '[class*="adv-card"], [class*="adv-item"], [class*="adv-list"],' +
             '[class*="adv-banner"], [class*="adv-container"], [class*="adv-wrapper"],' +
-            '[class*="ad-banner"], [class*="adBanner"], [class*="ad_card"], [class*="adCard"],' +
-            '[class*="banner-ad"], [class*="ad-container"], [class*="adContainer"],' +
-            '[class*="ad-wrapper"], [class*="ad-item"], [class*="ad-box"], [class*="ad-slot"]'
+            '[class*="banner-ad"], [class^="ad-"], [class*=" ad-"],' +
+            '[class*="adBanner"], [class*="adCard"]'
         ).forEach(function(el) { el.style.display = 'none'; });
 
         // 全屏视频广告/插屏广告
@@ -665,8 +664,6 @@ const injectScript = `
         '.adv-swiper-slide, [class*="adv-swiper"], [class*="advTitle"],',
         '[class*="adv-card"], [class*="adv-item"], [class*="adv-list"],',
         '[class*="adv-banner"], [class*="adv-container"], [class*="adv-wrapper"],',
-        // 只匹配明确的广告类名（ad-container/ad-wrapper），避免误杀 reading、header 等含"ad"的正常词
-        '[class*="ad-banner"], [class*="adBanner"], [class*="ad-item"], [class*="ad-box"], [class*="ad-slot"],',
         '[class*="google-ad"], [class*="adsbygoogle"],',
         '.corner-tag.isAdv',
         '{display:none!important}'
