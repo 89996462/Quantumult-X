@@ -1,5 +1,3 @@
-//17点25分
-
 const NAME = "妻社VIP";
 const VIP_GROUP_ID = "32";
 const VIP_GROUP_TITLE = " 妻社 终身VIP";
@@ -242,7 +240,7 @@ function modifyUser(data) {
 
 function upgradeUser(user) {
   if (!user || typeof user !== "object") return;
-  if ("username" in user) user.username = "联合国儿童基金会";
+  if ("username" in user) user.username = "彭于晏Crack";
   if ("groupid" in user) user.groupid = VIP_GROUP_ID;
   if ("groupexpiry" in user) user.groupexpiry = 4102444800;
   if ("grouptitle" in user) user.grouptitle = VIP_GROUP_TITLE;
