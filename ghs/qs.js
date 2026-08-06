@@ -1,25 +1,3 @@
-
-/******************************
-
-脚本功能：妻社
-脚本作者：彭于晏💞
-更新时间：2026-8-7
-TG反馈群：https://t.me/plus8889
-TG频道群：https://t.me/py996
-使用声明：此脚本仅供学习与交流，请勿转载与贩卖！⚠️⚠️⚠️
-
-*******************************
-
-[rewrite_local]
-
-^https?:\/\/qsh\d+\.qsh\d+\.\w+\.(?:com|cn|org\.cn)\/(?:source\/plugin\/qsts_app\/index\.php|mserver)\/ url script-response-body https://raw.githubusercontent.com/89996462/Quantumult-X/main/ghs/qs.js
-
-[mitm] 
-
-hostname = qsh*.qsh*.com, qsh*.qsh*.cn, qsh*.qsh*.org.cn
-
-*******************************/
-
 const NAME = "妻社VIP";
 const VIP_GROUP_ID = "32";
 const VIP_GROUP_TITLE = " 妻社 终身VIP";
