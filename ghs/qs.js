@@ -1,3 +1,5 @@
+//17点25分
+
 const NAME = "妻社VIP";
 const VIP_GROUP_ID = "32";
 const VIP_GROUP_TITLE = " 妻社 终身VIP";
