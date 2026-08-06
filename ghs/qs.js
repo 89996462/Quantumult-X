@@ -16,7 +16,7 @@ TG频道群：https://t.me/py996
 
 [mitm] 
 
-hostname = qsh*.qsh*.com,qsh*.qsh*.cn,qsh*.qsh*.org.cn
+hostname = qsh*.qsh*.com, qsh*.qsh*.cn, qsh*.qsh*.org.cn
 
 *******************************/
 
