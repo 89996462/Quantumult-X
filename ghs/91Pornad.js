@@ -14,9 +14,9 @@ function initCrypto() {
 
 
 // 91Porn PWA 去广告 v1 — 抓包 2026-06-10-211114 / main.dart.js 校验
-const AES_KEY = "7f21f0eb260e396e";
-const AES_IV = "6cbe8a2b687e0ffb";
-const SIGN_SALT = "7f21f0eb260e396e";
+const AES_KEY = atob("N2YyMWYwZWIyNjBlMzk2ZQ==");
+const AES_IV = atob("NmNiZThhMmI2ODdlMGZmYg==");
+const SIGN_SALT = atob("N2YyMWYwZWIyNjBlMzk2ZQ==");
 
 const AD_KEY_RE =
   /^(ads|ads_screen|ads_pop|ads_media|start_screen_ads|pop_ads|pop_ads_v2|pop_conf|layer_ads|apps|app_list|recommend_apps|partner_apps|app_ads|ad_list|advertise_list|popup_ads|launch_ads|screen_ads|active_pop|floating_ads|floating|banner|banners|home_banner|home_ads|notice|notice_app|person_ads|post_detail_ads|buoy|nav_prepend|list_ads|ad_play|ad_pops)$/i;
